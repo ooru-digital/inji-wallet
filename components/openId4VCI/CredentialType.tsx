@@ -12,7 +12,7 @@ import { getCredentialType } from '../VC/common/VCUtils';
 export const CredentialType: React.FC<CredentialTypeProps> = props => {
   const selectedIssuerDisplayObject = props.item.display?.length
     ? getDisplayObjectForCurrentLanguage(props.item.display)
-    : {name:getCredentialType(props.item)};
+    : {name: getCredentialType(props.item)};
 
   return (
     <Pressable

@@ -310,7 +310,6 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                       <VcItemContainer
                         key={vcKey}
                         vcMetadata={vcMetadata}
-                        margin="0 2 8 2"
                         onPress={controller.VIEW_VC}
                         isDownloading={controller.inProgressVcDownloads?.has(
                           vcKey,

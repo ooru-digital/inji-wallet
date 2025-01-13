@@ -232,7 +232,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = ({
   const faceImage = verifiableCredentialData.face;
   const {start} = useCopilot();
   const {t} = useTranslation();
-
+  const id = props.verifiableCredentialData.credentialConfigurationId;
   return (
     <ImageBackground
       source={
@@ -307,8 +307,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = ({
                   vcHasImage={faceImage !== undefined}
                 />
               </Pressable>
-            </>
-          )}
+
           {vcSelectableButton}
           {flow === VCItemContainerFlowType.VP_SHARE &&
             credential?.disclosedKeys?.length > 0 && (

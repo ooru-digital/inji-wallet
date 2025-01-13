@@ -112,7 +112,7 @@ android {
     namespace 'io.mosip.residentapp'
 
     defaultConfig {
-        applicationId 'io.mosip.residentapp'
+        applicationId 'ooru.io.credissuer_wallet'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionName "0.22.1"
@@ -205,7 +205,7 @@ android {
         residentapp {
             versionName defaultConfig.versionName
             dimension "inji"
-            resValue "string", "app_name", "Inji"
+            resValue "string", "app_name", "Credissuer Wallet"
         }
         inji {
             applicationId "io.mosip.inji.wallet"
@@ -237,7 +237,7 @@ android {
         variant.outputs.all { output ->
             def datetime = new Date().format('yyyyMMdd_HHmm')
             def architecture = output.getFilter(com.android.build.OutputFile.ABI) ?: "universal"
-            outputFileName = "Inji_${architecture}.apk"
+            outputFileName = "Credissuer_wallet_${architecture}.apk"
         }
     }
 

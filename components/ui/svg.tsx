@@ -89,6 +89,7 @@ export class SvgImage {
       />
     );
   }
+
   static logOutIcon(): any {
     return (
       <SettingsLogOut

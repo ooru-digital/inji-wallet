@@ -152,7 +152,7 @@ export const incrementRetryCount = (eventType, screen) => {
             TelemetryConstants.ErrorId.resend,
             TelemetryConstants.ErrorMessage.resendOtp,
           ];
-    sendErrorEvent(getErrorEventData(eventType, errorId, errorMessage));
+    // sendErrorEvent(getErrorEventData(eventType, errorId, errorMessage));
     retryCount = 0;
   }
 };
@@ -162,9 +162,9 @@ export const resetRetryCount = () => {
 };
 
 export function configureTelemetry() {
-  const config = getTelemetryConfigData();
-  initializeTelemetry(config);
-  sendAppInfoEvent(getAppInfoEventData());
+  // const config = getTelemetryConfigData();
+  //initializeTelemetry(config);
+  //sendAppInfoEvent(getAppInfoEventData());
 }
 
 export function getEventType(isSettingUp) {
