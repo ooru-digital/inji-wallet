@@ -6,6 +6,7 @@ apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
 apply plugin: "org.sonarqube"
 apply plugin: 'kotlin-android'
+apply plugin: 'com.google.gms.google-services'
 
 
 configurations.all {
@@ -280,6 +281,8 @@ dependencies {
     implementation 'com.facebook.soloader:soloader:0.10.1+'
     implementation("io.mosip:pixelpass-aar:0.7.0")
     implementation("io.mosip:secure-keystore:0.3.0")
+    implementation platform('com.google.firebase:firebase-bom:32.1.1')
+    implementation ("com.google.firebase:firebase-messaging")
     implementation("io.mosip:tuvali:0.5.2")
     implementation("io.inji:inji-vci-client-aar:0.7.0"){
         changing = true

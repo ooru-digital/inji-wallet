@@ -18,6 +18,7 @@ import {SvgImage} from '../../components/ui/svg';
 import {DataBackupAndRestore} from './DataBackupAndRestore';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {SettingsKeyManagementScreen} from './SettingsKeyManagement';
+import {SettingsEmailManagementScreen} from './SettingsEmailManagement';
 
 const LanguageSetting: React.FC = () => {
   const {t} = useTranslation('SettingScreen');
@@ -127,6 +128,7 @@ export const SettingScreen: React.FC<
           />
 
           <LanguageSetting />
+          <SettingsEmailManagementScreen controller={controller} />
 
           {/*  <ListItem topDivider disabled={!controller.canUseBiometrics}>
             {SvgImage.fingerprintIcon(24)}
