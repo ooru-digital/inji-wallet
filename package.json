@@ -31,7 +31,7 @@
     "@react-native-firebase/app": "^21.12.0",
     "@react-native-firebase/database": "^21.12.0",
     "@react-native-firebase/firestore": "^21.12.0",
-    "@react-native-firebase/messaging": "^21.12.0",
+    "@react-native-firebase/messaging": "^21.12.2",
     "@react-native-google-signin/google-signin": "^10.1.1",
     "@react-native-picker/picker": "2.4.8",
     "@react-navigation/bottom-tabs": "^6.0.7",

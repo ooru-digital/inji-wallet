@@ -171,18 +171,18 @@ export const EmailManagementScreen: React.FC<
     }
   };
 
-  const storeFCMToken = async (email, fcmToken) => {
+  const storeFCMToken = async (email, token) => {
     try {
-      console.log('📡 Storing FCM Token:', {email, fcm_token: fcmToken});
+      console.log('📡 Storing FCM Token:', {email, token: token});
 
       const response = await fetch(
-        'https://staging.credissuer.com/api/holders/store-fcm',
+        'https://staging.credissuer.com/api/holders/store-token/fcm/',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({email, fcm_token: fcmToken}),
+          body: JSON.stringify({email, token: token}),
         },
       );
 
