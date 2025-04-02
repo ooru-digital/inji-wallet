@@ -33,7 +33,7 @@ import {
   requestPermission,
   useForegroundNotification,
   useBackgroundNotification,
-} from '/home/rashmi/data/repos/apps/ooru/credissuer-wallet/screens/Notification/NotificationScreen.tsx';
+} from './screens/Notification/NotificationScreen.tsx';
 
 const {RNSecureKeystoreModule} = NativeModules;
 // kludge: this is a bad practice but has been done temporarily to surface

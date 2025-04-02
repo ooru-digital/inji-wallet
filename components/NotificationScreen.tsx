@@ -20,6 +20,7 @@ import { BannerNotificationContainer } from './BannerNotificationContainer';
 import {Button} from './ui';
 
 
+
 // Request notification permission
 async function requestPermission(): Promise<void> {
   const authStatus = await messaging().requestPermission();
@@ -172,7 +173,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         <SafeAreaView style={{ padding: 20, alignItems: 'center' }}>
           <View style={styles.card}>
             <Image
-              source={require('/home/rashmi/data/repos/apps/ooru/credissuer-wallet/assets/certificate.png')}
+              source={require('../assets/certificate.png')}
               style={styles.cardImage}
               resizeMode="contain"
             />
@@ -183,7 +184,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
                 </Text>
                 <TouchableOpacity onPress={() => copyToClipboard(selectedNotification?.credential_id || '')}>
                   <Image
-                    source={require('/home/rashmi/data/repos/apps/ooru/credissuer-wallet/assets/copy.png')}
+                    source={require('../assets/copy.png')}
                     style={styles.copyIcon}
                   />
                 </TouchableOpacity>

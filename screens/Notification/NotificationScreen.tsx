@@ -4,7 +4,7 @@ import messaging, {
 import {Alert} from 'react-native';
 import {useEffect} from 'react';
 import {useMachine} from '@xstate/react';
-import {IssuersMachine} from '/home/rashmi/data/repos/apps/ooru/credissuer-wallet/machines/Issuers/IssuersMachine.ts';
+import {IssuersMachine} from '../../machines/Issuers/IssuersMachine.ts';
 
 // Request notification permissions
 export async function requestPermission(): Promise<void> {
