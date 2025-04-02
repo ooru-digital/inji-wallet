@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FlatList,
   Pressable,
@@ -7,14 +7,18 @@ import {
   Alert,
   Image,
   StyleSheet,
+  ToastAndroid,
+  Platform,
+  TouchableOpacity
 } from 'react-native';
-import messaging, {
-  FirebaseMessagingTypes,
-} from '@react-native-firebase/messaging';
-import {Modal} from './ui/Modal';
-import {Column, Text} from './ui';
-import {Theme} from './ui/styleUtils';
-import {BannerNotificationContainer} from './BannerNotificationContainer';
+import Clipboard from '@react-native-clipboard/clipboard';
+import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
+import { Modal } from './ui/Modal';
+import { Column, Text } from './ui';
+import { Theme } from './ui/styleUtils';
+import { BannerNotificationContainer } from './BannerNotificationContainer';
+import {Button} from './ui';
+
 
 // Request notification permission
 async function requestPermission(): Promise<void> {
@@ -120,6 +124,15 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
     setShowDetailsModal(true);
   };
 
+  const copyToClipboard = (text: string) => {
+    Clipboard.setString(text);
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Copied to clipboard!', ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Copied!', 'Credential ID has been copied to clipboard.');
+    }
+  };
+
   return (
     <>
       <Pressable onPress={() => setShowNotificationPage(!showNotificationPage)}>
@@ -130,11 +143,11 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         headerTitle="Notifications"
         onDismiss={() => setShowNotificationPage(false)}>
         <BannerNotificationContainer />
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
           <Column fill padding="10">
             <FlatList
               keyExtractor={(item, index) => 'Notification' + index.toString()}
-              renderItem={({item}) => (
+              renderItem={({ item }) => (
                 <View style={styles.notificationItem}>
                   <Pressable onPress={() => handleNotificationPress(item)}>
                     <Text style={Theme.TextStyles.helpHeader}>
@@ -156,7 +169,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         isVisible={showDetailsModal}
         headerTitle="Certificate Details"
         onDismiss={() => setShowDetailsModal(false)}>
-        <SafeAreaView style={{padding: 20, alignItems: 'center'}}>
+        <SafeAreaView style={{ padding: 20, alignItems: 'center' }}>
           <View style={styles.card}>
             <Image
               source={require('/home/rashmi/data/repos/apps/ooru/credissuer-wallet/assets/certificate.png')}
@@ -164,15 +177,34 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
               resizeMode="contain"
             />
             <View style={styles.cardContent}>
-              <Text style={Theme.TextStyles.helpDetails}>
-                Credential ID: {selectedNotification?.credential_id}
-              </Text>
+              <View style={styles.copyContainer}>
+                <Text style={Theme.TextStyles.helpDetails}>
+                  Credential ID: {selectedNotification?.credential_id}
+                </Text>
+                <TouchableOpacity onPress={() => copyToClipboard(selectedNotification?.credential_id || '')}>
+                  <Image
+                    source={require('/home/rashmi/data/repos/apps/ooru/credissuer-wallet/assets/copy.png')}
+                    style={styles.copyIcon}
+                  />
+                </TouchableOpacity>
+              </View>
               <Text style={Theme.TextStyles.helpDetails}>
                 Issued by: {selectedNotification?.org_name}
               </Text>
+                   
             </View>
+            
           </View>
+          
         </SafeAreaView>
+        <View style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
+                     <Button
+                       testID="addToWallet"
+                       type="gradient"
+                       title={('Add to Wallet')}
+                     />
+                   </View>
+        
       </Modal>
     </>
   );
@@ -189,7 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -201,6 +233,16 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     padding: 15,
+  },
+  copyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  copyIcon: {
+    width: 40,
+    height: 40,
+    marginLeft: -100,
   },
 });
 

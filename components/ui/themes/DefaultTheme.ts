@@ -533,10 +533,11 @@ export const DefaultTheme = {
       borderRadius: 100,
     },
     detailedViewImage: {
-      width: 50,
+      width: 80,
       height: 80,
       borderRadius: 5,
       marginTop: 10,
+      resizeMode: 'contain',
     },
     openCardProfileIconContainer: {
       alignSelf: 'center',
@@ -1081,7 +1082,6 @@ export const DefaultTheme = {
     vcSearchBarContainer: {
       alignItems: 'center',
       borderBottomWidth: 0.5,
-      borderTopWidth: 0.5,
       borderColor: Colors.DimGray,
       width: Dimensions.get('window').width,
       backgroundColor: Colors.White,
