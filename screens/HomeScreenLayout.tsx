@@ -9,11 +9,12 @@ import {RootRouteProps} from '../routes';
 import {HomeScreen} from './Home/HomeScreen';
 import {IssuersScreen} from './Issuers/IssuersScreen';
 import {SvgImage} from '../components/ui/svg';
-import {HelpScreen} from '../components/HelpScreen';
+import {NotificationScreen} from '../components/NotificationScreen';
 import {I18nManager, View} from 'react-native';
 import {isIOS} from '../shared/constants';
 import {Copilot} from '../components/ui/Copilot';
 import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('IssuersScreen');
@@ -44,7 +45,7 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   }, [props.navigation, props.route]);
 
   const screenOptions = (
-    <HelpScreen
+    <NotificationScreen
       source={'Inji'}
       triggerComponent={
         <Copilot
@@ -58,14 +59,15 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
             end={Theme.LinearGradientDirection.end}>
             <View style={Theme.HelpScreenStyle.viewStyle}>
               <Row crossAlign="center" style={Theme.HelpScreenStyle.rowStyle}>
-                <View testID="helpIcon" style={Theme.HelpScreenStyle.iconStyle}>
-                  {SvgImage.coloredInfo()}
+                <View
+                  testID="notificationIcon"
+                  style={Theme.HelpScreenStyle.iconStyle}>
+                  <Icon
+                    name="notifications"
+                    size={24}
+                    color={Theme.Colors.IconBg}
+                  />
                 </View>
-                <Text
-                  testID="helpText"
-                  style={Theme.HelpScreenStyle.labelStyle}>
-                  {t('help')}
-                </Text>
               </Row>
             </View>
           </LinearGradient>
