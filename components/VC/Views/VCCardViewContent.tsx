@@ -80,45 +80,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
             : undefined
         }>
         <Row crossAlign="center" padding="3 0 0 3">
-          {VcItemContainerProfileImage(props)}
-          <Column fill align="center" justify="center" margin="0 10 0 10">
-            <Column
-              style={{
-                width: '90%',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginHorizontal: '10%',
-              }}>
-              <VCItemFieldValue
-                key={'id'}
-                testID="id"
-                fieldValue={idType}
-                wellknown={props.wellknown}
-                style={{
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              />
-            </Column>
-            <VCItemFieldValue
-              key={'fullName'}
-              testID="fullName"
-              fieldValue={getLocalizedField(
-                props.credential?.credentialSubject.recipientName,
-              )}
-              wellknown={props.wellknown}
-            />
-            <Row>
-              <VCVerification
-                wellknown={props.wellknown}
-                isVerified={props.isVerified}
-              />
-            </Row>
-          </Column>
-
-          {isVCLoaded(props.credential, props.fields) && (
+        {isVCLoaded(props.credential, props.fields) && (
             <Image
               src={issuerLogo?.url}
               alt={issuerLogo?.alt_text}
@@ -127,6 +89,47 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
               resizeMode="contain"
             />
           )}
+          <Column fill align="center" justify="center" margin="0 10 0 10">
+            <View
+                style={{
+                  width: '90%',
+                  alignItems: 'flex-end', 
+                  justifyContent: 'center',
+                }}>
+                <VCItemFieldValue
+                  key={'id'}
+                  testID="id"
+                  fieldValue={idType}
+                  wellknown={props.wellknown}
+                  style={{
+                    textAlign: 'left', 
+                    fontWeight: 'bold',
+                    fontSize: 16,
+                    width: '100%', 
+                    alignSelf: 'flex-end', 
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                />
+              </View>
+
+            <VCItemFieldValue
+              key={'fullName'}
+              testID="fullName"
+              fieldValue={getLocalizedField(
+                props.credential?.credentialSubject.recipientName,
+              )}
+              style={{
+                    textAlign: 'left', 
+                    fontSize: 14,
+                    width: '100%', 
+                    alignSelf: 'flex-end', 
+                  }}
+              wellknown={props.wellknown}
+            />
+          </Column>
+
+         
           <Pressable
             onPress={props.KEBAB_POPUP}
             accessible={false}

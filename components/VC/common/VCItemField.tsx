@@ -63,18 +63,18 @@ export const VCItemFieldName = ({fieldName, wellknown, testID}) => {
   );
 };
 
-export const VCItemFieldValue = ({fieldValue, wellknown, testID}) => {
+export const VCItemFieldValue = ({ fieldValue, wellknown, testID, style }) => {
   return (
-    <>
-      <Text
-        testID={`${testID}Value`}
-        color={getTextColor(wellknown, Theme.Colors.Details)}
-        style={Theme.Styles.fieldItemValue}>
-        {fieldValue}
-      </Text>
-    </>
+    <Text
+      testID={`${testID}Value`}
+      color={getTextColor(wellknown, Theme.Colors.Details)}
+      style={[Theme.Styles.fieldItemValue, style]} 
+    >
+      {fieldValue}
+    </Text>
   );
 };
+
 
 export const VCItemField = props => {
   return (

@@ -81,24 +81,32 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   const [isRTL] = useState(I18nManager.isRTL);
 
   var HomeScreenOptions = {
-    headerLeft: () =>
-      isIOS() || !isRTL ? (
+  headerLeft: () => (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {isIOS() || !isRTL ? (
         <View style={Theme.Styles.injiHomeLogo}>
           {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
         </View>
       ) : (
         screenOptions
-      ),
-    headerTitle: '',
-    headerRight: () =>
-      isIOS() || !isRTL ? (
-        screenOptions
-      ) : (
-        <View style={Theme.Styles.injiHomeLogo}>
-          {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
-        </View>
-      ),
-  };
+      )}
+      <Text style={{ marginLeft: -70, fontSize: 16, fontWeight: 'bold', color: '#2A2DA4' }}>
+        CREDISSUER WALLET
+      </Text>
+    </View>
+  ),
+  headerTitle: '',
+  headerRight: () =>
+    isIOS() || !isRTL ? (
+      screenOptions
+    ) : (
+      <View style={Theme.Styles.injiHomeLogo}>
+        {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
+      </View>
+    ),
+};
+
+  
 
   return (
     <Navigator>
