@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   FlatList,
   Pressable,
@@ -9,17 +9,21 @@ import {
   StyleSheet,
   ToastAndroid,
   Platform,
-  TouchableOpacity
+  TouchableOpacity,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
-import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
-import { Modal } from './ui/Modal';
-import { Column, Text } from './ui';
-import { Theme } from './ui/styleUtils';
-import { BannerNotificationContainer } from './BannerNotificationContainer';
+import messaging, {
+  FirebaseMessagingTypes,
+} from '@react-native-firebase/messaging';
+import {useMachine} from '@xstate/react';
+import {notificationMachine} from '../machines/Notifications/NotificationMachine';
+import {Modal} from './ui/Modal';
+import {Column, Text} from './ui';
+import {Theme} from './ui/styleUtils';
+import {BannerNotificationContainer} from './BannerNotificationContainer';
 import {Button} from './ui';
-
-
+import {appMachine} from '../machines/app';
+import {useApp} from './../screens/AppController';
 
 // Request notification permission
 async function requestPermission(): Promise<void> {
@@ -42,6 +46,10 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
     null,
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Initialize state machine
+  const [state, send] = useMachine(notificationMachine);
+  const controller = useApp();
 
   // Listen for foreground notifications
   useEffect(() => {
@@ -134,6 +142,11 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
     }
   };
 
+  const handleAddToWallet = () => {
+    if (!selectedNotification) return;
+    send({type: 'ADD_TO_WALLET', data: selectedNotification});
+  };
+
   return (
     <>
       <Pressable onPress={() => setShowNotificationPage(!showNotificationPage)}>
@@ -144,11 +157,11 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         headerTitle="Notifications"
         onDismiss={() => setShowNotificationPage(false)}>
         <BannerNotificationContainer />
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{flex: 1}}>
           <Column fill padding="10">
             <FlatList
               keyExtractor={(item, index) => 'Notification' + index.toString()}
-              renderItem={({ item }) => (
+              renderItem={({item}) => (
                 <View style={styles.notificationItem}>
                   <Pressable onPress={() => handleNotificationPress(item)}>
                     <Text style={Theme.TextStyles.helpHeader}>
@@ -170,7 +183,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         isVisible={showDetailsModal}
         headerTitle="Certificate Details"
         onDismiss={() => setShowDetailsModal(false)}>
-        <SafeAreaView style={{ padding: 20, alignItems: 'center' }}>
+        <SafeAreaView style={{padding: 20, alignItems: 'center'}}>
           <View style={styles.card}>
             <Image
               source={require('../assets/certificate.png')}
@@ -182,7 +195,10 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
                 <Text style={Theme.TextStyles.helpDetails}>
                   Credential ID: {selectedNotification?.credential_id}
                 </Text>
-                <TouchableOpacity onPress={() => copyToClipboard(selectedNotification?.credential_id || '')}>
+                <TouchableOpacity
+                  onPress={() =>
+                    copyToClipboard(selectedNotification?.credential_id || '')
+                  }>
                   <Image
                     source={require('../assets/copy.png')}
                     style={styles.copyIcon}
@@ -192,20 +208,18 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
               <Text style={Theme.TextStyles.helpDetails}>
                 Issued by: {selectedNotification?.org_name}
               </Text>
-                   
             </View>
-            
           </View>
-          
         </SafeAreaView>
         <View style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
-                     <Button
-                       testID="addToWallet"
-                       type="gradient"
-                       title={('Add to Wallet')}
-                     />
-                   </View>
-        
+          <Button
+            testID="addToWallet"
+            type="gradient"
+            title="Add to Wallet"
+            onPress={handleAddToWallet}
+            disabled={state.matches('addingToWallet')}
+          />
+        </View>
       </Modal>
     </>
   );
@@ -222,7 +236,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
