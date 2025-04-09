@@ -30,9 +30,9 @@ const {RNSecureKeystoreModule} = NativeModules;
 export const NotificationActions = (model: any) => {
   return {
     storeOriginalEventData: (context, event) => {
-      event.data.org_code = 'cr-org-pr';
-      event.data.credType = 'certificateOfAchievement03';
+      const { org_code, certificate_type } = event.data;
       context.originalEventData = event.data;
+    
     },
     setIsVerified: assign({
       vcMetadata: (context: any) => {

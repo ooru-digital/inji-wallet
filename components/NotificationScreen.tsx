@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FlatList,
   Pressable,
@@ -15,17 +15,16 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
-import {useMachine} from '@xstate/react';
-import {notificationMachine} from '../machines/Notifications/NotificationMachine';
-import {Modal} from './ui/Modal';
-import {Column, Text} from './ui';
-import {Theme} from './ui/styleUtils';
-import {BannerNotificationContainer} from './BannerNotificationContainer';
-import {Button} from './ui';
-import {appMachine} from '../machines/app';
-import {useApp} from './../screens/AppController';
+import { useMachine } from '@xstate/react';
+import { notificationMachine } from '../machines/Notifications/NotificationMachine';
+import { Modal } from './ui/Modal';
+import { Column, Text } from './ui';
+import { Theme } from './ui/styleUtils';
+import { BannerNotificationContainer } from './BannerNotificationContainer';
+import { Button } from './ui';
+import { useApp } from './../screens/AppController';
+import { CopyButton } from '../components/CopyButton';
 
-// Request notification permission
 async function requestPermission(): Promise<void> {
   const authStatus = await messaging().requestPermission();
   const enabled =
@@ -46,19 +45,16 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
     null,
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Initialize state machine
   const [state, send] = useMachine(notificationMachine);
   const controller = useApp();
 
-  // Listen for foreground notifications
   useEffect(() => {
     requestPermission();
 
     const unsubscribe = messaging().onMessage(
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
-        console.log('New FCM Notification:', remoteMessage);
-
         const newNotification = {
           title: remoteMessage.notification?.title || 'New Notification',
           message:
@@ -66,14 +62,12 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
           credential_id: remoteMessage.data?.credential_id || 'N/A',
           org_code: remoteMessage.data?.org_code || 'N/A',
           org_name: remoteMessage.data?.org_name || 'N/A',
+          credType: remoteMessage.data?.certificate_type || 'N/A',
         };
 
-        setNotifications(prevNotifications => [
-          newNotification,
-          ...prevNotifications,
-        ]);
+        setNotifications(prev => [newNotification, ...prev]);
+        setUnreadCount(prev => prev + 1);
 
-        // Show an alert
         Alert.alert(newNotification.title, newNotification.message);
       },
     );
@@ -81,17 +75,11 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
     return () => unsubscribe();
   }, []);
 
-  // Handle background and quit state notifications
   useEffect(() => {
     messaging()
       .getInitialNotification()
       .then(remoteMessage => {
         if (remoteMessage) {
-          console.log(
-            'Notification received while app was quit:',
-            remoteMessage,
-          );
-
           const newNotification = {
             title: remoteMessage.notification?.title || 'New Notification',
             message:
@@ -99,30 +87,26 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
             credential_id: remoteMessage.data?.credential_id || 'N/A',
             org_code: remoteMessage.data?.org_code || 'N/A',
             org_name: remoteMessage.data?.org_name || 'N/A',
+            credType: remoteMessage.data?.certificate_type || 'N/A',
           };
 
-          setNotifications(prevNotifications => [
-            newNotification,
-            ...prevNotifications,
-          ]);
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
         }
       });
 
     const unsubscribe = messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log('Notification opened from background:', remoteMessage);
-
       const newNotification = {
         title: remoteMessage.notification?.title || 'New Notification',
         message: remoteMessage.notification?.body || 'You have a new message.',
         credential_id: remoteMessage.data?.credential_id || 'N/A',
         org_code: remoteMessage.data?.org_code || 'N/A',
         org_name: remoteMessage.data?.org_name || 'N/A',
+        credType: remoteMessage.data?.certificate_type || 'N/A',
       };
 
-      setNotifications(prevNotifications => [
-        newNotification,
-        ...prevNotifications,
-      ]);
+      setNotifications(prev => [newNotification, ...prev]);
+      setUnreadCount(prev => prev + 1);
     });
 
     return () => unsubscribe();
@@ -143,25 +127,46 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
   };
 
   const handleAddToWallet = () => {
-    if (!selectedNotification) return;
-    send({type: 'ADD_TO_WALLET', data: selectedNotification});
+    if (!selectedNotification) {
+      console.log('No notification selected. Aborting add to wallet.');
+      return;
+    }
+
+    console.log('Adding to wallet with the following data:', selectedNotification);
+    send({ type: 'ADD_TO_WALLET', data: selectedNotification });
+
+    // Close both modals after sending
+    setShowDetailsModal(false);
+    setShowNotificationPage(false);
   };
 
   return (
     <>
-      <Pressable onPress={() => setShowNotificationPage(!showNotificationPage)}>
+      <Pressable
+        onPress={() => {
+          setShowNotificationPage(true);
+          setUnreadCount(0);
+        }}
+        style={{ position: 'relative' }}>
         {triggerComponent}
+        {unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount}</Text>
+          </View>
+        )}
       </Pressable>
+
       <Modal
+        animationType="fade"
         isVisible={showNotificationPage}
         headerTitle="Notifications"
         onDismiss={() => setShowNotificationPage(false)}>
         <BannerNotificationContainer />
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
           <Column fill padding="10">
             <FlatList
               keyExtractor={(item, index) => 'Notification' + index.toString()}
-              renderItem={({item}) => (
+              renderItem={({ item }) => (
                 <View style={styles.notificationItem}>
                   <Pressable onPress={() => handleNotificationPress(item)}>
                     <Text style={Theme.TextStyles.helpHeader}>
@@ -180,10 +185,11 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
       </Modal>
 
       <Modal
+        animationType="fade"
         isVisible={showDetailsModal}
         headerTitle="Certificate Details"
         onDismiss={() => setShowDetailsModal(false)}>
-        <SafeAreaView style={{padding: 20, alignItems: 'center'}}>
+        <SafeAreaView style={{ padding: 20, alignItems: 'center' }}>
           <View style={styles.card}>
             <Image
               source={require('../assets/certificate.png')}
@@ -195,15 +201,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
                 <Text style={Theme.TextStyles.helpDetails}>
                   Credential ID: {selectedNotification?.credential_id}
                 </Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    copyToClipboard(selectedNotification?.credential_id || '')
-                  }>
-                  <Image
-                    source={require('../assets/copy.png')}
-                    style={styles.copyIcon}
-                  />
-                </TouchableOpacity>
+                <CopyButton content={selectedNotification?.credential_id || ''} />
               </View>
               <Text style={Theme.TextStyles.helpDetails}>
                 Issued by: {selectedNotification?.org_name}
@@ -211,7 +209,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
             </View>
           </View>
         </SafeAreaView>
-        <View style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
+        <View style={{ position: 'absolute', bottom: 20, left: 20, right: 20 }}>
           <Button
             testID="addToWallet"
             type="gradient"
@@ -236,7 +234,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -254,10 +252,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  copyIcon: {
-    width: 40,
-    height: 40,
-    marginLeft: -100,
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#2A2DA4',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
 
