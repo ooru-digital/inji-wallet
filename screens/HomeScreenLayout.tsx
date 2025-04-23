@@ -9,7 +9,7 @@ import {RootRouteProps} from '../routes';
 import {HomeScreen} from './Home/HomeScreen';
 import {IssuersScreen} from './Issuers/IssuersScreen';
 import {SvgImage} from '../components/ui/svg';
-import {NotificationScreen} from '../components/NotificationScreen';
+import {NotificationScreen} from '../components/NotificationLandingScreen';
 import {I18nManager, View} from 'react-native';
 import {isIOS} from '../shared/constants';
 import {Copilot} from '../components/ui/Copilot';
