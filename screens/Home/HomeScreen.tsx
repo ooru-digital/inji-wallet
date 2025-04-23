@@ -11,7 +11,7 @@ import {TabRef} from './HomeScreenMachine';
 import {ActorRefFrom} from 'xstate';
 import LinearGradient from 'react-native-linear-gradient';
 import {ErrorMessageOverlay} from '../../components/MessageOverlay';
-import {Pressable} from 'react-native';
+import {Pressable, Text} from 'react-native';
 import testIDProps from '../../shared/commonUtil';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
@@ -46,26 +46,27 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
         color={Theme.Colors.whiteText}
       />
     );
+        
     return (
-      <LinearGradient
-        colors={Theme.Colors.gradientBtn}
-        start={Theme.LinearGradientDirection.start}
-        end={Theme.LinearGradientDirection.end}
+<LinearGradient
+  colors={Theme.Colors.gradientBtn}
+  start={Theme.LinearGradientDirection.start}
+  end={Theme.LinearGradientDirection.end}
         style={Theme.Styles.downloadFabIconContainer}>
-        <Pressable
-          onPress={() => {
-            controller.GOTO_ISSUERS();
-          }}
-          {...testIDProps('downloadCardButton')}
-          accessible={false}
-          style={({pressed}) =>
-            pressed
-              ? Theme.Styles.downloadFabIconPressed
-              : Theme.Styles.downloadFabIconNormal
-          }>
-          {plusIcon}
-        </Pressable>
-      </LinearGradient>
+  <Pressable
+    onPress={() => {
+      controller.GOTO_ISSUERS();
+    }}
+    {...testIDProps('downloadCardButton')}
+    accessible={false}
+    style={({pressed}) =>
+      pressed
+        ? Theme.Styles.downloadFabIconPressed
+        : Theme.Styles.downloadFabIconNormal
+    }>
+    {plusIcon}
+  </Pressable>
+</LinearGradient>
     );
   };
 
@@ -74,19 +75,29 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
       <BannerNotificationContainer />
       <Column fill backgroundColor={Theme.Colors.lightGreyBackgroundColor}>
         {controller.haveTabsLoaded && (
-          <Column fill>
-            <MyVcsTab
-              isVisible={controller.activeTab === 0}
-              service={controller.tabRefs.myVcs}
-              vcItemActor={controller.selectedVc}
-              isViewingVc={controller.isViewingVc}
-            />
-            <ReceivedVcsTab
-              isVisible={controller.activeTab === 1}
-              service={controller.tabRefs.receivedVcs}
-              vcItemActor={controller.selectedVc}
-            />
-          </Column>
+          <>
+            <Column fill>
+              <MyVcsTab
+                isVisible={controller.activeTab === 0}
+                service={controller.tabRefs.myVcs}
+                vcItemActor={controller.selectedVc}
+                isViewingVc={controller.isViewingVc}
+              />
+              <ReceivedVcsTab
+                isVisible={controller.activeTab === 1}
+                service={controller.tabRefs.receivedVcs}
+                vcItemActor={controller.selectedVc}
+              />
+            </Column>
+            <Column style={{alignItems: 'center', paddingVertical: 8}}>
+              <Text style={{color: 'gray', fontSize: 14}}>
+                {t(
+                  'home:refreshNote',
+                  'Please refresh if you don’t see your  credential downloaded  upon Notification.',
+                )}
+              </Text>
+            </Column>
+          </>
         )}
       </Column>
 

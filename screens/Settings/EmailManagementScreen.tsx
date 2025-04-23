@@ -13,7 +13,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ListItem, Icon} from 'react-native-elements';
 import {Text, Button} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
-import {HelpScreen} from '../../components/HelpScreen';
 import {BackButton} from '../../components/ui/backButton/BackButton';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
@@ -79,7 +78,7 @@ export const EmailManagementScreen: React.FC<
       } else {
         try {
           const response = await fetch(
-            'https://staging.credissuer.com/api/holders/send-email-otp',
+            'https://app.credissuer.com/api/holders/send-email-otp',
             {
               method: 'POST',
               headers: {
@@ -113,7 +112,7 @@ export const EmailManagementScreen: React.FC<
         console.log('📩 Sending OTP Verification:', {email, otp});
 
         const response = await fetch(
-          'https://staging.credissuer.com/api/holders/verify-email-otp',
+          'https://app.credissuer.com/api/holders/verify-email-otp',
           {
             method: 'POST',
             headers: {
@@ -176,7 +175,7 @@ export const EmailManagementScreen: React.FC<
       console.log('📡 Storing FCM Token:', {email, token: token});
 
       const response = await fetch(
-        'https://staging.credissuer.com/api/holders/store-token/fcm/',
+        'https://app.credissuer.com/api/holders/store-token/fcm/',
         {
           method: 'POST',
           headers: {
@@ -230,20 +229,7 @@ export const EmailManagementScreen: React.FC<
           ]}>
           {t('Registered Emails')}
         </Text>
-        <HelpScreen
-          source={'mailManagement'}
-          triggerComponent={
-            <Icon
-              testID="mailManagementHelpIcon"
-              accessible={true}
-              name="question"
-              type="font-awesome"
-              size={21}
-              style={Theme.Styles.IconContainer}
-              color={Theme.Colors.Icon}
-            />
-          }
-        />
+       
       </View>
 
       <ScrollView contentContainerStyle={{paddingBottom: 80}}>

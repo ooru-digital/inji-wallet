@@ -22,12 +22,19 @@ export const notificationMachine = model.createMachine(
     context: model.initialContext,
     states: {
       idle: {
-        entry: assign({
-          serviceRefs: context => ({
-            ...context.serviceRefs,
-            store: spawn(storeMachine, {name: 'store'}),
+        entry: [
+          assign({
+            selectedIssuerId: undefined,
+            selectedCredentialType: undefined,
+            originalEventData: undefined,
           }),
-        }),
+          assign({
+            serviceRefs: context => ({
+              ...context.serviceRefs,
+              store: spawn(storeMachine, {name: 'store'}),
+            }),
+          }),
+        ],
         on: {
           [NotificationEvents.ADD_TO_WALLET]: {
             target: 'downloadingIssuers',
@@ -35,6 +42,7 @@ export const notificationMachine = model.createMachine(
           },
         },
       },
+      
       downloadingIssuers: {
         invoke: {
           id: 'downloadIssuers',
@@ -233,7 +241,7 @@ export const notificationMachine = model.createMachine(
                     event.data,
                   ),
               ],
-              target: 'downloadingIssuers',
+              target: 'downloadingIssuers',  
             },
           ],
         },
@@ -454,7 +462,7 @@ export const notificationMachine = model.createMachine(
       },
 
       storing: {
-        description: 'all the verified credential is stored.',
+        description: 'All the verified credentials are stored.',
         entry: [
           'setVCMetadata',
           'setMetadataInCredentialData',
@@ -464,20 +472,16 @@ export const notificationMachine = model.createMachine(
           'storeVcMetaContext',
           'logDownloaded',
         ],
-        invoke: {
-          src: 'isUserSignedAlready',
-          onDone: {
-            cond: 'isSignedIn',
-            actions: ['sendBackupEvent'],
-          },
-        },
+        always: 'completed',
       },
       completed: {
+        description: 'Storage process is completed.',
         entry: 'redirectToHome',
-        type: 'final',
+        always: 'idle',
+      },
+      
       },
     },
-  },
   {
     actions: NotificationActions(model),
     services: NotificationServices(),
