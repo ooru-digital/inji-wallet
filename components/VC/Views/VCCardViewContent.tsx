@@ -63,7 +63,10 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
   const {start} = useCopilot();
   const {t} = useTranslation();
   const idType = getIdType(props.wellknown);
-
+  const maskCredentialId = (credentialId: string) => {
+    if (!credentialId) return '';
+    return credentialId.replace(/.(?=.{4})/g, '*'); 
+  };
   return (
     <ImageBackground
       source={getBackgroundImage(props.wellknown, Theme.CloseCard)}
@@ -104,7 +107,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
                   style={{
                     textAlign: 'left', 
                     fontWeight: 'bold',
-                    fontSize: 16,
+                    fontSize: 14,
                     width: '100%', 
                     alignSelf: 'flex-end', 
                   }}
@@ -121,12 +124,26 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
               )}
               style={{
                     textAlign: 'left', 
-                    fontSize: 14,
+                    fontSize: 13,
                     width: '100%', 
                     alignSelf: 'flex-end', 
                   }}
               wellknown={props.wellknown}
             />
+             <VCItemFieldValue
+                  key={'credentialId'}
+                  testID="credentialId"
+                  fieldValue={maskCredentialId(
+                    getLocalizedField(props.credential?.credentialSubject.credential_id)
+                  )}
+                  style={{
+                    textAlign: 'left',
+                    fontSize: 12,
+                    width: '100%',
+                    alignSelf: 'flex-end',
+                  }}
+                  wellknown={props.wellknown}
+                />
           </Column>
 
          
