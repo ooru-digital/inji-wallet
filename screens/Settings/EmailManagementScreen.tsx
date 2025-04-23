@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ListItem, Icon} from 'react-native-elements';
 import {Text, Button} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
+import {NotificationHelpScreen} from '../../components/NotificationHelpScreen';
 import {BackButton} from '../../components/ui/backButton/BackButton';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
@@ -229,7 +230,20 @@ export const EmailManagementScreen: React.FC<
           ]}>
           {t('Registered Emails')}
         </Text>
-       
+        <NotificationHelpScreen
+          source={'mailManagement'}
+          triggerComponent={
+            <Icon
+              testID="mailManagementHelpIcon"
+              accessible={true}
+              name="question"
+              type="font-awesome"
+              size={21}
+              style={Theme.Styles.IconContainer}
+              color={Theme.Colors.Icon}
+            />
+          }
+        />
       </View>
 
       <ScrollView contentContainerStyle={{paddingBottom: 80}}>
