@@ -31,6 +31,7 @@ export const NotificationActions = (model: any) => {
   return {
     storeOriginalEventData: (context, event) => {
       const { org_code, certificate_type } = event.data;
+
       context.originalEventData = event.data;
     
     },
@@ -84,7 +85,7 @@ export const NotificationActions = (model: any) => {
           '🔹 Extracting well-known key types from:',
           context.selectedCredentialType,
         );
-
+      
         if (!context.selectedCredentialType) {
           console.warn('⚠️ selectedCredentialType is undefined!');
           return [KeyTypes.RS256]; // Fallback value
@@ -122,10 +123,6 @@ export const NotificationActions = (model: any) => {
 
           return ErrorMessage.NO_INTERNET;
         }
-        console.log(
-          'Error did not match NETWORK_REQUEST_FAILED. Returning default error message.',
-        );
-
         return ErrorMessage.TECHNICAL_DIFFICULTIES;
       },
     }),
@@ -191,7 +188,7 @@ export const NotificationActions = (model: any) => {
         console.log('🔒 Key successfully stored!');
       } else {
         console.log('⚠️ Key storage skipped for keyType:', keyType);
-      }
+      }      
     },
 
     storeVerifiableCredentialMeta: send(
@@ -252,7 +249,7 @@ export const NotificationActions = (model: any) => {
       context => {
         console.log('📩 Storing VC Metadata...');
         console.log('🔹 Current keyType:', context.keyType);
-
+        
         const vcMetadata = getVCMetadata(context, context.keyType);
         console.log('✅ Retrieved VC Metadata:', vcMetadata);
 
@@ -452,7 +449,7 @@ export const NotificationActions = (model: any) => {
         ),
       );
     },
-
+    
     updateVerificationErrorMessage: assign({
       verificationErrorMessage: (_, event: any) =>
         (event.data as Error).message,
