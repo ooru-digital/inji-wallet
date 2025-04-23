@@ -232,7 +232,11 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = ({
   const faceImage = verifiableCredentialData.face;
   const {start} = useCopilot();
   const {t} = useTranslation();
-  const id = props.verifiableCredentialData.credentialConfigurationId;
+  const id = verifiableCredentialData.credentialConfigurationId;
+  const maskCredentialId = (credentialId: string) => {
+    if (!credentialId) return '';
+    return credentialId.replace(/.(?=.{4})/g, '*');
+  };
   return (
     <ImageBackground
       source={
@@ -271,6 +275,19 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = ({
                 showLastChecked={false}
               />
             </Row>
+            {typeof credential !== 'string' &&
+              !!credential?.credentialSubject?.id && (
+                <VCItemFieldValue
+                  key={'maskedCredentialId'}
+                  testID="maskedCredentialId"
+                  fieldValue={maskCredentialId(
+                    credential.credentialSubject.id,
+                  )}
+                  fieldValueColor={wellknownDisplayProperty.getTextColor(
+                    Theme.Colors.Details,
+                  )}
+                />
+              )}
           </Column>
 
           {isVCLoaded(credential) && (

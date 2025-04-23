@@ -24,7 +24,7 @@ export type ActivityLogType =
   | 'TAMPERED_VC_REMOVED';
 
 export interface ActivityLog {
-  getActionText(t: TFunction, wellknown: Object | undefined);
+  getActionText(t: TFunction, wellknown: Object | undefined): string;
 }
 
 export class VCActivityLog implements ActivityLog {
@@ -60,8 +60,13 @@ export class VCActivityLog implements ActivityLog {
     this.vcStatus = vcStatus;
   }
 
+  private maskId(id: string): string {
+    return id.length > 4 ? '*'.repeat(id.length - 4) + id.slice(-4) : id;
+  }
+
   getActionText(t: TFunction, wellknown: Object | undefined) {
     const formattedVcStatus = this.vcStatus ? `.${this.vcStatus}` : '';
+    const maskedId = this.maskId(this.id);
     if (!!this.credentialConfigurationId && wellknown) {
       const cardType = getCredentialTypeFromWellKnown(
         wellknown,
@@ -70,12 +75,14 @@ export class VCActivityLog implements ActivityLog {
       return `${t(this.type + formattedVcStatus, {
         idType: cardType,
         vcStatus: this.vcStatus,
+        id: maskedId,
       })}`;
     }
 
     return `${t(this.type + formattedVcStatus, {
       idType: t('VcDetails:identityCard'),
       vcStatus: this.vcStatus,
+      id: maskedId,
     })}`;
   }
 
@@ -83,7 +90,7 @@ export class VCActivityLog implements ActivityLog {
     return new VCActivityLog(data);
   }
 
-  getActionLabel(language: string) {
+  getActionLabel(language: string): string {
     return [
       this.deviceName,
       formatDistanceToNow(this.timestamp, {
