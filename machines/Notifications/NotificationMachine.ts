@@ -213,7 +213,7 @@ export const notificationMachine = model.createMachine(
                 'resetError',
                 'resetLoadingReason',
               ],
-              target: 'downloadingIssuers',
+              target: 'idle',
             },
             {
               cond: 'isOIDCConfigError',
@@ -401,8 +401,7 @@ export const notificationMachine = model.createMachine(
         },
         on: {
           CANCEL: {
-            target: 'downloadingIssuers',
-            actions: 'resetSelectedCredentialType',
+            target: 'idle',
           },
         },
         initial: 'idle',

@@ -3,8 +3,6 @@ import messaging, {
 } from '@react-native-firebase/messaging';
 import {Alert} from 'react-native';
 import {useEffect} from 'react';
-import {useMachine} from '@xstate/react';
-import {IssuersMachine} from '../../machines/Issuers/IssuersMachine.ts';
 
 // Request notification permissions
 export async function requestPermission(): Promise<void> {
@@ -20,8 +18,6 @@ export async function requestPermission(): Promise<void> {
 
 // Handle foreground notifications
 export function useForegroundNotification(): void {
-  const [state] = useMachine(IssuersMachine);
-
   useEffect(() => {
     requestPermission();
 
@@ -45,7 +41,7 @@ export function useForegroundNotification(): void {
     );
 
     return unsubscribe;
-  }, [state]);
+  }, []);
 }
 
 // Handle background notifications
@@ -53,6 +49,7 @@ export function useBackgroundNotification(): void {
   useEffect(() => {
     requestPermission();
 
+    // Handle notifications when the app is in the background and opened
     const unsubscribeBackground = messaging().onNotificationOpenedApp(
       (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
         console.log(
@@ -99,6 +96,13 @@ export function useBackgroundNotification(): void {
           '🔔 Full Background Message Received:',
           JSON.stringify(remoteMessage, null, 2),
         );
+
+        const { title, body } = remoteMessage.notification || {};
+        const messageText = body || 'You have received a new message.';
+        const credential_issuer = remoteMessage.data || {};
+        const issuerId = credential_issuer.org_code || null;
+
+        console.log('📢 Background Notification Data:', credential_issuer);
       },
     );
 
