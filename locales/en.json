@@ -1032,8 +1032,8 @@
     }
   },
   "copilot": {
-    "helpTitle": "Help/FAQs",
-    "helpMessage": "Find answers to common questions and access helpful resources in our FAQ section, ensuring you have the support whenever you need it.",
+    "helpTitle": "Notification",
+    "helpMessage": "Stay updated! You’ll be notified instantly whenever a new credential is issued to your email.",
     "downloadTitle": "Download Certificate",
     "downloadMessage": "Easily download and securely store your certificate in the app for convenient access whenever you need them.",
     "shareTitle": "Share Certificate",

@@ -11,10 +11,8 @@ export const NotificationHelpScreen: React.FC<HelpScreenProps> = props => {
   const {t} = useTranslation('NotificationHelpScreen');
   const [showHelpPage, setShowHelpPage] = useState(false);
   const listingRef = useRef();
-
-  // Firebase Cloud Messaging Documentation URL
-  const firebaseHelpUrl = 'https://firebase.google.com/docs/cloud-messaging';
-
+  const firebaseUrl = process.env.FIREBASE_URL;
+  
   useEffect(() => {
     if (props.source === 'BackUp') {
       setTimeout(() => {
@@ -55,7 +53,7 @@ export const NotificationHelpScreen: React.FC<HelpScreenProps> = props => {
         <React.Fragment>
           {getTextField(
             t('answers.notification.one'),
-            getLinkedText(firebaseHelpUrl, 'here') // Updated link here
+            getLinkedText(firebaseUrl, 'here') 
           )}
         </React.Fragment>
       ),

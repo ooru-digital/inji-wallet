@@ -37,18 +37,10 @@ export const NotificationActions = (model: any) => {
     },
     setIsVerified: assign({
       vcMetadata: (context: any) => {
-        console.log('🔹 Previous vcMetadata:>>>>>>>', context.vcMetadata);
-
         const updatedMetadata = new VCMetadata({
           ...context.vcMetadata,
           isVerified: true,
         });
-
-        console.log(
-          '✅ Updated vcMetadata (isVerified set to true):>>>>>>>>>',
-          updatedMetadata,
-        );
-
         return updatedMetadata;
       },
     }),
@@ -79,15 +71,10 @@ export const NotificationActions = (model: any) => {
       loadingReason: null,
     }),
     setSelectedCredentialType: model.assign({
-      selectedCredentialType: (context: any) => context.selectedCredentialType, // ✅ Use full object from context
+      selectedCredentialType: (context: any) => context.selectedCredentialType, 
       wellknownKeyTypes: (context: any) => {
-        console.log(
-          '🔹 Extracting well-known key types from:',
-          context.selectedCredentialType,
-        );
-      
         if (!context.selectedCredentialType) {
-          console.warn('⚠️ selectedCredentialType is undefined!');
+          console.warn('selectedCredentialType is undefined!');
           return [KeyTypes.RS256]; // Fallback value
         }
 
@@ -111,16 +98,8 @@ export const NotificationActions = (model: any) => {
     }),
     setFetchWellknownError: model.assign({
       errorMessage: (_: any, event: any) => {
-        console.log('Event data received:', event);
-
         const error = event.data.message;
-        console.log('Extracted error message:', error);
-
         if (error.includes(NETWORK_REQUEST_FAILED)) {
-          console.log(
-            'Network request failed. Returning NO_INTERNET error message.',
-          );
-
           return ErrorMessage.NO_INTERNET;
         }
         return ErrorMessage.TECHNICAL_DIFFICULTIES;
@@ -170,25 +149,15 @@ export const NotificationActions = (model: any) => {
       to: (context: any) => context.serviceRefs?.backup,
     }),
     storeKeyPair: async (context: any) => {
-      console.log('🔑 Storing Key Pair...');
-      console.log('📌 Context keyType:', context.keyType);
-      console.log('🔐 Public Key:', context.publicKey);
-      console.log('🔑 Private Key:', context.privateKey);
-      console.log('📱 is iOS:', isIOS());
-
       const keyType = context.keyType;
 
       if ((keyType != 'ES256' && keyType != 'RS256') || isIOS()) {
-        console.log('✅ Storing key in RNSecureKeystoreModule...');
         await RNSecureKeystoreModule.storeGenericKey(
           context.publicKey,
           context.privateKey,
           keyType,
         );
-        console.log('🔒 Key successfully stored!');
-      } else {
-        console.log('⚠️ Key storage skipped for keyType:', keyType);
-      }      
+      }
     },
 
     storeVerifiableCredentialMeta: send(
@@ -211,12 +180,7 @@ export const NotificationActions = (model: any) => {
 
     setVCMetadata: assign({
       vcMetadata: (context: any) => {
-        console.log('🔹 Fetching VC Metadata with keyType:', context.keyType);
-
         const metadata = getVCMetadata(context, context.keyType);
-
-        console.log('✅ Retrieved VC Metadata:', metadata);
-
         return metadata;
       },
     }),
@@ -247,37 +211,20 @@ export const NotificationActions = (model: any) => {
 
     storeVcMetaContext: send(
       context => {
-        console.log('📩 Storing VC Metadata...');
-        console.log('🔹 Current keyType:', context.keyType);
-        
         const vcMetadata = getVCMetadata(context, context.keyType);
-        console.log('✅ Retrieved VC Metadata:', vcMetadata);
-
         return {
           type: 'VC_ADDED',
           vcMetadata,
         };
       },
       {
-        to: (context: any) => {
-          console.log(
-            '🎯 Sending VC_ADDED event to:',
-            context.serviceRefs?.vcMeta,
-          );
-          return context.serviceRefs?.vcMeta;
-        },
+        to: (context: any) => context.serviceRefs?.vcMeta,
       },
     ),
 
     storeVcsContext: send(
       (context: any) => {
-        console.log('📩 Sending VC_DOWNLOADED event...');
-        console.log('🔹 Current keyType:', context.keyType);
-        console.log('🔹 Current credentialWrapper:', context.credentialWrapper);
-
         const metadata = getVCMetadata(context, context.keyType);
-        console.log('✅ Retrieved VC Metadata:', metadata);
-
         return {
           type: 'VC_DOWNLOADED',
           vcMetadata: metadata,
@@ -285,33 +232,16 @@ export const NotificationActions = (model: any) => {
         };
       },
       {
-        to: context => {
-          console.log('🎯 Sending event to:>>>>>>', context.serviceRefs);
-          console.log('🎯 Sending event to:', context.serviceRefs?.vcMeta);
-          return context.serviceRefs?.vcMeta;
-        },
+        to: context => context.serviceRefs?.vcMeta,
       },
     ),
 
     setSelectedKey: model.assign({
       keyType: (context: any, event: any) => {
-        console.log(
-          '🚀 Context wellknownKeyTypes:',
-          context.wellknownKeyTypes || 'undefined',
-        );
-        console.log('📩 Event data:', event.data);
-
-        // Ensure wellknownKeyTypes is defined before using it
         if (!context.wellknownKeyTypes) {
-          console.log(
-            '⚠️ wellknownKeyTypes is undefined! Initializing it now.',
-          );
-          context.wellknownKeyTypes = []; // ✅ Initialize as an array
+          context.wellknownKeyTypes = [];
         }
-
-        // Ensure wellknownKeyTypes contains "RS256"
         if (!context.wellknownKeyTypes.includes('RS256')) {
-          console.log('⚠️ RS256 is missing, adding it now!');
           context.wellknownKeyTypes.push('RS256');
         }
 
@@ -320,13 +250,12 @@ export const NotificationActions = (model: any) => {
           event.data,
         );
 
-        console.log('✅ Selected KeyType:', keyType);
         return keyType;
       },
     }),
 
     setSelectedIssuers: model.assign({
-      selectedIssuer: (context: any, event: any) => {
+      selectedIssuer: (context: any) => {
         const selectedIssuer = context.issuers.find(
           issuer =>
             issuer.credential_issuer === context.originalEventData?.org_code,
@@ -350,7 +279,7 @@ export const NotificationActions = (model: any) => {
       selectedIssuerWellknownResponse: (_: any, event: any) => event.data,
     }),
     setSelectedIssuerId: model.assign({
-      selectedIssuerId: (context: any, event: any) => {
+      selectedIssuerId: (context: any) => {
         return context.originalEventData.org_code;
       },
     }),
@@ -358,16 +287,15 @@ export const NotificationActions = (model: any) => {
     setTokenResponse: model.assign({
       tokenResponse: (_: any, event: any) => event.data,
     }),
+
     setVerifiableCredential: model.assign({
-      verifiableCredential: (_: any, event: any) => {
-        return event.data.verifiableCredential;
-      },
+      verifiableCredential: (_: any, event: any) => event.data.verifiableCredential,
     }),
+
     setCredentialWrapper: model.assign({
-      credentialWrapper: (_: any, event: any) => {
-        return event.data;
-      },
+      credentialWrapper: (_: any, event: any) => event.data,
     }),
+
     setPublicKey: assign({
       publicKey: (_, event: any) => {
         if (!isHardwareKeystoreExists) {
@@ -383,17 +311,7 @@ export const NotificationActions = (model: any) => {
 
     logDownloaded: send(
       context => {
-        console.log('📩 Logging VC_DOWNLOADED event...');
-        console.log('🔹 Current keyType:', context.keyType);
-        console.log('🔹 Selected Issuer ID:', context.selectedIssuerId);
-        console.log(
-          '🔹 Selected Credential Type:',
-          context.selectedCredentialType,
-        );
-
         const vcMetadata = getVCMetadata(context, context.keyType);
-        console.log('✅ Retrieved VC Metadata:', vcMetadata);
-
         const logEntry = VCActivityLog.getLogFromObject({
           _vcKey: vcMetadata.getVcKey(),
           type: 'VC_DOWNLOADED',
@@ -404,21 +322,13 @@ export const NotificationActions = (model: any) => {
           credentialConfigurationId: context.selectedCredentialType?.id,
         });
 
-        console.log('📝 Activity Log Entry Created:', logEntry);
-
         return ActivityLogEvents.LOG_ACTIVITY(
           logEntry,
           context.selectedIssuerWellknownResponse,
         );
       },
       {
-        to: (context: any) => {
-          console.log(
-            '🎯 Sending log event to:',
-            context.serviceRefs?.activityLog,
-          );
-          return context.serviceRefs?.activityLog;
-        },
+        to: (context: any) => context.serviceRefs?.activityLog,
       },
     ),
 
@@ -449,7 +359,7 @@ export const NotificationActions = (model: any) => {
         ),
       );
     },
-    
+
     updateVerificationErrorMessage: assign({
       verificationErrorMessage: (_, event: any) =>
         (event.data as Error).message,

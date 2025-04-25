@@ -200,6 +200,11 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
         SettingsEvents.SET_KEY_MANAGEMENT_TOUR_GUIDE_EXPLORED(),
       );
     },
+    SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED: () => {
+      settingsService.send(
+        SettingsEvents.SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED(),
+      );
+    },
     INJI_TOUR_GUIDE: () => {
       settingsService.send(SettingsEvents.INJI_TOUR_GUIDE());
       props.navigation.navigate(BOTTOM_TAB_ROUTES.home);

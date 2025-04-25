@@ -33,6 +33,7 @@ export const NotificationServices = () => ({
   isUserSignedAlready: () => async () => {
     return await Cloud.isSignedInAlready();
   },
+
   // Fetch issuers list
   downloadIssuersList: async () => {
     let issuers = await CACHED_API.fetchIssuers();
@@ -45,6 +46,7 @@ export const NotificationServices = () => ({
     );
     return wellknownResponse;
   },
+
   downloadCredentialTypes: async (context: any) => {
     const credentialTypes = [];
     for (const key in context.selectedIssuer
@@ -60,9 +62,8 @@ export const NotificationServices = () => ({
       );
     return credentialTypes;
   },
-  downloadCredential: async (context: any) => {
-    console.log('Starting downloadCredential function...');
 
+  downloadCredential: async (context: any) => {
     const downloadTimeout = await vcDownloadTimeout();
     const accessToken: string = context.tokenResponse?.accessToken;
     const proofJWT = await constructProofJWT(
@@ -82,25 +83,13 @@ export const NotificationServices = () => ({
       proofJWT,
       accessToken,
     );
-    console.log('credentialmaincheck', JSON.stringify(credential, null, 2));
 
     console.info(`VC download via ${context.selectedIssuerId} is successful`);
-    // if (credential.credential.credentialSubject.name) {
-    //   credential.credential.credentialSubject.fullName =
-    //     credential.credential.credentialSubject.name;
-    // }
-
-    // if (credential.credential.id) {
-    //   credential.credential.id = credential.credential.id
-    //     .split(':')
-    //     .reverse()[0];
-    // }
     return await updateCredentialInformation(context, credential);
   },
 
   // Add to Wallet Service
   addToWalletService: async (context, event) => {
-    console.log('📌 Adding to wallet:', context.originalEventData);
     return {};
   },
 
@@ -114,14 +103,7 @@ export const NotificationServices = () => ({
           TelemetryConstants.Screens.webViewPage,
       ),
     );
-    console.log('FlowType:', TelemetryConstants.FlowType.vcDownload);
-    console.log('Issuer:', context.selectedIssuer.credential_issuer);
-    console.log('Screen:', TelemetryConstants.Screens.webViewPage);
-    console.log('Selected Issuer:', context.selectedIssuer);
-    console.log(
-      'Selected Credential Scope:',
-      context.selectedCredentialType.scope,
-    );
+
     let accessToken = await authorize(
       constructAuthorizationConfiguration(
         context.selectedIssuer,

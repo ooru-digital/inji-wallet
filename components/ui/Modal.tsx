@@ -65,7 +65,7 @@ export const Modal: React.FC<ModalProps> = props => {
               </Row>
               {props.headerRight != null ||
                 props.arrowLeft ||
-                (props.showClose && (
+                (props.showClose !== false && (
                   <Icon
                     {...testIDProps('close')}
                     name="close"

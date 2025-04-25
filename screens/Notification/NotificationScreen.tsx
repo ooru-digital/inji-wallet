@@ -12,7 +12,7 @@ export async function requestPermission(): Promise<void> {
     authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
   if (enabled) {
-    console.log('Notification permission granted.');
+    // Permission granted
   }
 }
 
@@ -23,19 +23,8 @@ export function useForegroundNotification(): void {
 
     const unsubscribe = messaging().onMessage(
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
-        console.log(
-          '🔔 Full Foreground Notification Data:',
-          JSON.stringify(remoteMessage, null, 2),
-        );
-
         const {title, body} = remoteMessage.notification || {};
         const messageText = body || 'You have received a new message.';
-        const credential_issuer = remoteMessage.data || {};
-        const issuerId = credential_issuer.org_code || null;
-
-        console.log('📢 Extracted org_code:', issuerId);
-        console.log('📌 Notification data:', credential_issuer);
-
         Alert.alert(title || 'Notification', messageText);
       },
     );
@@ -52,15 +41,9 @@ export function useBackgroundNotification(): void {
     // Handle notifications when the app is in the background and opened
     const unsubscribeBackground = messaging().onNotificationOpenedApp(
       (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
-        console.log(
-          '🔔 Full Background Notification Data:',
-          JSON.stringify(remoteMessage, null, 2),
-        );
-
         const messageText =
           remoteMessage.notification?.body ||
           'You have received a new message.';
-        console.log('📌 Notification opened in background:', messageText);
         Alert.alert(
           remoteMessage.notification?.title || 'Notification',
           messageText,
@@ -72,37 +55,19 @@ export function useBackgroundNotification(): void {
       .getInitialNotification()
       .then(remoteMessage => {
         if (remoteMessage) {
-          console.log(
-            '🔔 Full Initial Notification Data:',
-            JSON.stringify(remoteMessage, null, 2),
-          );
-
           const messageText =
             remoteMessage.notification?.body ||
             'You have received a new message.';
-          console.log(
-            '📌 Notification received while app was quit:',
-            messageText,
-          );
+          // Initial notification logic (e.g., navigation) can go here
         }
       })
       .catch(error => {
-        console.error('❌ Error getting initial notification:', error);
+        // Optionally handle the error
       });
 
     messaging().setBackgroundMessageHandler(
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
-        console.log(
-          '🔔 Full Background Message Received:',
-          JSON.stringify(remoteMessage, null, 2),
-        );
-
-        const { title, body } = remoteMessage.notification || {};
-        const messageText = body || 'You have received a new message.';
-        const credential_issuer = remoteMessage.data || {};
-        const issuerId = credential_issuer.org_code || null;
-
-        console.log('📢 Background Notification Data:', credential_issuer);
+        // You can process the background message here if needed
       },
     );
 

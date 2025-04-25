@@ -1,6 +1,8 @@
 import {VCMetadata} from './VCMetadata';
 import {groupBy} from './javascript';
 import {Issuers} from './openId4VCI/Utils';
+import { Platform, ToastAndroid, Alert } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 export const getVCsOrderedByPinStatus = (vcMetadatas: VCMetadata[]) => {
   const [pinned, unpinned] = groupBy(
@@ -48,4 +50,14 @@ export const parseJSON = (input: any) => {
     result = JSON.parse(JSON.stringify(input));
   }
   return result;
+};
+
+export const copyToClipboard = (text: string, message?: string) => {
+  Clipboard.setString(text);
+  const displayMessage = message || 'Copied to clipboard!';
+  if (Platform.OS === 'android') {
+    ToastAndroid.show(displayMessage, ToastAndroid.SHORT);
+  } else {
+    Alert.alert('Copied!', displayMessage);
+  }
 };
