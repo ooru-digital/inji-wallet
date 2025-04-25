@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {
   TouchableOpacity,
@@ -17,11 +17,8 @@ import {NotificationHelpScreen} from '../../components/NotificationHelpScreen';
 import {BackButton} from '../../components/ui/backButton/BackButton';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
-import database from '@react-native-firebase/database';
 
-export const EmailManagementScreen: React.FC<
-  EmailManagementScreenProps
-> = () => {
+export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () => {
   const {t} = useTranslation('SetupEmail');
   const navigation = useNavigation();
   const route =
@@ -31,12 +28,13 @@ export const EmailManagementScreen: React.FC<
   const [modalVisible, setModalVisible] = useState(false);
   const [modalStep, setModalStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [registeredEmails, setRegisteredEmails] = useState<string[]>([]);
+  const otpRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
     const backAction = () => {
-      controller.SET_KEY_MANAGEMENT_TOUR_GUIDE_EXPLORED();
+      controller.SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED();
       navigation.goBack();
       return true;
     };
@@ -75,16 +73,14 @@ export const EmailManagementScreen: React.FC<
   const addEmailToList = async () => {
     if (email.trim()) {
       if (registeredEmails.includes(email)) {
-        Alert.alert('Email already registered!');
+        Alert.alert('This email address is already registered.');
       } else {
         try {
           const response = await fetch(
             'https://app.credissuer.com/api/holders/send-email-otp',
             {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({login_type: 'email_otp', email}),
             },
           );
@@ -92,54 +88,53 @@ export const EmailManagementScreen: React.FC<
           const data = await response.json();
 
           if (response.ok) {
-            Alert.alert('OTP Sent!', 'Check your email for the OTP.');
+            Alert.alert('OTP Sent', 'We’ve sent a 6-digit code to your email. Please enter it  to continue.');
             setModalStep('otp');
           } else {
-            Alert.alert('Error', data.message || 'Failed to send OTP.');
+            Alert.alert('Error', data.message || 'We couldn’t send the OTP. Please try again.');
           }
         } catch (error) {
           console.error('Error sending OTP:', error);
-          Alert.alert('Error', 'Failed to send OTP. Please try again.');
+          Alert.alert('Something Went Wrong', 'We couldn’t reach our servers. Please check your internet connection and try again.');
         }
       }
     } else {
-      Alert.alert('Enter Email', 'Please enter an email address.');
+      Alert.alert('Email Required', 'Please enter a valid email address before continuing.');
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (/^\d?$/.test(value)) {
+      const updatedOtp = [...otpDigits];
+      updatedOtp[index] = value;
+      setOtpDigits(updatedOtp);
+
+      if (value && index < 5) {
+        otpRefs.current[index + 1]?.focus();
+      }
     }
   };
 
   const verifyOtp = async () => {
-    if (otp.trim()) {
+    const otp = otpDigits.join('');
+    if (otp.length === 6) {
       try {
-        console.log('📩 Sending OTP Verification:', {email, otp});
-
         const response = await fetch(
           'https://app.credissuer.com/api/holders/verify-email-otp',
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, otp}),
           },
         );
 
         const data = await response.json();
-        console.log('✅ OTP Verification Response:', data);
 
         if (response.ok) {
-          Alert.alert(
-            'OTP Verified',
-            'Your OTP has been successfully verified.',
-          );
-
-          // ✅ Fetch FCM Token
+          Alert.alert('Success', 'Your email has been verified successfully.');
           const fcmToken = await messaging().getToken();
-          console.log('🔥 FCM Token:', fcmToken);
-
-          // ✅ Call API to store FCM token
           await storeFCMToken(email, fcmToken);
 
-          // ✅ Store email locally & reset UI
           setRegisteredEmails(prevEmails => {
             const updatedEmails = [...prevEmails, email];
             saveEmails(updatedEmails);
@@ -149,75 +144,78 @@ export const EmailManagementScreen: React.FC<
           setModalVisible(false);
           setModalStep('email');
           setEmail('');
-          setOtp('');
+          setOtpDigits(['', '', '', '', '', '']);
         } else {
-          Alert.alert(
-            'Invalid OTP',
-            data.message || 'Please enter a valid OTP.',
-          );
+          Alert.alert('Incorrect OTP', data.message || 'The code you entered is incorrect. Please try again.');
           setModalStep('email');
-          setOtp('');
+          setOtpDigits(['', '', '', '', '', '']);
         }
       } catch (error) {
-        console.error('❌ Error verifying OTP:', error);
-        Alert.alert('Error', 'Failed to verify OTP. Please try again.');
+        console.error('Error verifying OTP:', error);
+        Alert.alert('Something Went Wrong', 'Failed to verify OTP. Please check your internet and try again.');
         setModalStep('email');
-        setOtp('');
+        setOtpDigits(['', '', '', '', '', '']);
       }
     } else {
-      Alert.alert('Invalid OTP', 'Please enter a valid OTP.');
-      setModalStep('email');
-      setOtp('');
+      Alert.alert('Invalid Code', 'Please enter a 6-digit OTP to proceed.');
     }
   };
 
-  const storeFCMToken = async (email, token) => {
+  const storeFCMToken = async (email: string, token: string) => {
     try {
-      console.log('📡 Storing FCM Token:', {email, token: token});
-
       const response = await fetch(
         'https://app.credissuer.com/api/holders/store-token/fcm/',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({email, token: token}),
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, token}),
         },
       );
 
       const data = await response.json();
-      console.log('✅ FCM Token Storage Response:', data);
 
       if (response.ok) {
-        Alert.alert('Success', 'FCM token stored successfully.');
+        Alert.alert('FCM Registered', 'You’ll now receive notifications to this email.');
       } else {
-        Alert.alert(
-          'Warning',
-          'OTP verified, but FCM token could not be stored.',
-        );
+        Alert.alert('Partial Success', 'Email verified, but we couldn’t register for notifications.');
       }
     } catch (error) {
-      console.error('❌ Error storing FCM Token:', error);
-      Alert.alert('Error', 'Failed to store FCM token.');
+      console.error('Error storing FCM Token:', error);
+      Alert.alert('Error', 'Could not store notification token. Try again later.');
     }
   };
 
   const removeEmail = (emailToRemove: string) => {
-    setRegisteredEmails(prevEmails => {
-      const updatedEmails = prevEmails.filter(email => email !== emailToRemove);
-      saveEmails(updatedEmails);
-      return updatedEmails;
-    });
+    Alert.alert(
+      'Confirm Delete',
+      `Are you sure you want to remove ${emailToRemove}?`,
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: () => {
+            setRegisteredEmails(prevEmails => {
+              const updatedEmails = prevEmails.filter(email => email !== emailToRemove);
+              saveEmails(updatedEmails);
+              return updatedEmails;
+            });
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: true },
+    );
   };
-
   return (
     <View style={{flex: 1, backgroundColor: '#ffffff'}}>
       <View style={Theme.KeyManagementScreenStyle.outerViewStyle}>
         <TouchableOpacity onPress={isClosed}>
           <BackButton
             onPress={() => {
-              controller.SET_KEY_MANAGEMENT_TOUR_GUIDE_EXPLORED();
+              controller.SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED();
               navigation.goBack();
             }}
           />
@@ -289,44 +287,68 @@ export const EmailManagementScreen: React.FC<
               padding: 20,
               borderRadius: 10,
               alignItems: 'center',
-              position: 'relative',
             }}>
             <View
               style={{
                 flexDirection: 'row',
-                alignItems: 'center',
                 justifyContent: 'space-between',
                 width: '100%',
+                alignItems: 'center',
               }}>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  flex: 1,
-                }}>
+              <Text style={{fontSize: 18, fontWeight: 'bold', flex: 1}}>
                 {modalStep === 'email' ? t('Enter your Email') : t('Enter OTP')}
               </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Icon name="close" type="material" color="black" size={30} />
               </TouchableOpacity>
             </View>
-            <TextInput
-              style={{
-                width: '100%',
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 5,
-                padding: 10,
-                marginBottom: 15,
-              }}
-              placeholder={
-                modalStep === 'email' ? t('Enter your email') : t('Enter OTP')
-              }
-              value={modalStep === 'email' ? email : otp}
-              onChangeText={modalStep === 'email' ? setEmail : setOtp}
-              keyboardType={modalStep === 'email' ? 'email-address' : 'numeric'}
-            />
+
+            {modalStep === 'email' ? (
+              <TextInput
+                style={{
+                  width: '100%',
+                  borderBottomWidth: 1,
+                  borderColor: '#ccc',
+                  padding: 10,
+                  marginTop: 15,
+                  marginBottom: 20,
+                }}
+                placeholder={t('Enter your email')}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+              />
+            ) : (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  marginVertical: 20,
+                }}>
+                {Array(6)
+                  .fill(0)
+                  .map((_, index) => (
+                    <TextInput
+                      key={index}
+                      ref={ref => (otpRefs.current[index] = ref)}
+                      style={{
+                        borderBottomWidth: 1,
+                        borderColor: '#000',
+                        width: 30,
+                        height: 40,
+                        textAlign: 'center',
+                        fontSize: 20,
+                      }}
+                      value={otpDigits[index]}
+                      onChangeText={text => handleOtpChange(index, text)}
+                      maxLength={1}
+                      keyboardType="number-pad"
+                    />
+                  ))}
+              </View>
+            )}
+
             <Button
               title={modalStep === 'email' ? t('Send OTP') : t('Verify')}
               testID="sendotp"
