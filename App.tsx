@@ -29,6 +29,11 @@ import './shared/flipperConfig';
 import {CopilotProvider} from 'react-native-copilot';
 import {CopilotTooltip} from './components/CopilotTooltip';
 import {Theme} from './components/ui/styleUtils';
+import {
+  requestPermission,
+  useForegroundNotification,
+  useBackgroundNotification,
+} from './screens/Notification/NotificationScreen.tsx';
 
 const {RNSecureKeystoreModule} = NativeModules;
 // kludge: this is a bad practice but has been done temporarily to surface
@@ -126,7 +131,14 @@ const AppInitialization: React.FC = () => {
         t('biometricPopup.description'),
       );
     }
+
+    // Request Notification Permissions & Get FCM Token
+    requestPermission();
   }, [i18n.language]);
+
+  //  Register Foreground & Background Notification Hooks
+  useForegroundNotification();
+  useBackgroundNotification();
 
   return isReady && hasFontsLoaded ? (
     <AppLayoutWrapper />

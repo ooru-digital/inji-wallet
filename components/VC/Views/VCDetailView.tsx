@@ -38,19 +38,13 @@ import Share from 'react-native-share';
 import {SvgUri} from 'react-native-svg'; // Import SvgUri for SVG images
 import RNFS from 'react-native-fs';
 
-const getProfileImage = (face: any) => {
+const getProfileImage = (face) => {
   if (face) {
-    return (
-      <Image source={{uri: face}} style={Theme.Styles.detailedViewImage} />
-    );
+    return <Image source={{ uri: face }} style={Theme.Styles.detailedViewImage} />;
   }
-  return (
-    <ProfileIcon
-      profileIconContainerStyles={Theme.Styles.openCardProfileIconContainer}
-      profileIconSize={60}
-    />
-  );
+  return null;
 };
+
 
 export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
   const {t} = useTranslation('VcDetails');
@@ -401,10 +395,11 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                     <Image
                       src={logo?.url}
                       alt={logo?.alt_text}
-                      style={[Theme.Styles.issuerLogo, {marginTop: 10}]} // Added marginTop for spacing
+                      style={[Theme.Styles.issuerLogo, { width: 60, height: 60, marginTop: 10 }]} 
                       resizeMethod="scale"
                       resizeMode="contain"
                     />
+
                   </Column>
                 </Column>
 

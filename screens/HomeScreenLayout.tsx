@@ -9,11 +9,12 @@ import {RootRouteProps} from '../routes';
 import {HomeScreen} from './Home/HomeScreen';
 import {IssuersScreen} from './Issuers/IssuersScreen';
 import {SvgImage} from '../components/ui/svg';
-import {HelpScreen} from '../components/HelpScreen';
+import {NotificationScreen} from '../components/NotificationLandingScreen';
 import {I18nManager, View} from 'react-native';
 import {isIOS} from '../shared/constants';
 import {Copilot} from '../components/ui/Copilot';
 import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('IssuersScreen');
@@ -44,7 +45,7 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   }, [props.navigation, props.route]);
 
   const screenOptions = (
-    <HelpScreen
+    <NotificationScreen
       source={'Inji'}
       triggerComponent={
         <Copilot
@@ -60,15 +61,14 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
               <View style={Theme.HelpScreenStyle.viewStyle}>
                 <Row crossAlign="center" style={Theme.HelpScreenStyle.rowStyle}>
                   <View
-                    testID="helpIcon"
+                    testID="notificationIcon"
                     style={Theme.HelpScreenStyle.iconStyle}>
-                    {SvgImage.coloredInfo()}
+                    <Icon
+                      name="notifications"
+                      size={24}
+                      color={Theme.Colors.IconBg}
+                    />
                   </View>
-                  <Text
-                    testID="helpText"
-                    style={Theme.HelpScreenStyle.labelStyle}>
-                    {t('help')}
-                  </Text>
                 </Row>
               </View>
             </LinearGradient>
@@ -81,16 +81,32 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   const [isRTL] = useState(I18nManager.isRTL);
 
   var HomeScreenOptions = {
-    headerLeft: () =>
-      isIOS() || !isRTL
-        ? <View style={Theme.Styles.injiHomeLogo}>{SvgImage.InjiLogo(Theme.Styles.injiLogo)}</View>
-        : screenOptions,
-    headerTitle: '',
-    headerRight: () =>
-      isIOS() || !isRTL
-        ? screenOptions
-        : <View style={Theme.Styles.injiHomeLogo}>{SvgImage.InjiLogo(Theme.Styles.injiLogo)}</View>,
-  };
+  headerLeft: () => (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {isIOS() || !isRTL ? (
+        <View style={Theme.Styles.injiHomeLogo}>
+          {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
+        </View>
+      ) : (
+        screenOptions
+      )}
+      <Text style={{ marginLeft: -70, fontSize: 16, fontWeight: 'bold', color: '#2A2DA4' }}>
+        CREDISSUER WALLET
+      </Text>
+    </View>
+  ),
+  headerTitle: '',
+  headerRight: () =>
+    isIOS() || !isRTL ? (
+      screenOptions
+    ) : (
+      <View style={Theme.Styles.injiHomeLogo}>
+        {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
+      </View>
+    ),
+};
+
+  
 
   return (
     <Navigator>
