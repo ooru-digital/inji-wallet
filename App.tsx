@@ -16,7 +16,7 @@ import {
 } from './machines/app';
 import {DualMessageOverlay} from './components/DualMessageOverlay';
 import {useApp} from './screens/AppController';
-import {Alert, AppState} from 'react-native';
+import {Alert, AppState, Platform,PermissionsAndroid} from 'react-native';
 import {
   configureTelemetry,
   getErrorEventData,
@@ -146,6 +146,18 @@ const AppLoadingWrapper: React.FC = () => {
   );
 };
 
+const checkApplicationPermission =async () =>
+{
+  if(Platform.OS === 'android')
+  {
+    try{
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      )
+    }catch(error) {}
+  }
+};
+
 const AppInitialization: React.FC = () => {
   const {appService} = useContext(GlobalContext);
   const hasFontsLoaded = useFont();
@@ -167,6 +179,7 @@ const AppInitialization: React.FC = () => {
   //  Register Foreground & Background Notification Hooks
   useForegroundNotification();
   useBackgroundNotification();
+  checkApplicationPermission();
 
   return isReady && hasFontsLoaded ? (
     <AppLayoutWrapper />
