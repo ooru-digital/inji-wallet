@@ -14,7 +14,7 @@ import {
 } from './machines/app';
 import {DualMessageOverlay} from './components/DualMessageOverlay';
 import {useApp} from './screens/AppController';
-import {Alert, AppState} from 'react-native';
+import {Alert, AppState, Platform,PermissionsAndroid} from 'react-native';
 import {
   configureTelemetry,
   getErrorEventData,
@@ -34,6 +34,7 @@ import {
   useForegroundNotification,
   useBackgroundNotification,
 } from './screens/Notification/NotificationScreen.tsx';
+import { checkPermission } from 'react-native-location';
 
 const {RNSecureKeystoreModule} = NativeModules;
 // kludge: this is a bad practice but has been done temporarily to surface
@@ -118,6 +119,18 @@ const AppLoadingWrapper: React.FC = () => {
   );
 };
 
+const checkApplicationPermission =async () =>
+{
+  if(Platform.OS === 'android')
+  {
+    try{
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      )
+    }catch(error) {}
+  }
+};
+
 const AppInitialization: React.FC = () => {
   const {appService} = useContext(GlobalContext);
   const isReady = useSelector(appService, selectIsReady);
@@ -139,6 +152,7 @@ const AppInitialization: React.FC = () => {
   //  Register Foreground & Background Notification Hooks
   useForegroundNotification();
   useBackgroundNotification();
+  checkApplicationPermission();
 
   return isReady && hasFontsLoaded ? (
     <AppLayoutWrapper />
