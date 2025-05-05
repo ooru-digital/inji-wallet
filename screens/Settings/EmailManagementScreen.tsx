@@ -11,12 +11,13 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ListItem, Icon} from 'react-native-elements';
-import {Text, Button} from '../../components/ui';
+import {Text, Button, Row} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {NotificationHelpScreen} from '../../components/NotificationHelpScreen';
 import {BackButton} from '../../components/ui/backButton/BackButton';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
+import LinearGradient from 'react-native-linear-gradient';
 
 export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () => {
   const {t} = useTranslation('SetupEmail');
@@ -171,24 +172,22 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
           body: JSON.stringify({email, token}),
         },
       );
-
+  
       const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('FCM Registered', 'You’ll now receive notifications to this email.');
-      } else {
-        Alert.alert('Partial Success', 'Email verified, but we couldn’t register for notifications.');
+      if (!response.ok) {
       }
-    } catch (error) {
-      console.error('Error storing FCM Token:', error);
-      Alert.alert('Error', 'Could not store notification token. Try again later.');
-    }
+    } catch (error) {          }
   };
-
+  
+  const handleCancel = () => {
+    setModalVisible(false);
+    setEmail('');
+  };
+  
   const removeEmail = (emailToRemove: string) => {
     Alert.alert(
       'Confirm Delete',
-      `Are you sure you want to remove ${emailToRemove}?`,
+      `You will not receive notifications when the credential is issued over the above mentioned email.`,
       [
         {
           text: 'No',
@@ -229,19 +228,30 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
           {t('Registered Emails')}
         </Text>
         <NotificationHelpScreen
-          source={'mailManagement'}
           triggerComponent={
-            <Icon
-              testID="mailManagementHelpIcon"
-              accessible={true}
-              name="question"
-              type="font-awesome"
-              size={21}
-              style={Theme.Styles.IconContainer}
-              color={Theme.Colors.Icon}
-            />
+            <LinearGradient
+              style={{borderRadius: 8, marginRight: 4}}
+              colors={Theme.Colors.GradientColorsLight}
+              start={Theme.LinearGradientDirection.start}
+              end={Theme.LinearGradientDirection.end}>
+              <View testID="help"></View>
+              <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                width: 60, 
+                height: 36, 
+                borderRadius: 8,
+              }}>
+              <Text style={{ color: '#2A2DA4', fontWeight: 'bold' }}>Help</Text>
+            </View>
+            </LinearGradient>
           }
-        />
+          />
+
       </View>
 
       <ScrollView contentContainerStyle={{paddingBottom: 80}}>
@@ -260,11 +270,16 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
       </ScrollView>
 
       <View style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
-        <Button
+              <Button
           testID="saveEmailOrderingPreference"
           type="gradient"
-          title={t('Add New Email')}
-          onPress={() => setModalVisible(true)}
+          title={t('Register Email')}
+          onPress={() => {
+            setModalStep('email'); // <-- This resets the step to email input
+            setEmail('');
+            setOtpDigits(['', '', '', '', '', '']);
+            setModalVisible(true);
+          }}
         />
       </View>
 
@@ -285,7 +300,7 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
               width: '80%',
               backgroundColor: 'white',
               padding: 20,
-              borderRadius: 10,
+              borderRadius: 5,
               alignItems: 'center',
             }}>
             <View
@@ -295,11 +310,10 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
                 width: '100%',
                 alignItems: 'center',
               }}>
-              <Text style={{fontSize: 18, fontWeight: 'bold', flex: 1}}>
+              <Text style={{fontSize: 16, flex: 1}}>
                 {modalStep === 'email' ? t('Enter your Email') : t('Enter OTP')}
               </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="close" type="material" color="black" size={30} />
               </TouchableOpacity>
             </View>
 
@@ -313,7 +327,7 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
                   marginTop: 15,
                   marginBottom: 20,
                 }}
-                placeholder={t('Enter your email')}
+                placeholder={t('Please  enter your email')}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -348,13 +362,23 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
                   ))}
               </View>
             )}
-
+              
+          <Row>
             <Button
-              title={modalStep === 'email' ? t('Send OTP') : t('Verify')}
+              testID="cancel"
+              fill
+              type="clear"
+              title={t('Cancel')}
+              onPress={handleCancel}
+            />
+            <Button
               testID="sendotp"
+              fill
               type="gradient"
+              title={modalStep === 'email' ? t('Send OTP') : t('Verify')}
               onPress={modalStep === 'email' ? addEmailToList : verifyOtp}
             />
+          </Row>
           </View>
         </View>
       </Modal>

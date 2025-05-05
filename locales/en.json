@@ -390,7 +390,7 @@
   },
   "answers": {
   "notification": {
-    "one": "Your email is required to store a FCM Token.FCM token or a Firebase Cloud Messaging Token is a unique identifier assigned to a specific instance of a client application on a device that uses firebase cloud messaging services. Whenever a credential is issued to your email , you will receive a notification on your app  stating, ‘A new credential was issued’.Read more about FCM Token"
+    "one": "Whenever a credential is issued to your email , you will receive a notification on your app  stating, ‘A new credential is Issued’."
   }
   }
 },

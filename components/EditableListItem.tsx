@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Dimensions, I18nManager} from 'react-native';
+import {Dimensions, I18nManager,View} from 'react-native';
 import {Icon, ListItem, Overlay, Input} from 'react-native-elements';
 import {Text, Column, Row, Button} from './ui';
 import {Theme} from './ui/styleUtils';
@@ -35,16 +35,20 @@ export const EditableListItem: React.FC<EditableListItemProps> = props => {
       bottomDivider
       topDivider
       onPress={() => setIsEditing(true)}>
-      {SvgImage.starIcon()}
       <ListItem.Content>
-        <ListItem.Title
-          {...testIDProps(props.testID + 'Title')}
-          style={{paddingTop: 3}}>
-          <Text weight="semibold" color={props.titleColor}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <View style={{marginRight: 8}}>{SvgImage.starIcon()}</View>
+          <Text
+            {...testIDProps(props.testID + 'Title')}
+            weight="semibold"
+            color={props.titleColor}
+            style={{marginRight: 6}}>
             {props.title}
           </Text>
-        </ListItem.Title>
-        <Text color={Theme.Colors.textLabel}>{props.content}</Text>
+        </View>
+        <Text color={Theme.Colors.textLabel} style={{marginLeft: 31}}>
+          {props.content}
+        </Text>
       </ListItem.Content>
       <Icon
         name="chevron-right"
@@ -59,7 +63,7 @@ export const EditableListItem: React.FC<EditableListItemProps> = props => {
           {props.items.map((item: ListItemProps, index) => {
             return (
               <React.Fragment key={index}>
-                <Text testID={item.testID + 'Label'} style={{marginTop:10}}>
+                <Text testID={item.testID + 'Label'} style={{marginTop: 10}}>
                   {t('editLabel', {label: item.label})}
                 </Text>
                 <Input

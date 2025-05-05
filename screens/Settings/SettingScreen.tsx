@@ -1,5 +1,5 @@
 import React from 'react';
-import {Platform, Pressable} from 'react-native';
+import {Platform, Pressable,View} from 'react-native';
 import {Icon, ListItem, Switch} from 'react-native-elements';
 import {Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
@@ -27,24 +27,26 @@ const LanguageSetting: React.FC = () => {
     <LanguageSelector
       triggerComponent={
         <ListItem {...testIDProps('language')}>
-          {SvgImage.settingsLanguageIcon(24)}
-          <ListItem.Content>
-            <ListItem.Title
-              {...testIDProps('languageTitle')}
-              style={{paddingTop: 3}}>
-              <Text weight="semibold" color={Theme.Colors.settingsLabel}>
-                {t('language')}
-              </Text>
-            </ListItem.Title>
-          </ListItem.Content>
-          <Icon
-            {...testIDProps('chevronRightIcon')}
-            name="chevron-right"
-            size={21}
-            color={Theme.Colors.chevronRightColor}
-            style={{marginRight: 15}}
-          />
-        </ListItem>
+  {SvgImage.settingsLanguageIcon(24)}
+  <ListItem.Content>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <ListItem.Title
+        {...testIDProps('languageTitle')}
+        style={{ paddingTop: 3 }}>
+        <Text weight="semibold" color={Theme.Colors.settingsLabel}>
+          {t('language')}
+        </Text>
+      </ListItem.Title>
+    </View>
+  </ListItem.Content>
+  <Icon
+    {...testIDProps('chevronRightIcon')}
+    name="chevron-right"
+    size={21}
+    color={Theme.Colors.chevronRightColor}
+    style={{ marginRight: 15 }}
+  />
+</ListItem>
       }
     />
   );
@@ -203,8 +205,10 @@ export const SettingScreen: React.FC<
               </ListItem.Title>
             </ListItem.Content>
           </ListItem>*/}
-
-          <ListItem onPress={controller.LOGOUT}>
+            <ListItem
+            topDivider
+            bottomDivider
+            onPress={() => controller.LOGOUT()}>
             {SvgImage.logOutIcon()}
             <ListItem.Content>
               <ListItem.Title
