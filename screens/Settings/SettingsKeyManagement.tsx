@@ -30,39 +30,47 @@ export const SettingsKeyManagementScreen: React.FC<
             controller: props.controller,
           });
         }}>
-        <ListItem topDivider bottomDivider>
-          <Icon name="vpn-key" color={Theme.Colors.Icon} />
-          <ListItem.Content>
-            <ListItem.Title
-              accessible={false}
-              {...testIDProps('keyManagementText')}>
-              <Row>
-                <Text
-                  testID="keyManagementText"
-                  weight="semibold"
-                  color={Theme.Colors.settingsLabel}
-                  style={Theme.KeyManagementScreenStyle.textStyle}>
-                  {t('header')}
-                </Text>
-                {!props.controller.isKeyManagementExplored && (
-                  <Text
-                    testID="newLabel"
-                    style={Theme.Styles.newLabel}
-                    color={Theme.Colors.whiteText}>
-                    {t('NEW')}
-                  </Text>
-                )}
-              </Row>
-            </ListItem.Title>
-          </ListItem.Content>
-          <Icon
-            name="chevron-right"
-            size={21}
-            {...testIDProps('keyManagementChevronRight')}
-            color={Theme.Colors.chevronRightColor}
-            style={Theme.KeyManagementScreenStyle.iconStyle}
-          />
-        </ListItem>
+       <ListItem topDivider bottomDivider containerStyle={{ paddingVertical: 12 }}>
+  <Row style={{ alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+    <Row style={{ alignItems: 'center', flexShrink: 1 }}>
+      <Icon
+        name="vpn-key"
+        color={Theme.Colors.Icon}
+        style={{ marginRight: 13,paddingTop:2 }}
+      />
+      <Row style={{ alignItems: 'center', flexShrink: 1 }}>
+        <Text
+          testID="keyManagementText"
+          weight="semibold"
+          color={Theme.Colors.settingsLabel}
+          style={[
+            Theme.KeyManagementScreenStyle.textStyle,
+            { marginTop: -10, flexShrink: 1 }
+          ]}
+        >
+          {t('header')}
+        </Text>
+        {!props.controller.isKeyManagementExplored && (
+          <Text
+            testID="newLabel"
+            style={Theme.Styles.newLabel}
+            color={Theme.Colors.whiteText}
+          >
+            {t('NEW')}
+          </Text>
+        )}
+      </Row>
+    </Row>
+
+    <Icon
+      name="chevron-right"
+      size={21}
+      {...testIDProps('keyManagementChevronRight')}
+      color={Theme.Colors.chevronRightColor}
+      style={Theme.KeyManagementScreenStyle.iconStyle}
+    />
+  </Row>
+</ListItem>
       </Pressable>
     </React.Fragment>
   );

@@ -10,9 +10,7 @@ import getAllConfigurations from '../shared/api';
 export const NotificationHelpScreen: React.FC<HelpScreenProps> = props => {
   const {t} = useTranslation('NotificationHelpScreen');
   const [showHelpPage, setShowHelpPage] = useState(false);
-  const listingRef = useRef();
-  const firebaseUrl = process.env.FIREBASE_URL;
-  
+  const listingRef = useRef();  
   useEffect(() => {
     if (props.source === 'BackUp') {
       setTimeout(() => {
@@ -53,7 +51,6 @@ export const NotificationHelpScreen: React.FC<HelpScreenProps> = props => {
         <React.Fragment>
           {getTextField(
             t('answers.notification.one'),
-            getLinkedText(firebaseUrl, 'here') 
           )}
         </React.Fragment>
       ),

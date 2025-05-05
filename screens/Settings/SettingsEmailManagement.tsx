@@ -1,5 +1,5 @@
 import React, {useTransition} from 'react';
-import {Pressable} from 'react-native';
+import {Pressable,View} from 'react-native';
 import {ListItem, Icon} from 'react-native-elements';
 import {Row} from '../../components/ui';
 import testIDProps from '../../shared/commonUtil';
@@ -30,39 +30,46 @@ export const SettingsEmailManagementScreen: React.FC<
             controller: props.controller,
           });
         }}>
-        <ListItem topDivider bottomDivider>
-          <Icon name="email" color={Theme.Colors.Icon} />
-          <ListItem.Content>
-            <ListItem.Title
-              accessible={false}
-              {...testIDProps('keyManagementText')}>
-              <Row>
-                <Text
-                  testID="keyManagementText"
-                  weight="semibold"
-                  color={Theme.Colors.settingsLabel}
-                  style={Theme.KeyManagementScreenStyle.textStyle}>
-                  {t('Email')}
-                </Text>
-                {!props.controller.isKeyManagementExplored && (
-                  <Text
-                    testID="newLabel"
-                    style={Theme.Styles.newLabel}
-                    color={Theme.Colors.whiteText}>
-                    {t('NEW')}
-                  </Text>
-                )}
-              </Row>
-            </ListItem.Title>
-          </ListItem.Content>
-          <Icon
-            name="chevron-right"
-            size={21}
-            {...testIDProps('keyManagementChevronRight')}
-            color={Theme.Colors.chevronRightColor}
-            style={Theme.KeyManagementScreenStyle.iconStyle}
-          />
-        </ListItem>
+      <ListItem topDivider bottomDivider>
+  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+    <Icon
+      name="email"
+      color={Theme.Colors.Icon}
+      style={{ marginRight: 13 }}
+    />
+    <ListItem.Content>
+      <ListItem.Title
+        accessible={false}
+        {...testIDProps('keyManagementText')}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text
+            testID="keyManagementText"
+            weight="semibold"
+            color={Theme.Colors.settingsLabel}
+            style={[Theme.KeyManagementScreenStyle.textStyle,{ paddingTop:1}]}>
+            {t('Email')}
+          </Text>
+          {!props.controller.isKeyManagementExplored && (
+            <Text
+              testID="newLabel"
+              style={[Theme.Styles.newLabel]}
+              color={Theme.Colors.whiteText}>
+              {t('NEW')}
+            </Text>
+          )}
+        </View>
+      </ListItem.Title>
+    </ListItem.Content>
+  </View>
+
+  <Icon
+    name="chevron-right"
+    size={21}
+    {...testIDProps('keyManagementChevronRight')}
+    color={Theme.Colors.chevronRightColor}
+    style={Theme.KeyManagementScreenStyle.iconStyle}
+  />
+</ListItem>
       </Pressable>
     </React.Fragment>
   );

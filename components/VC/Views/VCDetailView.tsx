@@ -123,8 +123,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
     }
   };
 
-  console.log('>>>>>>>>>>>>>>>>>>>>>>>QRCODE>>>>>>>>>>>>>>>>>>>>>', qrCodeData);
-  console.log('>>>>>>>>>>>>>>>>>>>>>>>publicUrl>>>>>>>>>>>>>>>>>>>>>',publicUrl);
 
   const shouldShowHrLine = verifiableCredential => {
     let availableFieldNames: string[] = [];
@@ -201,10 +199,26 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
 
                   <View
                     style={{
-                      flex: 1,
+                      padding:10,
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}>
+                      <TouchableOpacity
+                      onPress={() => setQRCodeModalVisible(true)}>
+                      <Image
+                        source={{uri: qrCodeData}} // Replace with your image path
+                        style={{
+                          width: 90, // Adjust the width of the image
+                          height: 90, // Adjust the height of the image
+                          borderRadius: 10,
+                        }}
+                      />
+                      <View
+                        testID="magnifierZoom"
+                        style={[Theme.QrCodeStyles.magnifierZoom]}>
+                        {SvgImage.MagnifierZoom()}
+                      </View>
+                    </TouchableOpacity>
                     <Modal
                       animationType="fade"
                       transparent={true}
@@ -272,23 +286,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}>
-                    {/* Button to show QR Code Modal */}
-                    <TouchableOpacity
-                      onPress={() => setQRCodeModalVisible(true)}>
-                      <Image
-                        source={{uri: qrCodeData}} // Replace with your image path
-                        style={{
-                          width: 90, // Adjust the width of the image
-                          height: 90, // Adjust the height of the image
-                          borderRadius: 10,
-                        }}
-                      />
-                      <View
-                        testID="magnifierZoom"
-                        style={[Theme.QrCodeStyles.magnifierZoom]}>
-                        {SvgImage.MagnifierZoom()}
-                      </View>
-                    </TouchableOpacity>
+                    
 
                     {/* QR Code Modal */}
                     <Modal
@@ -385,12 +383,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                     crossAlign="center"
                     margin="12 0 0 0"
                     style={{justifyContent: 'space-between'}}>
-                    {console.log('Logo Object:', logo)}
-                    {console.log('Logo URL:', logo?.url)}
-                    {console.log('Logo Alt Text:', logo?.alt_text)}
-                    {console.log('Issuer Logo Style:', Theme.Styles.issuerLogo)}
-                    {console.log('Image Resize Method:', 'scale')}
-                    {console.log('Image Resize Mode:', 'contain')}
 
                     <Image
                       src={logo?.url}

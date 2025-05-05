@@ -44,6 +44,8 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
   const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [previewImageUri, setPreviewImageUri] = useState<string | null>(null);
 
   const [state, send] = useMachine(notificationMachine);
   const navigation = useNavigation();
@@ -78,47 +80,47 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
 
     const unsubscribe = messaging().onMessage(
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
-      const newNotification = {
-        title: remoteMessage.notification?.title || 'New Notification',
-        message: remoteMessage.notification?.body || 'You have a new message.',
-        credential_id: remoteMessage.data?.credential_id || 'N/A',
-        org_code: remoteMessage.data?.org_code || 'N/A',
-        org_name: remoteMessage.data?.org_name || 'N/A',
-        certificate_url: remoteMessage.data?.certificate_url || 'N/A',
-        credType: remoteMessage.data?.certificate_type || 'N/A',
-        time: new Date().toLocaleTimeString(),
-      };
+        const newNotification = {
+          title: remoteMessage.notification?.title || 'New Notification',
+          message: remoteMessage.notification?.body || 'You have a new message.',
+          credential_id: remoteMessage.data?.credential_id || 'N/A',
+          org_code: remoteMessage.data?.org_code || 'N/A',
+          org_name: remoteMessage.data?.org_name || 'N/A',
+          certificate_url: remoteMessage.data?.certificate_url || 'N/A',
+          credType: remoteMessage.data?.certificate_type || 'N/A',
+          time: new Date().toLocaleTimeString(),
+        };
 
         setNotifications(prev => {
-        const updated = [newNotification, ...prev];
-        AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(console.error);
-        return updated;
-      });
+          const updated = [newNotification, ...prev];
+          AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(console.error);
+          return updated;
+        });
 
         setUnreadCount(prev => prev + 1);
-      Alert.alert(newNotification.title, newNotification.message);
+        Alert.alert(newNotification.title, newNotification.message);
       },
     );
 
     // Background message handler
     messaging().setBackgroundMessageHandler(
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
-      const newNotification = {
-        title: remoteMessage.notification?.title || 'New Notification',
-        message: remoteMessage.notification?.body || 'You have a new message.',
-        credential_id: remoteMessage.data?.credential_id || 'N/A',
-        org_code: remoteMessage.data?.org_code || 'N/A',
-        org_name: remoteMessage.data?.org_name || 'N/A',
-        certificate_url: remoteMessage.data?.certificate_url || 'N/A',
-        credType: remoteMessage.data?.certificate_type || 'N/A',
-        time: new Date().toLocaleTimeString(),
-      };
+        const newNotification = {
+          title: remoteMessage.notification?.title || 'New Notification',
+          message: remoteMessage.notification?.body || 'You have a new message.',
+          credential_id: remoteMessage.data?.credential_id || 'N/A',
+          org_code: remoteMessage.data?.org_code || 'N/A',
+          org_name: remoteMessage.data?.org_name || 'N/A',
+          certificate_url: remoteMessage.data?.certificate_url || 'N/A',
+          credType: remoteMessage.data?.certificate_type || 'N/A',
+          time: new Date().toLocaleTimeString(),
+        };
 
         setNotifications(prev => {
-        const updated = [newNotification, ...prev];
-        AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(console.error);
-        return updated;
-      });
+          const updated = [newNotification, ...prev];
+          AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(console.error);
+          return updated;
+        });
 
         setUnreadCount(prev => prev + 1);
         // Optionally, you could trigger a local notification or other actions here.
@@ -150,7 +152,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         onDismiss={() => setShowNotificationPage(false)}
         headerTitle="Notifications"
         showClose={false}>
-       <View>
+        <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, marginTop: -65 }}>
             <BackButton onPress={() => setShowNotificationPage(false)} />
           </View>
@@ -181,7 +183,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         headerTitle="Certificate Details"
         onDismiss={() => setShowDetailsModal(false)}
         showClose={false}>
-         <View>
+        <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, marginTop: -65 }}>
             <BackButton onPress={() => setShowDetailsModal(false)} />
           </View>
@@ -190,13 +192,19 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         </View>
         <SafeAreaView style={{ padding: 20, alignItems: 'center' }}>
           <View style={styles.card}>
-            <View style={styles.cardImageContainer}>
-              <Image
-                source={{ uri: selectedNotification?.certificate_url }}
-                style={styles.cardImage}
-                resizeMode="contain"
-              />
-            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setPreviewImageUri(selectedNotification?.certificate_url || null);
+                setShowImagePreview(true);
+              }}>
+              <View style={styles.cardImageContainer}>
+                <Image
+                  source={{ uri: selectedNotification?.certificate_url }}
+                  style={styles.cardImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </TouchableOpacity>
             <View style={styles.cardContent}>
               <View style={styles.copyContainer}>
                 <Text style={Theme.TextStyles.helpDetails}>
@@ -219,6 +227,21 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
             disabled={state.matches('addingToWallet')}
           />
         </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        isVisible={showImagePreview}
+        onDismiss={() => setShowImagePreview(false)}
+        showClose>
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          {previewImageUri && (
+            <Image
+              source={{ uri: previewImageUri }}
+              style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
+            />
+          )}
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -254,7 +277,7 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     padding: 15,
-    backgroundColor: '#f1f1f1',
+    backgroundColor: '#EFEFFA',
     borderTopWidth: 1,
     borderTopColor: '#ddd',
   },
