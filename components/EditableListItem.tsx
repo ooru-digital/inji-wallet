@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Dimensions, I18nManager} from 'react-native';
+import {Dimensions, I18nManager,View} from 'react-native';
 import {Icon, ListItem, Overlay, Input} from 'react-native-elements';
 import {Text, Column, Row, Button} from './ui';
 import {Theme} from './ui/styleUtils';
@@ -31,78 +31,86 @@ export const EditableListItem: React.FC<EditableListItemProps> = props => {
 
   return (
     <ListItem
-      {...testIDProps(props.testID)}
-      bottomDivider
-      topDivider
-      onPress={() => setIsEditing(true)}>
+  {...testIDProps(props.testID)}
+  bottomDivider
+  topDivider
+  onPress={() => setIsEditing(true)}>
+ <ListItem.Content>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <View style={{ marginRight: 8 }}>
       {SvgImage.starIcon()}
-      <ListItem.Content>
-        <ListItem.Title
-          {...testIDProps(props.testID + 'Title')}
-          style={{paddingTop: 3}}>
-          <Text weight="semibold" color={props.titleColor}>
-            {props.title}
-          </Text>
-        </ListItem.Title>
-        <Text color={Theme.Colors.textLabel}>{props.content}</Text>
-      </ListItem.Content>
-      <Icon
-        name="chevron-right"
-        size={21}
-        color={Theme.Colors.chevronRightColor}
-      />
-      <Overlay
+    </View>
+    <Text
+      {...testIDProps(props.testID + 'Title')}
+      weight="semibold"
+      color={props.titleColor}
+      style={{ marginRight: 6 }}
+    >
+      {props.title}
+    </Text>
+</View>
+    <Text color={Theme.Colors.textLabel} style={{marginLeft:31}}>{props.content}</Text>
+      
+</ListItem.Content>
+
+
+    <Icon
+      name="chevron-right"
+      size={21}
+      color={Theme.Colors.chevronRightColor}
+    />
+  <Overlay
         overlayStyle={{padding: 24, elevation: 6}}
-        isVisible={isEditing}
-        onBackdropPress={dismiss}>
-        <Column width={Dimensions.get('screen').width * 0.8}>
-          {props.items.map((item: ListItemProps, index) => {
-            return (
-              <React.Fragment key={index}>
-                <Text testID={item.testID + 'Label'}>
+    isVisible={isEditing}
+    onBackdropPress={dismiss}>
+    <Column width={Dimensions.get('screen').width * 0.8}>
+      {props.items.map((item: ListItemProps, index) => {
+        return (
+          <React.Fragment key={index}>
+            <Text testID={item.testID + 'Label'}>
                   {t('editLabel', {label: item.label})}
-                </Text>
-                <Input
-                  {...testIDProps(item.testID + 'InputField')}
-                  autoFocus
-                  value={items[index].value}
-                  onChangeText={value => updateItems(item.label, value)}
-                  selectionColor={Theme.Colors.Cursor}
-                  inputStyle={{
-                    textAlign: I18nManager.isRTL ? 'right' : 'left',
-                  }}
-                />
-                {index === 0 && props.response === 'error' && (
-                  <Text
-                    testID={item.testID + 'ErrorMessage'}
-                    style={Theme.TextStyles.error}>
-                    {props.errorMessage}
-                  </Text>
-                )}
-              </React.Fragment>
-            );
-          })}
-          {props.response === 'success' && overlayOpened && closePopup()}
-          <Row>
-            <Button
-              testID="cancel"
-              fill
-              type="clear"
-              title={t('cancel')}
-              onPress={dismiss}
+            </Text>
+            <Input
+              {...testIDProps(item.testID + 'InputField')}
+              autoFocus
+              value={items[index].value}
+              onChangeText={value => updateItems(item.label, value)}
+              selectionColor={Theme.Colors.Cursor}
+              inputStyle={{
+                textAlign: I18nManager.isRTL ? 'right' : 'left',
+              }}
             />
-            <Button
-              testID="save"
-              fill
+            {index === 0 && props.response === 'error' && (
+              <Text
+                testID={item.testID + 'ErrorMessage'}
+                style={Theme.TextStyles.error}>
+                {props.errorMessage}
+              </Text>
+            )}
+          </React.Fragment>
+        );
+      })}
+      {props.response === 'success' && overlayOpened && closePopup()}
+      <Row>
+        <Button
+          testID="cancel"
+          fill
+          type="clear"
+          title={t('cancel')}
+          onPress={dismiss}
+        />
+        <Button
+          testID="save"
+          fill
               type='gradient'
-              title={t('save')}
-              onPress={edit}
-              loading={props.progress}
-            />
-          </Row>
-        </Column>
-      </Overlay>
-    </ListItem>
+          title={t('save')}
+          onPress={edit}
+          loading={props.progress}
+        />
+      </Row>
+    </Column>
+  </Overlay>
+</ListItem>
   );
 
   function edit() {

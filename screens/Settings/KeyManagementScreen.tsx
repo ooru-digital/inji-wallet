@@ -19,6 +19,7 @@ import {
 } from '../../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../../shared/telemetry/TelemetryConstants';
 import {SUPPORTED_KEY_TYPES} from '../../shared/constants';
+import LinearGradient from 'react-native-linear-gradient';
 
 const {RNSecureKeystoreModule} = NativeModules;
 
@@ -129,17 +130,28 @@ export const KeyManagementScreen: React.FC<KeyManagementScreenProps> = () => {
         <HelpScreen
           source={'keyManagement'}
           triggerComponent={
-            <Icon
-              testID="keyManagementHelpIcon"
-              accessible={true}
-              name="question"
-              type="font-awesome"
-              size={21}
-              style={Theme.Styles.IconContainer}
-              color={Theme.Colors.Icon}
-            />
+            <LinearGradient
+              style={{borderRadius: 8, marginRight: 4}}
+              colors={Theme.Colors.GradientColorsLight}
+              start={Theme.LinearGradientDirection.start}
+              end={Theme.LinearGradientDirection.end}>
+              <View testID="help"></View>
+              <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                width: 60, 
+                height: 36, 
+                borderRadius: 8,
+              }}>
+              <Text style={{ color: '#2A2DA4', fontWeight: 'bold' }}>Help</Text>
+            </View>
+            </LinearGradient>
           }
-        />
+          />
       </View>
       <BannerNotificationContainer />
       <View style={Theme.KeyManagementScreenStyle.copilotViewStyle}>

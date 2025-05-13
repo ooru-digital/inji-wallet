@@ -34,6 +34,7 @@ import {
   BannerStatus,
 } from '../../components/BannerNotification';
 import {VCProcessor} from '../../components/VC/common/VCProcessor';
+import { Text } from 'react-native-elements';
 
 export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
   const {t} = useTranslation('ViewVcModal');
@@ -96,9 +97,19 @@ export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
               start={Theme.LinearGradientDirection.start}
               end={Theme.LinearGradientDirection.end}>
               <View testID="help"></View>
-              <View style={Theme.Styles.IconContainer}>
-                {SvgImage.questionIcon()}
-              </View>
+              <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                width: 60, 
+                height: 36, 
+                borderRadius: 8,
+              }}>
+              <Text style={{ color: '#2A2DA4', fontWeight: 'bold' }}>Help</Text>
+            </View>
             </LinearGradient>
           }
         />

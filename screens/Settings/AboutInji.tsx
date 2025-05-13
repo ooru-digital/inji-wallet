@@ -6,6 +6,7 @@ import {
   Pressable,
   TouchableOpacity,
   I18nManager,
+  View
 } from 'react-native';
 import {Modal} from '../../components/ui/Modal';
 import {Column, Row, Text} from '../../components/ui';
@@ -39,17 +40,22 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
           setShowAboutInji(!showAboutInji);
         }}>
         <ListItem {...testIDProps('aboutInji')} topDivider bottomDivider>
-          {SvgImage.abotInjiIcon()}
-          <ListItem.Content>
-            <ListItem.Title
-              {...testIDProps('aboutInjiTitle')}
-              style={{paddingTop: 3}}>
-              <Text weight="semibold" color={Theme.Colors.settingsLabel}>
-                {t('aboutInji')}
-              </Text>
-            </ListItem.Title>
-          </ListItem.Content>
-        </ListItem>
+  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+    {SvgImage.abotInjiIcon()}
+
+    <ListItem.Content>
+      <ListItem.Title
+        {...testIDProps('aboutInjiTitle')}
+        style={{ paddingTop: 3, paddingLeft: 16 }} 
+      >
+        <Text weight="semibold" color={Theme.Colors.settingsLabel}>
+          {t('aboutInji')}
+        </Text>
+      </ListItem.Title>
+    </ListItem.Content>
+  </View>
+</ListItem>
+
       </Pressable>
       <Modal
         testID="aboutInji"
