@@ -89,14 +89,6 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
                 vcItemActor={controller.selectedVc}
               />
             </Column>
-            <Column style={{alignItems: 'center', paddingVertical: 8}}>
-              <Text style={{color: 'gray', fontSize: 14}}>
-                {t(
-                  'home:refreshNote',
-                  'Please refresh if you don’t see your  credential downloaded  upon Notification.',
-                )}
-              </Text>
-            </Column>
           </>
         )}
       </Column>
