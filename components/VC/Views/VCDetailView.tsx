@@ -219,6 +219,22 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                         {SvgImage.MagnifierZoom()}
                       </View>
                     </TouchableOpacity>
+                    <Column
+                    width={80}
+                    height={100}
+                    crossAlign="center"
+                    margin="12 0 0 0"
+                    style={{justifyContent: 'space-between'}}>
+
+                    <Image
+                      src={logo?.url}
+                      alt={logo?.alt_text}
+                      style={[Theme.Styles.issuerLogo, { width: 60, height: 60, marginTop: 10 }]} 
+                      resizeMethod="scale"
+                      resizeMode="contain"
+                    />
+
+                  </Column>
                     <Modal
                       animationType="fade"
                       transparent={true}
@@ -377,22 +393,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                     </Modal>
                   </View>
 
-                  <Column
-                    width={80}
-                    height={100}
-                    crossAlign="center"
-                    margin="12 0 0 0"
-                    style={{justifyContent: 'space-between'}}>
-
-                    <Image
-                      src={logo?.url}
-                      alt={logo?.alt_text}
-                      style={[Theme.Styles.issuerLogo, { width: 60, height: 60, marginTop: 10 }]} 
-                      resizeMethod="scale"
-                      resizeMode="contain"
-                    />
-
-                  </Column>
                 </Column>
 
                 <Column
