@@ -237,6 +237,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = ({
     if (!credentialId) return '';
     return credentialId.replace(/.(?=.{4})/g, '*');
   };
+
   return (
     <ImageBackground
       source={
