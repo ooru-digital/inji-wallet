@@ -67,6 +67,21 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
     if (!credentialId) return '';
     return credentialId.replace(/.(?=.{4})/g, '*'); 
   };
+
+  function credentialType(text: string): string {
+    if (!text) return '';
+    const lowerCaseWords = ['of'];
+  
+    return text
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .split(' ')
+      .map((word, index) =>
+        lowerCaseWords.includes(word.toLowerCase()) && index !== 0
+          ? word.toLowerCase()
+          : word[0].toUpperCase() + word.slice(1)
+      )
+      .join(' ');
+  }
   return (
     <ImageBackground
       source={getBackgroundImage(props.wellknown, Theme.CloseCard)}
@@ -99,21 +114,23 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
                   alignItems: 'flex-end', 
                   justifyContent: 'center',
                 }}>
-                <VCItemFieldValue
-                  key={'id'}
-                  testID="id"
-                  fieldValue={idType}
-                  wellknown={props.wellknown}
-                  style={{
-                    textAlign: 'left', 
+             <VCItemFieldValue
+                key={'id'}
+                testID="id"
+                fieldValue={credentialType(
+                  getLocalizedField(props.credential?.credentialSubject.type)
+                )}
+                style={{
+                  textAlign: 'left',
                     fontWeight: 'bold',
                     fontSize: 14,
-                    width: '100%', 
-                    alignSelf: 'flex-end', 
-                  }}
-                  numberOfLines={1}
+                  width: '100%',
+                  alignSelf: 'flex-end',
+                }}
+                wellknown={props.wellknown} 
                   ellipsizeMode="tail"
-                />
+              />
+
               </View>
 
             <VCItemFieldValue
