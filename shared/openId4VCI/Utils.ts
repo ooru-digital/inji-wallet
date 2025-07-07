@@ -146,23 +146,18 @@ export const constructAuthorizationConfiguration = (
   selectedIssuer: issuerType,
   supportedScope: string,
 ) => {
-  console.log('Constructing Authorization Configuration...');
-  console.log('Selected Issuer: ', selectedIssuer);
-  console.log('Supported Scope: ', supportedScope);
-  const config = {
+  return {
     issuer: selectedIssuer.credential_issuer,
     clientId: selectedIssuer.client_id,
     scopes: [supportedScope],
     redirectUrl: selectedIssuer.redirect_uri,
-    additionalParameters: {ui_locales: i18n.language},
+    additionalParameters: { ui_locales: i18n.language },
     serviceConfiguration: {
       authorizationEndpoint:
         selectedIssuer.authorization_servers[0] + '/authorize',
       tokenEndpoint: selectedIssuer.token_endpoint,
     },
   };
-  console.log('Authorization Configuration: ', config);
-  return config;
 };
 
 export const getCredentialIssuersWellKnownConfig = async (

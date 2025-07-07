@@ -402,10 +402,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                   ref={ref => {
                     console.log('Column ref:', ref); // Log ref of Column
                   }}>
-                  {console.log('Props fields:', props.fields)}
-                  {console.log('Verifiable Credential:', verifiableCredential)}
-                  {console.log('Well-known props:', props.wellknown)}
-                  {console.log('Props object:', props)}
                   {fieldItemIterator(
                     props.fields,
                     verifiableCredential,
