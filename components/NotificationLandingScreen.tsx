@@ -32,7 +32,6 @@ async function requestPermission(): Promise<void> {
     authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
   if (enabled) {
-    console.log('Notification permission granted.');
   }
 }
 
