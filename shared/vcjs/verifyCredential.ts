@@ -249,6 +249,8 @@ function handleVcVerifierResponse(
   verificationResult: any,
   verifiableCredential: VerifiableCredential | Credential,
 ): VerificationResult {
+  console.log('verifiableCredentialcredres', verificationResult);
+  console.log('verifiableCredential', verifiableCredential);
   try {
     if (!verificationResult.verificationStatus) {
       verificationResult.verificationErrorCode =

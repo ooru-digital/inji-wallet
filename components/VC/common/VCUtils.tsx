@@ -262,10 +262,16 @@ export const getIdType = (
     wellknown['credential_configurations_supported'] === undefined &&
     wellknown?.display
   ) {
+    console.log('wellknown object:', wellknown);
+
     const idTypeObj = wellknown.display.map((displayProps: any) => {
+      console.log('Mapping displayProps:', displayProps);
+
       return {language: displayProps.locale, value: displayProps.name};
     });
+    console.log('Generated idTypeObj:', idTypeObj);
     const localizedField = getLocalizedField(idTypeObj);
+    console.log('Localized Field:', localizedField);
     return localizedField;
   } else if (wellknown && Object.keys(wellknown).length > 0) {
     let supportedCredentialsWellknown;
