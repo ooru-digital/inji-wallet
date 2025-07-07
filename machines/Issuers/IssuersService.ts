@@ -320,7 +320,6 @@ export const IssuersService = () => {
       await VciClient.getInstance().sendProof(proofJWT);
       return proofJWT;
     },
-
     getKeyOrderList: async () => {
       const {RNSecureKeystoreModule} = NativeModules;
       const keyOrder = JSON.parse(

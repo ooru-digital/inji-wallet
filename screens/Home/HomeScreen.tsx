@@ -46,27 +46,27 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
         color={Theme.Colors.whiteText}
       />
     );
-        
+
     return (
-<LinearGradient
-  colors={Theme.Colors.gradientBtn}
-  start={Theme.LinearGradientDirection.start}
-  end={Theme.LinearGradientDirection.end}
+      <LinearGradient
+        colors={Theme.Colors.gradientBtn}
+        start={Theme.LinearGradientDirection.start}
+        end={Theme.LinearGradientDirection.end}
         style={Theme.Styles.downloadFabIconContainer}>
-  <Pressable
-    onPress={() => {
-      controller.GOTO_ISSUERS();
-    }}
-    {...testIDProps('downloadCardButton')}
-    accessible={false}
-    style={({pressed}) =>
-      pressed
-        ? Theme.Styles.downloadFabIconPressed
-        : Theme.Styles.downloadFabIconNormal
-    }>
-    {plusIcon}
-  </Pressable>
-</LinearGradient>
+        <Pressable
+          onPress={() => {
+            controller.GOTO_ISSUERS();
+          }}
+          {...testIDProps('downloadCardButton')}
+          accessible={false}
+          style={({pressed}) =>
+            pressed
+              ? Theme.Styles.downloadFabIconPressed
+              : Theme.Styles.downloadFabIconNormal
+          }>
+          {plusIcon}
+        </Pressable>
+      </LinearGradient>
     );
   };
 
