@@ -38,13 +38,14 @@ import Share from 'react-native-share';
 import {SvgUri} from 'react-native-svg'; // Import SvgUri for SVG images
 import RNFS from 'react-native-fs';
 
-const getProfileImage = (face) => {
+const getProfileImage = face => {
   if (face) {
-    return <Image source={{ uri: face }} style={Theme.Styles.detailedViewImage} />;
+    return (
+      <Image source={{uri: face}} style={Theme.Styles.detailedViewImage} />
+    );
   }
   return null;
 };
-
 
 export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
   const {t} = useTranslation('VcDetails');
@@ -55,7 +56,8 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isQRCodeModalVisible, setQRCodeModalVisible] = useState(false);
   const addtolinkedin = props.credential?.credentialSubject['add_to_linkedin'];
-  const postonlinkedin = props.credential?.credentialSubject['post_on_linkedin'];
+  const postonlinkedin =
+    props.credential?.credentialSubject['post_on_linkedin'];
   const shareonx = props.credential?.credentialSubject['share_on_x'];
   const [isImageExpanded, setIsImageExpanded] = useState(false); // State for expanded image
   const face = props.credential?.credentialSubject.face;
@@ -122,7 +124,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
       );
     }
   };
-
 
   const shouldShowHrLine = verifiableCredential => {
     let availableFieldNames: string[] = [];
@@ -199,11 +200,11 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
 
                   <View
                     style={{
-                      padding:10,
+                      padding: 10,
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}>
-                      <TouchableOpacity
+                    <TouchableOpacity
                       onPress={() => setQRCodeModalVisible(true)}>
                       <Image
                         source={{uri: qrCodeData}} // Replace with your image path
@@ -220,21 +221,22 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                       </View>
                     </TouchableOpacity>
                     <Column
-                    width={80}
-                    height={100}
-                    crossAlign="center"
-                    margin="12 0 0 0"
-                    style={{justifyContent: 'space-between'}}>
-
-                    <Image
-                      src={logo?.url}
-                      alt={logo?.alt_text}
-                      style={[Theme.Styles.issuerLogo, { width: 60, height: 60, marginTop: 10 }]} 
-                      resizeMethod="scale"
-                      resizeMode="contain"
-                    />
-
-                  </Column>
+                      width={80}
+                      height={100}
+                      crossAlign="center"
+                      margin="12 0 0 0"
+                      style={{justifyContent: 'space-between'}}>
+                      <Image
+                        src={logo?.url}
+                        alt={logo?.alt_text}
+                        style={[
+                          Theme.Styles.issuerLogo,
+                          {width: 60, height: 60, marginTop: 10},
+                        ]}
+                        resizeMethod="scale"
+                        resizeMode="contain"
+                      />
+                    </Column>
                     <Modal
                       animationType="fade"
                       transparent={true}
@@ -302,8 +304,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}>
-                    
-
                     {/* QR Code Modal */}
                     <Modal
                       animationType="slide"
@@ -392,7 +392,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                       </View>
                     </Modal>
                   </View>
-
                 </Column>
 
                 <Column
@@ -402,10 +401,6 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                   ref={ref => {
                     console.log('Column ref:', ref); // Log ref of Column
                   }}>
-                  {console.log('Props fields:', props.fields)}
-                  {console.log('Verifiable Credential:', verifiableCredential)}
-                  {console.log('Well-known props:', props.wellknown)}
-                  {console.log('Props object:', props)}
                   {fieldItemIterator(
                     props.fields,
                     verifiableCredential,
@@ -443,7 +438,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                       <TouchableOpacity onPress={() => setModalVisible(true)}>
                         <Image
                           source={require('../../../assets/share.png')} // replace with your actual image path
-                          style={{ width: 30, height: 30 }} // adjust size as needed
+                          style={{width: 30, height: 30}} // adjust size as needed
                           resizeMode="contain"
                         />
                       </TouchableOpacity>
@@ -515,7 +510,8 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                           {/* Add on LinkedIn */}
                           {addtolinkedin && (
                             <>
-                              <TouchableOpacity onPress={() => Linking.openURL(addtolinkedin)}>
+                              <TouchableOpacity
+                                onPress={() => Linking.openURL(addtolinkedin)}>
                                 <View
                                   style={{
                                     flexDirection: 'row',
@@ -535,7 +531,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                                       color: 'black',
                                       fontWeight: 'bold',
                                       fontSize: 14,
-                                      marginRight:200,
+                                      marginRight: 200,
                                     }}>
                                     Add to LinkedIn
                                   </Text>
@@ -557,7 +553,8 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                           {/* Post on LinkedIn */}
                           {postonlinkedin && (
                             <>
-                              <TouchableOpacity onPress={() => Linking.openURL(postonlinkedin)}>
+                              <TouchableOpacity
+                                onPress={() => Linking.openURL(postonlinkedin)}>
                                 <View
                                   style={{
                                     flexDirection: 'row',
@@ -577,7 +574,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                                       color: 'black',
                                       fontWeight: 'bold',
                                       fontSize: 14,
-                                      marginRight:200,
+                                      marginRight: 200,
                                     }}>
                                     Post on LinkedIn
                                   </Text>
@@ -599,7 +596,8 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                           {/* Share on X */}
                           {shareonx && (
                             <>
-                              <TouchableOpacity onPress={() => Linking.openURL(shareonx)}>
+                              <TouchableOpacity
+                                onPress={() => Linking.openURL(shareonx)}>
                                 <View
                                   style={{
                                     flexDirection: 'row',
@@ -619,7 +617,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                                       color: 'black',
                                       fontWeight: 'bold',
                                       fontSize: 14,
-                                      marginRight:220,
+                                      marginRight: 220,
                                     }}>
                                     Share on X
                                   </Text>

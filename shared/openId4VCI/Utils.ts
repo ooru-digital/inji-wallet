@@ -9,15 +9,15 @@ import i18next from 'i18next';
 import {getJWT, replaceCharactersInB64} from '../cryptoutil/cryptoUtil';
 import i18n from '../../i18n';
 import {
-CredentialTypes,
-CredentialWrapper,
-VerifiableCredential,
+  CredentialTypes,
+  CredentialWrapper,
+  VerifiableCredential,
 } from '../../machines/VerifiableCredential/VCMetaMachine/vc';
 import {
-BOTTOM_SECTION_FIELDS_WITH_DETAILED_ADDRESS_FIELDS,
-DETAIL_VIEW_ADD_ON_FIELDS,
-getIdType,
-getCredentialTypes,
+  BOTTOM_SECTION_FIELDS_WITH_DETAILED_ADDRESS_FIELDS,
+  DETAIL_VIEW_ADD_ON_FIELDS,
+  getIdType,
+  getCredentialTypes,
 } from '../../components/VC/common/VCUtils';
 import {getVerifiableCredential} from '../../machines/VerifiableCredential/VCItemMachine/VCItemSelectors';
 import {vcVerificationBannerDetails} from '../../components/BannerNotificationContainer';
@@ -31,13 +31,13 @@ import {VCMetadata} from '../VCMetadata';
 import {VCProcessor} from '../../components/VC/common/VCProcessor';
 
 export const Protocols = {
-OpenId4VCI: 'OpenId4VCI',
-OTP: 'OTP',
+  OpenId4VCI: 'OpenId4VCI',
+  OTP: 'OTP',
 };
 
 export const Issuers = {
-MosipOtp: '',
-Mosip: 'Mosip',
+  MosipOtp: '',
+  Mosip: 'Mosip',
 };
 
 export function getVcVerificationDetails(
@@ -146,10 +146,7 @@ export const constructAuthorizationConfiguration = (
   selectedIssuer: issuerType,
   supportedScope: string,
 ) => {
-  console.log('Constructing Authorization Configuration...');
-  console.log('Selected Issuer: ', selectedIssuer);
-  console.log('Supported Scope: ', supportedScope);
-  const config = {
+  return {
     issuer: selectedIssuer.credential_issuer,
     clientId: selectedIssuer.client_id,
     scopes: [supportedScope],
@@ -161,8 +158,6 @@ export const constructAuthorizationConfiguration = (
       tokenEndpoint: selectedIssuer.token_endpoint,
     },
   };
-  console.log('Authorization Configuration: ', config);
-  return config;
 };
 
 export const getCredentialIssuersWellKnownConfig = async (

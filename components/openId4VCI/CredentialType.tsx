@@ -12,8 +12,6 @@ export const CredentialType: React.FC<CredentialTypeProps> = props => {
   const selectedIssuerDisplayObject = props.item.display
     ? getDisplayObjectForCurrentLanguage(props.item.display)
     : {};
-  console.log('>>>>>>>>>>>>>>>', props.item);
-  console.log('>>>>>>>>>>>>>...', props.item.display);
 
   return (
     <Pressable
