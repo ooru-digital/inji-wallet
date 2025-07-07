@@ -65,20 +65,20 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
   const idType = getIdType(props.wellknown);
   const maskCredentialId = (credentialId: string) => {
     if (!credentialId) return '';
-    return credentialId.replace(/.(?=.{4})/g, '*'); 
+    return credentialId.replace(/.(?=.{4})/g, '*');
   };
 
-  function credentialType(text: string): string {
+  function formatcredentialType(text: string): string {
     if (!text) return '';
     const lowerCaseWords = ['of'];
-  
+
     return text
       .replace(/([a-z])([A-Z])/g, '$1 $2')
       .split(' ')
       .map((word, index) =>
         lowerCaseWords.includes(word.toLowerCase()) && index !== 0
           ? word.toLowerCase()
-          : word[0].toUpperCase() + word.slice(1)
+          : word[0].toUpperCase() + word.slice(1),
       )
       .join(' ');
   }
@@ -98,7 +98,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
             : undefined
         }>
         <Row crossAlign="center" padding="3 0 0 3">
-        {isVCLoaded(props.credential, props.fields) && (
+          {isVCLoaded(props.credential, props.fields) && (
             <Image
               src={issuerLogo?.url}
               alt={issuerLogo?.alt_text}
@@ -109,29 +109,28 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
           )}
           <Column fill align="center" justify="center" margin="0 10 0 10">
             <View
-                style={{
-                  width: '90%',
-                  alignItems: 'flex-end', 
-                  justifyContent: 'center',
-                }}>
-             <VCItemFieldValue
+              style={{
+                width: '90%',
+                alignItems: 'flex-end',
+                justifyContent: 'center',
+              }}>
+              <VCItemFieldValue
                 key={'id'}
                 testID="id"
-                fieldValue={credentialType(
-                  getLocalizedField(props.credential?.credentialSubject.type)
+                fieldValue={formatcredentialType(
+                  getLocalizedField(props.credential?.credentialSubject.type),
                 )}
                 style={{
                   textAlign: 'left',
-                    fontWeight: 'bold',
-                    fontSize: 14,
+                  fontWeight: 'bold',
+                  fontSize: 14,
                   width: '100%',
                   alignSelf: 'flex-end',
                 }}
-                wellknown={props.wellknown} 
-                  ellipsizeMode="tail"
+                wellknown={props.wellknown}
+                ellipsizeMode="tail"
               />
-
-              </View>
+            </View>
 
             <VCItemFieldValue
               key={'fullName'}
@@ -140,30 +139,31 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
                 props.credential?.credentialSubject.recipientName,
               )}
               style={{
-                    textAlign: 'left', 
-                    fontSize: 13,
-                    width: '100%', 
-                    alignSelf: 'flex-end', 
-                  }}
+                textAlign: 'left',
+                fontSize: 13,
+                width: '100%',
+                alignSelf: 'flex-end',
+              }}
               wellknown={props.wellknown}
             />
-             <VCItemFieldValue
-                  key={'credentialId'}
-                  testID="credentialId"
-                  fieldValue={maskCredentialId(
-                    getLocalizedField(props.credential?.credentialSubject.credential_id)
-                  )}
-                  style={{
-                    textAlign: 'left',
-                    fontSize: 12,
-                    width: '100%',
-                    alignSelf: 'flex-end',
-                  }}
-                  wellknown={props.wellknown}
-                />
+            <VCItemFieldValue
+              key={'credentialId'}
+              testID="credentialId"
+              fieldValue={maskCredentialId(
+                getLocalizedField(
+                  props.credential?.credentialSubject.credential_id,
+                ),
+              )}
+              style={{
+                textAlign: 'left',
+                fontSize: 12,
+                width: '100%',
+                alignSelf: 'flex-end',
+              }}
+              wellknown={props.wellknown}
+            />
           </Column>
 
-         
           <Pressable
             onPress={props.KEBAB_POPUP}
             accessible={false}
