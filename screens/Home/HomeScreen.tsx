@@ -46,27 +46,27 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
         color={Theme.Colors.whiteText}
       />
     );
-
+        
     return (
-      <LinearGradient
-        colors={Theme.Colors.gradientBtn}
-        start={Theme.LinearGradientDirection.start}
-        end={Theme.LinearGradientDirection.end}
+<LinearGradient
+  colors={Theme.Colors.gradientBtn}
+  start={Theme.LinearGradientDirection.start}
+  end={Theme.LinearGradientDirection.end}
         style={Theme.Styles.downloadFabIconContainer}>
-        <Pressable
-          onPress={() => {
-            controller.GOTO_ISSUERS();
-          }}
-          {...testIDProps('downloadCardButton')}
-          accessible={false}
-          style={({pressed}) =>
-            pressed
-              ? Theme.Styles.downloadFabIconPressed
-              : Theme.Styles.downloadFabIconNormal
-          }>
-          {plusIcon}
-        </Pressable>
-      </LinearGradient>
+  <Pressable
+    onPress={() => {
+      controller.GOTO_ISSUERS();
+    }}
+    {...testIDProps('downloadCardButton')}
+    accessible={false}
+    style={({pressed}) =>
+      pressed
+        ? Theme.Styles.downloadFabIconPressed
+        : Theme.Styles.downloadFabIconNormal
+    }>
+    {plusIcon}
+  </Pressable>
+</LinearGradient>
     );
   };
 
@@ -88,6 +88,14 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
                 service={controller.tabRefs.receivedVcs}
                 vcItemActor={controller.selectedVc}
               />
+            </Column>
+            <Column style={{alignItems: 'center', paddingVertical: 8}}>
+              <Text style={{color: 'gray', fontSize: 14}}>
+                {t(
+                  'home:refreshNote',
+                  'Please refresh if you don’t see your  credential downloaded  upon Notification.',
+                )}
+              </Text>
             </Column>
           </>
         )}
