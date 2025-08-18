@@ -10,9 +10,7 @@ import {BindingVcWarningOverlay} from './MyVcs/BindingVcWarningOverlay';
 import {VcDetailsContainer} from '../../components/VC/VcDetailsContainer';
 import {TelemetryConstants} from '../../shared/telemetry/TelemetryConstants';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
-import {Icon, ThemeConsumer} from 'react-native-elements';
 import {Theme} from '../../components/ui/styleUtils';
-import testIDProps from '../../shared/commonUtil';
 import {HelpScreen} from '../../components/HelpScreen';
 import {Pressable, View} from 'react-native';
 import {KebabPopUp} from '../../components/KebabPopUp';
@@ -35,6 +33,7 @@ import {
 } from '../../components/BannerNotification';
 import {VCProcessor} from '../../components/VC/common/VCProcessor';
 import { Text } from 'react-native-elements';
+import {HelpIcon} from '../../components/ui/HelpIcon';
 
 export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
   const {t} = useTranslation('ViewVcModal');
@@ -104,8 +103,8 @@ export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
                 justifyContent: 'center',
                 paddingHorizontal: 12,
                 paddingVertical: 6,
-                width: 60, 
-                height: 36, 
+                width: 60,
+                height: 36,
                 borderRadius: 8,
               }}>
               <Text style={{ color: '#2A2DA4', fontWeight: 'bold' }}>Help</Text>

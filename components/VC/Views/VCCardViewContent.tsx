@@ -13,7 +13,7 @@ import {
   isVCLoaded,
   getBackgroundColour,
   getBackgroundImage,
-  DisplayName,
+  Display,
 } from '../common/VCUtils';
 import {VCItemFieldValue} from '../common/VCItemField';
 import {WalletBinding} from '../../../screens/Home/MyVcs/WalletBinding';
@@ -25,14 +25,16 @@ import {HistoryTab} from '../../../screens/Home/MyVcs/HistoryTab';
 import {getTextColor} from '../common/VCUtils';
 import {useCopilot} from 'react-native-copilot';
 import {useTranslation} from 'react-i18next';
-import {getIdType} from '../common/VCUtils';
+import testIDProps from '../../../shared/commonUtil';
+import { getCredentialType } from '../common/VCUtils';
 
-export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
-  const vcSelectableButton =
-    props.selectable &&
-    (props.flow === VCItemContainerFlowType.VP_SHARE ? (
+export const VCCardViewContent: React.FC<VCItemContentProps> = ({isPinned = false, context, credential, verifiableCredentialData, fields, wellknown, generatedOn, selectable, selected, service, onPress, isDownloading, flow, walletBindingResponse, KEBAB_POPUP, DISMISS, isKebabPopUp, vcMetadata, isInitialLaunch}) => {
+  const wellknownDisplayProperty = new Display(wellknown);
+    const vcSelectableButton =
+    selectable &&
+    (flow === VCItemContainerFlowType.VP_SHARE ? (
       <CheckBox
-        checked={props.selected}
+        checked={selected}
         checkedIcon={SvgImage.selectedCheckBox()}
         uncheckedIcon={
           <Icon
@@ -41,11 +43,11 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
             size={22}
           />
         }
-        onPress={() => props.onPress()}
+        onPress={() => onPress()}
       />
     ) : (
       <CheckBox
-        checked={props.selected}
+        checked={selected}
         checkedIcon={
           <Icon name="check-circle" type="material" color={Theme.Colors.Icon} />
         }
@@ -62,26 +64,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
   const faceImage = props.verifiableCredentialData.face;
   const {start} = useCopilot();
   const {t} = useTranslation();
-  const idType = getIdType(props.wellknown);
-  const maskCredentialId = (credentialId: string) => {
-    if (!credentialId) return '';
-    return credentialId.replace(/.(?=.{4})/g, '*');
-  };
 
-  function formatcredentialType(text: string): string {
-    if (!text) return '';
-    const lowerCaseWords = ['of'];
-
-    return text
-      .replace(/([a-z])([A-Z])/g, '$1 $2')
-      .split(' ')
-      .map((word, index) =>
-        lowerCaseWords.includes(word.toLowerCase()) && index !== 0
-          ? word.toLowerCase()
-          : word[0].toUpperCase() + word.slice(1),
-      )
-      .join(' ');
-  }
   return (
     <ImageBackground
       source={getBackgroundImage(props.wellknown, Theme.CloseCard)}
@@ -183,15 +166,15 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
           {vcSelectableButton}
         </Row>
 
-        <WalletBinding service={props.service} vcMetadata={props.vcMetadata} />
+        <WalletBinding service={service} vcMetadata={vcMetadata} />
 
         <RemoveVcWarningOverlay
           testID="removeVcWarningOverlay"
-          service={props.service}
-          vcMetadata={props.vcMetadata}
+          service={service}
+          vcMetadata={vcMetadata}
         />
 
-        <HistoryTab service={props.service} vcMetadata={props.vcMetadata} />
+        <HistoryTab service={service} vcMetadata={vcMetadata} />
       </View>
     </ImageBackground>
   );
@@ -208,7 +191,7 @@ export interface VCItemContentProps {
   selected: boolean;
   isPinned?: boolean;
   service: any;
-  onPress?: () => void;
+  onPress: () => void;
   isDownloading?: boolean;
   flow?: string;
   walletBindingResponse: {};

@@ -27,6 +27,7 @@ import {selectIsMinimumStorageRequiredForAuditEntryLimitReached} from '../../mac
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
 import {MainBottomTabParamList} from '../../routes/routeTypes';
 import {useNavigation, NavigationProp} from '@react-navigation/native';
+import {selectAuthorizationRequest, selectIsLinkCode} from '../../machines/app';
 
 export function useScanScreen() {
   const {t} = useTranslation('ScanScreen');
@@ -73,16 +74,21 @@ export function useScanScreen() {
   }
   type ScanScreenNavigation = NavigationProp<MainBottomTabParamList>;
   const navigation = useNavigation<ScanScreenNavigation>();
-  const GOTO_HOME = () => navigation.navigate(BOTTOM_TAB_ROUTES.home);
+  const GOTO_HOME = () => {
+    scanService.send(ScanEvents.RESET());
+    navigation.navigate(BOTTOM_TAB_ROUTES.home);
+  };
   const ALLOWED = () => scanService.send(ScanEvents.ALLOWED());
   const DENIED = () => scanService.send(ScanEvents.DENIED());
   const isLocalPermissionRational = useSelector(
     scanService,
     selectIsLocationPermissionRationale,
   );
+  const isNoSharableVCs = !shareableVcsMetadata.length;
+
   return {
     locationError,
-    isEmpty: !shareableVcsMetadata.length,
+    isNoSharableVCs,
     isBluetoothPermissionDenied,
     isNearByDevicesPermissionDenied,
     isLocationDisabled,
@@ -113,5 +119,7 @@ export function useScanScreen() {
     ALLOWED,
     DENIED,
     isLocalPermissionRational,
+    authorizationRequest: useSelector(appService, selectAuthorizationRequest),
+    linkcode: useSelector(appService, selectIsLinkCode),
   };
 }

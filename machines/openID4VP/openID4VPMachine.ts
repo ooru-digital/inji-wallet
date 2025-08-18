@@ -42,26 +42,39 @@ export const openID4VPMachine = model.createMachine(
         on: {
           AUTHENTICATE: {
             actions: [
-              'setEncodedAuthorizationRequest',
+              'setUrlEncodedAuthorizationRequest',
               'setFlowType',
               'setMiniViewShareSelectedVC',
               'setIsShareWithSelfie',
+              'setIsOVPViaDeepLink',
             ],
             target: 'checkFaceAuthConsent',
           },
         },
       },
       checkFaceAuthConsent: {
-        entry: 'getFaceAuthConsent',
+        entry: ['setIsShowLoadingScreen', 'getFaceAuthConsent'],
         on: {
-          STORE_RESPONSE: {
-            actions: 'updateShowFaceAuthConsent',
-            target: 'getKeyPairFromKeystore',
-          },
+          STORE_RESPONSE: {target: 'checkIfClientValidationIsRequired'},
+        },
+      },
+      checkIfClientValidationIsRequired: {
+        invoke: {
+          src: 'shouldValidateClient',
+          onDone: [
+            {
+              cond: 'isClientValidationRequred',
+              actions: 'updateShowFaceAuthConsent',
+              target: 'getTrustedVerifiersList',
+            },
+            {
+              actions: 'updateShowFaceAuthConsent',
+              target: 'getKeyPairFromKeystore',
+            },
+          ],
         },
       },
       getTrustedVerifiersList: {
-        entry: 'setIsShowLoadingScreen',
         invoke: {
           src: 'fetchTrustedVerifiers',
           onDone: {
@@ -370,16 +383,23 @@ export const openID4VPMachine = model.createMachine(
         },
       },
       shareVPDeclineStatusToVerifier: {
-        entry: ['shareDeclineStatus', sendParent('DISMISS')],
+        entry: [
+          'shareDeclineStatus',
+        ],
+        after: {
+          200: {
+            actions: sendParent('DISMISS'),
+          },
+        },
       },
       showError: {
         on: {
           RETRY: {
-            actions: ['incrementOpenID4VPRetryCount'],
+            actions: ['resetError', 'incrementOpenID4VPRetryCount'],
             target: 'sendingVP',
           },
           RESET_RETRY_COUNT: {
-            actions: 'resetOpenID4VPRetryCount',
+            actions: ['resetError', 'resetOpenID4VPRetryCount'],
           },
           RESET_ERROR: {
             actions: 'resetError',

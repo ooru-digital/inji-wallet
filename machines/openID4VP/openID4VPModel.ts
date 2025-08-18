@@ -9,7 +9,8 @@ const openID4VPEvents = {
     encodedAuthRequest: string,
     flowType: string,
     selectedVC: any,
-  ) => ({encodedAuthRequest, flowType, selectedVC}),
+    isOVPViaDeepLink: boolean,
+  ) => ({encodedAuthRequest, flowType, selectedVC, isOVPViaDeepLink}),
   DOWNLOADED_VCS: (vcs: VC[]) => ({vcs}),
   SELECT_VC: (vcKey: string, inputDescriptorId: any) => ({
     vcKey,
@@ -46,7 +47,7 @@ const openID4VPEvents = {
 export const openID4VPModel = createModel(
   {
     serviceRefs: {} as AppServices,
-    encodedAuthorizationRequest: '' as string,
+    urlEncodedAuthorizationRequest: '' as string,
     authenticationResponse: {},
     vcsMatchingAuthRequest: {} as Record<string, VC[]>,
     checkedAll: false as boolean,
@@ -57,7 +58,7 @@ export const openID4VPModel = createModel(
     error: '' as string,
     publicKey: '',
     privateKey: '',
-    keyType: KeyTypes.RS256,
+    keyType: KeyTypes.ED25519,
     flowType: '' as string,
     miniViewSelectedVC: {} as VC,
     openID4VPRetryCount: 0,
@@ -66,6 +67,7 @@ export const openID4VPModel = createModel(
     isFaceVerificationRetryAttempt: false as boolean,
     requestedClaims: '' as string,
     showLoadingScreen: false as boolean,
+    isOVPViaDeepLink: false,
   },
   {events: openID4VPEvents},
 );

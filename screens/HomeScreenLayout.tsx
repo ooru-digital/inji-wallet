@@ -106,7 +106,7 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
     ),
 };
 
-  
+
 
   return (
     <Navigator>

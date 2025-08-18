@@ -101,7 +101,7 @@ export const IssuersMachine = model.createMachine(
             target: 'downloadCredentialTypes',
           },
           onError: {
-            actions: ['setFetchWellknownError', 'resetLoadingReason'],
+            actions: ['setNetworkOrTechnicalError', 'resetLoadingReason'],
             target: 'error',
           },
         },
@@ -142,7 +142,46 @@ export const IssuersMachine = model.createMachine(
           },
           SELECTED_CREDENTIAL_TYPE: {
             actions: 'setSelectedCredentialType',
-            target: 'checkInternet',
+            target: 'fetchAuthorizationEndpoint',
+          },
+        },
+      },
+      fetchAuthorizationEndpoint: {
+        invoke: {
+          src: 'fetchAuthorizationEndpoint',
+          onDone: [
+            {
+              actions: 'updateAuthorizationEndpoint',
+              target: 'checkInternet',
+            },
+          ],
+          onError: {
+            actions: ['setError', 'resetLoadingReason'],
+            target: '.error',
+          },
+        },
+        initial: 'idle',
+        states: {
+          idle: {},
+          error: {
+            on: {
+              TRY_AGAIN: [
+                {
+                  description:
+                    'issuer and credential type is selected by the user',
+                  actions: ['setLoadingReasonAsSettingUp', 'resetError'],
+                  target: '#issuersMachine.fetchAuthorizationEndpoint',
+                },
+              ],
+              RESET_ERROR: [
+                {
+                  description:
+                    'issuer and credential type is selected by the user',
+                  actions: ['setLoadingReasonAsSettingUp', 'resetError'],
+                  target: '#issuersMachine.selectingCredentialType',
+                },
+              ],
+            },
           },
         },
       },
@@ -195,18 +234,8 @@ export const IssuersMachine = model.createMachine(
             {
               actions: [
                 'resetSelectedCredentialType',
-                () => {
-                  console.log('Action: resetSelectedCredentialType triggered.');
-                },
-                'setError',
-                () => {
-                  console.log('Action: setError triggered.');
-                },
+                'setNetworkOrTechnicalError',
                 'resetLoadingReason',
-                () => {
-                  console.log('Action: resetLoadingReason triggered.');
-                },
-                'sendDownloadingFailedToVcMeta',
                 (_, event) =>
                   console.error(
                     'Error Occurred while invoking Auth - ',
@@ -235,7 +264,7 @@ export const IssuersMachine = model.createMachine(
                   'sendDownloadingFailedToVcMeta',
                   (_, event) =>
                     console.error(
-                      'Error Occurred while invoking Auth - ',
+                      'Error Occurred while getting key order - ',
                       event.data,
                     ),
                 ],
@@ -264,7 +293,7 @@ export const IssuersMachine = model.createMachine(
                     'sendDownloadingFailedToVcMeta',
                     (_, event) =>
                       console.error(
-                        'Error Occurred while invoking Auth - ',
+                        'Error Occurred while getting keypair from keystore - ',
                         event.data,
                       ),
                   ],
@@ -403,14 +432,14 @@ export const IssuersMachine = model.createMachine(
           src: 'verifyCredential',
           onDone: [
             {
-              actions: ['sendSuccessEndEvent', 'setIsVerified'],
+              actions: ['sendSuccessEndEvent', 'setVerificationResult'],
               target: 'storing',
             },
           ],
           onError: [
             {
               cond: 'isVerificationPendingBecauseOfNetworkIssue',
-              actions: ['resetLoadingReason', 'resetIsVerified'],
+              actions: ['resetLoadingReason', 'resetVerificationResult'],
               target: 'storing',
             },
             {
@@ -485,14 +514,14 @@ export interface displayType {
   language: string;
   logo: logoType;
   background_color: string;
-  background_image: string;
+  background_image: { uri: string };
   text_color: string;
   title: string;
   description: string;
 }
 
 export interface issuerType {
-  authorization_servers: [string];
+  issuer_id: string;
   credential_issuer: string;
   protocol: string;
   client_id: string;
@@ -505,4 +534,6 @@ export interface issuerType {
   credential_configurations_supported: object;
   display: [displayType];
   credentialTypes: [CredentialTypes];
+  authorizationEndpoint: string;
+  credential_issuer_host: string;
 }

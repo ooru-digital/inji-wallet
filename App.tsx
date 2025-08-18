@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {AppLayout} from './screens/AppLayout';
 import {useFont} from './shared/hooks/useFont';
 import {GlobalContextProvider} from './components/GlobalContextProvider';
@@ -9,6 +9,7 @@ import {
   APP_EVENTS,
   selectIsDecryptError,
   selectIsKeyInvalidateError,
+  selectIsDeepLinkDetected,
   selectIsReadError,
   selectIsReady,
 } from './machines/app';
@@ -25,10 +26,10 @@ import {MessageOverlay} from './components/MessageOverlay';
 import {NativeModules} from 'react-native';
 import {isHardwareKeystoreExists} from './shared/cryptoutil/cryptoUtil';
 import i18n from './i18n';
-import './shared/flipperConfig';
 import {CopilotProvider} from 'react-native-copilot';
 import {CopilotTooltip} from './components/CopilotTooltip';
 import {Theme} from './components/ui/styleUtils';
+import {selectAppSetupComplete} from './machines/auth';
 import {
   requestPermission,
   useForegroundNotification,
@@ -56,8 +57,14 @@ const DecryptErrorAlert = (controller, t) => {
 const AppLayoutWrapper: React.FC = () => {
   const {appService} = useContext(GlobalContext);
   const isDecryptError = useSelector(appService, selectIsDecryptError);
+  const isDeepLinkFlow = useSelector(appService, selectIsDeepLinkDetected);
   const controller = useApp();
   const {t} = useTranslation('WelcomeScreen');
+
+  const authService = appService.children.get('auth');
+  const isAppSetupComplete = useSelector(authService, selectAppSetupComplete);
+
+  const [isDeepLinkOverlayVisible, setDeepLinkOverlayVisible] = useState(isDeepLinkFlow);
 
   useEffect(() => {
     if (AppState.currentState === 'active') {
@@ -67,11 +74,30 @@ const AppLayoutWrapper: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    setDeepLinkOverlayVisible(isDeepLinkFlow);
+  }, [isDeepLinkFlow]);
+
   if (isDecryptError) {
     DecryptErrorAlert(controller, t);
   }
   configureTelemetry();
-  return <AppLayout />;
+  return (
+    <>
+      <AppLayout />
+
+      <MessageOverlay
+        isVisible={isDeepLinkOverlayVisible && !isAppSetupComplete}
+        title={t('errors.appSetupIncomplete.title')}
+        message={t('errors.appSetupIncomplete.message')}
+        onButtonPress={() => {
+          setDeepLinkOverlayVisible(false);
+        }}
+        buttonText={t('common:ok')}
+        minHeight={'auto'}
+      />
+    </>
+  );
 };
 
 const AppLoadingWrapper: React.FC = () => {
@@ -133,8 +159,8 @@ const checkApplicationPermission =async () =>
 
 const AppInitialization: React.FC = () => {
   const {appService} = useContext(GlobalContext);
-  const isReady = useSelector(appService, selectIsReady);
   const hasFontsLoaded = useFont();
+  const isReady = useSelector(appService, selectIsReady);
   const {t} = useTranslation('common');
 
   useEffect(() => {

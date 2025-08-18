@@ -63,6 +63,11 @@ export const ScanActions = (model: any) => {
     resetLinkCode: model.assign({
       linkcode: '',
     }),
+
+    resetAuthorizationRequest: model.assign({
+      authorizationRequest: '',
+    }),
+
     updateShowFaceAuthConsent: model.assign({
       showFaceAuthConsent: (_, event) => {
         return event.response || event.response === null;
@@ -104,9 +109,10 @@ export const ScanActions = (model: any) => {
     sendVPScanData: context =>
       context.OpenId4VPRef.send({
         type: 'AUTHENTICATE',
-        encodedAuthRequest: context.linkCode,
+        encodedAuthRequest: context.authorizationRequest,
         flowType: context.openID4VPFlowType,
         selectedVC: context.selectedVc,
+        isOVPViaDeepLink: context.isOVPViaDeepLink,
       }),
 
     openBluetoothSettings: () => {
@@ -242,7 +248,6 @@ export const ScanActions = (model: any) => {
             type: context.shareLogType
               ? context.shareLogType
               : 'VC_SHARED_WITH_VERIFICATION_CONSENT',
-            id: vcMetadata.displayId,
             credentialConfigurationId:
               context.selectedVc.verifiableCredential.credentialConfigurationId,
             issuer: vcMetadata.issuer!!,
@@ -265,7 +270,6 @@ export const ScanActions = (model: any) => {
             timestamp: Date.now(),
             credentialConfigurationId:
               context.selectedVc.verifiableCredential.credentialConfigurationId,
-            id: vcMetadata.displayId,
             issuer: vcMetadata.issuer!!,
             deviceName:
               context.receiverInfo.name || context.receiverInfo.deviceName,
@@ -286,12 +290,26 @@ export const ScanActions = (model: any) => {
       linkCode: (_, event) => event.linkCode,
     }),
 
+    setAuthRequestFromDeepLink: assign({
+      authorizationRequest: (_, event) => {
+        return event.params ?? event.authorizationRequest;
+      },
+    }),
+
     setIsQrLoginViaDeepLink: assign({
       isQrLoginViaDeepLink: true,
     }),
 
     resetIsQrLoginViaDeepLink: assign({
       isQrLoginViaDeepLink: false,
+    }),
+
+    setIsOVPViaDeepLink: assign({
+      isOVPViaDeepLink: true,
+    }),
+
+    resetIsOVPViaDeepLink: assign({
+      isOVPViaDeepLink: false,
     }),
 
     setQuickShareData: assign({
@@ -339,8 +357,7 @@ export const ScanActions = (model: any) => {
 
         return ActivityLogEvents.LOG_ACTIVITY(
           VCActivityLog.getLogFromObject({
-            _vcKey: '',
-            id: vcMetadata.displayId,
+            _vcKey: vcMetadata.getVcKey(),
             issuer: vcMetadata.issuer!!,
             credentialConfigurationId:
               selectedVc.verifiableCredential.credentialConfigurationId,

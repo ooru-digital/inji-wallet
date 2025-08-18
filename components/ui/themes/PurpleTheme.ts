@@ -11,6 +11,7 @@ import {COPILOT_HEIGHT, isIOS} from '../../../shared/constants';
 import Constants from 'expo-constants';
 import HomeScreenLogo from '../../../assets/Inji_Home_Logo.svg';
 import InjiLogoSmall from '../../../assets/InjiLogo.svg';
+import i18next from '../../../i18n';
 
 const Colors = {
   Black: '#231F20',
@@ -421,8 +422,8 @@ export const PurpleTheme = {
       width: 105,
       height: 40,
     },
-    injiHomeLogo:{
-      marginLeft:0
+    injiHomeLogo: {
+      marginLeft: 0,
     },
     logo: {
       height: 35,
@@ -483,7 +484,7 @@ export const PurpleTheme = {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 4,
-      marginLeft: 10,
+      marginLeft: 4,
       height: 36,
       borderRadius: 10,
       backgroundColor: Colors.LightPurple,
@@ -739,6 +740,8 @@ export const PurpleTheme = {
       fontSize: 13,
       fontFamily: 'Inter_600SemiBold',
       color: Colors.LightPurple,
+      maxWidth: '80%',
+      overflow: 'hidden',
     },
     HistoryHeaderTitleStyle: {
       fontSize: 26,
@@ -938,7 +941,7 @@ export const PurpleTheme = {
     },
     error: {
       position: 'absolute',
-      top: 30,
+      top: 65,
       left: 5,
       color: Colors.Red,
       fontFamily: 'Inter_600SemiBold',
@@ -1274,6 +1277,30 @@ export const PurpleTheme = {
       minHeight: 50,
     },
   }),
+  SectionLayoutStyles: StyleSheet.create({
+    headerContainer: {
+      alignItems: 'center',
+      padding: 16,
+      backgroundColor: Colors.White,
+      borderTopLeftRadius: 6,
+      borderTopRightRadius: 6,
+    },
+    headerText: {
+      justifyContent: 'center',
+      paddingLeft: 12,
+      fontFamily: 'Inter_500Medium',
+      fontWeight: '600',
+      fontSize: 14,
+      letterSpacing: 0,
+      lineHeight: 17,
+    },
+    content: {
+      padding: 16,
+      backgroundColor: Colors.White,
+      borderBottomLeftRadius: 6,
+      borderBottomRightRadius: 6,
+    },
+  }),
   TextEditOverlayStyles: StyleSheet.create({
     overlay: {
       elevation: 5,
@@ -1535,6 +1562,15 @@ export const PurpleTheme = {
       marginHorizontal: 26,
       color: Colors.mediumDarkGrey,
     },
+    additionalMessage: {
+      color: Colors.Black,
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 18,
+      lineHeight: 21,
+      paddingTop: 4,
+      textAlign: 'center',
+      marginBottom: 10,
+    },
   }),
   SetupLanguageScreenStyle: StyleSheet.create({
     columnStyle: {
@@ -1604,10 +1640,10 @@ export const PurpleTheme = {
       backgroundColor: Colors.LightPurple,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingLeft: 16,
-      paddingRight: 16,
-      paddingBottom: 10,
-      paddingTop: 10,
+      paddingLeft: 7,
+      paddingRight: 7,
+      paddingBottom: 7,
+      paddingTop: 7,
     },
     rowStyle: {
       justifyContent: 'space-between',
@@ -1619,6 +1655,96 @@ export const PurpleTheme = {
     },
     labelStyle: {
       fontWeight: 'bold',
+    },
+  }),
+  IntroSliderStyles: StyleSheet.create({
+    biometricIntroNotch: {
+      height: 13,
+      width: 100,
+      marginLeft: 80,
+      marginBottom: 20,
+      borderBottomLeftRadius: 13,
+      borderBottomRightRadius: 10,
+      backgroundColor: 'black',
+    },
+    introScreenNotch: {
+      height: 13,
+      width: 100,
+      marginLeft: 100,
+      borderBottomLeftRadius: 13,
+      borderBottomRightRadius: 10,
+      backgroundColor: 'black',
+    },
+    biometricIntroOuterColumn: {
+      borderRadius: 30,
+      maxHeight: 600,
+      maxWidth: 350,
+      minHeight: 600,
+      minWidth: 350,
+      borderColor: Colors.Black,
+      borderWidth: 12,
+      overflow: 'hidden',
+    },
+    quickAccessIntroOuterView: {
+      borderRadius: 30,
+      borderWidth: 12,
+      borderColor: Colors.Black,
+      maxHeight: 600,
+      maxWidth: 350,
+      alignSelf: 'center',
+      overflow: 'hidden',
+      backgroundColor: Colors.White,
+    },
+    quickAccessIntroOuterColumn: {
+      borderRadius: 30,
+      overflow: 'hidden',
+    },
+    quickAccessIntroQrScanner: {
+      width: 280,
+      height: 250,
+      borderRadius: 20,
+      overflow: 'hidden',
+      backgroundColor: Colors.LightGrey,
+    },
+    backupRestoreIntroView: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: Colors.White,
+      padding: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: Colors.LightGrey,
+    },
+    trustedDigitalWalletIntroOuterColumn: {
+      flex: 1,
+      width: 350,
+      borderRadius: 20,
+      borderColor: 'black',
+      overflow: 'hidden',
+      borderWidth: 12,
+    },
+    backupRestoreIntroOuterView: {
+      height: 600,
+      width: 350,
+      alignSelf: 'center',
+      overflow: 'hidden',
+      borderRadius: 20,
+      borderWidth: 12,
+      borderColor: 'black',
+      backgroundColor: Colors.Grey,
+    },
+    backupRestoreIntroScaleStyle: {
+      transform: [{scale: 0.85}, {translateX: -40}],
+      width: '120%',
+      height: '120%',
+      backgroundColor: Colors.LightGrey,
+      marginTop: -50,
+    },
+    secureShareIntroOuterColumn: {
+      borderRadius: 20,
+      borderColor: 'black',
+      overflow: 'hidden',
+      borderWidth: 12,
     },
   }),
   VPSharingStyles: StyleSheet.create({
@@ -1753,17 +1879,76 @@ export const PurpleTheme = {
     },
   }),
 
+  AboutInjiScreenStyle: StyleSheet.create({
+    titleStyle: {
+      paddingTop: 3,
+    },
+    appIdTitleStyle: {
+      maxWidth: 110,
+      paddingTop: i18next.language == 'kn' || i18next.language == 'hi' ? 5 : 0,
+    },
+    appIdTextStyle: {
+      paddingTop: i18next.language == 'hi' ? 2 : 0,
+    },
+    containerStyle: {
+      flex: 1,
+      padding: 12,
+    },
+    innerContainerStyle: {
+      maxWidth: Dimensions.get('window').width * 0.94,
+      minHeight: Dimensions.get('window').height * 0.1,
+      marginTop: 7,
+    },
+    clickHereTextStyle: {
+      maxWidth: 150,
+      paddingTop: 3,
+    },
+    injiVersionContainerStyle: {
+      paddingBottom: 15,
+    },
+    injiVersionTitle: {
+      paddingTop: 3,
+    },
+    injiVersionText: {
+      paddingTop: 3,
+      maxWidth: 250,
+    },
+    tuvaliVerisonStyle: {
+      paddingTop: 3,
+      paddingBottom: 12,
+      marginTop: 3,
+    },
+    horizontalLineStyle: {
+      backgroundColor: 'lightgrey',
+      width: '90%',
+      height: 1,
+    },
+    poweredByTextStyle: {
+      paddingTop: 15,
+      maxWidth: 250,
+    },
+    aboutDetailstextStyle: {
+      color: Colors.Black,
+      fontSize: 18,
+      margin: 7,
+      lineHeight: 18,
+      paddingTop: 5,
+    },
+    moreDetailstextStyle: {
+      color: Colors.Black,
+      fontSize: 18,
+      margin: 7,
+      lineHeight: 18,
+      maxWidth: 150,
+      paddingTop: 10,
+    },
+  }),
+
   ICON_SMALL_SIZE: 16,
   ICON_MID_SIZE: 22,
   ICON_LARGE_SIZE: 33,
-  CloseCard: require('../../../assets/Card_Bg1.png'),
-  OpenCard: require('../../../assets/Card_Bg1.png'),
-  IntroWelcome: require('../../../assets/Intro_Unlock.png'),
-  SecureSharing: require('../../../assets/Intro_Secure_Sharing.png'),
-  DigitalWallet: require('../../../assets/Intro_Wallet.png'),
-  IntroShare: require('../../../assets/Intro_Share.png'),
-  IntroBackup: require('../../../assets/Intro_Backup.png'),
-  IntroSliderbackground: require('../../../assets/IntroSliderBackgroundPurple.png'),
+  CloseCard: require('../../../assets/images/png/Card_Bg1.png'),
+  OpenCard: require('../../../assets/images/png/Card_Bg1.png'),
   HomeScreenLogo: HomeScreenLogo,
   InjiLogoSmall: InjiLogoSmall,
   elevation(level: ElevationLevel): ViewStyle {

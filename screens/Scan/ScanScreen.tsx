@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {
   ErrorMessageOverlay,
@@ -10,8 +10,12 @@ import {Theme} from '../../components/ui/styleUtils';
 import {QrLogin} from '../QrLogin/QrLogin';
 import {useScanScreen} from './ScanScreenController';
 import BluetoothStateManager from 'react-native-bluetooth-state-manager';
-import {Linking} from 'react-native';
-import {isIOS, LIVENESS_CHECK} from '../../shared/constants';
+import {BackHandler, Linking} from 'react-native';
+import {
+  isIOS,
+  LIVENESS_CHECK,
+  OVP_ERROR_MESSAGES,
+} from '../../shared/constants';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {SharingStatusModal} from './SharingStatusModal';
 import {SvgImage} from '../../components/ui/svg';
@@ -23,6 +27,8 @@ import {Error} from '../../components/ui/Error';
 import {VPShareOverlay} from './VPShareOverlay';
 import {VerifyIdentityOverlay} from '../VerifyIdentityOverlay';
 import {VCShareFlowType} from '../../shared/Utils';
+import {APP_EVENTS} from '../../machines/app';
+import {GlobalContext} from '../../shared/GlobalContext';
 
 export const ScanScreen: React.FC = () => {
   const {t} = useTranslation('ScanScreen');
@@ -38,6 +44,8 @@ export const ScanScreen: React.FC = () => {
         sendVPScreenController.flowType ===
           VCShareFlowType.MINI_VIEW_SHARE_WITH_SELFIE_OPENID4VP));
 
+  const {appService} = useContext(GlobalContext);
+
   useEffect(() => {
     (async () => {
       await BluetoothStateManager.onStateChange(state => {
@@ -52,16 +60,33 @@ export const ScanScreen: React.FC = () => {
 
   // TODO(kludge): skip running this hook on every render
   useEffect(() => {
-    if (
-      scanScreenController.isStartPermissionCheck &&
-      !scanScreenController.isEmpty
-    )
-      scanScreenController.START_PERMISSION_CHECK();
+    if (scanScreenController.isStartPermissionCheck) {
+      if (
+        scanScreenController.authorizationRequest !== '' &&
+        scanScreenController.isNoSharableVCs
+      ) {
+        scanScreenController.START_PERMISSION_CHECK();
+      } else if (!scanScreenController.isNoSharableVCs) {
+        scanScreenController.START_PERMISSION_CHECK();
+      }
+    }
   });
 
   useEffect(() => {
     if (scanScreenController.isQuickShareDone) scanScreenController.GOTO_HOME();
   }, [scanScreenController.isQuickShareDone]);
+
+  useEffect(() => {
+    if (
+      scanScreenController.isNoSharableVCs &&
+      scanScreenController.linkcode !== ''
+    )
+      setTimeout(() => {
+        scanScreenController.GOTO_HOME();
+        appService.send(APP_EVENTS.RESET_LINKCODE());
+        BackHandler.exitApp();
+      }, 2000);
+  }, [scanScreenController.isNoSharableVCs, scanScreenController.linkcode]);
 
   const openSettings = () => {
     Linking.openSettings();
@@ -175,7 +200,10 @@ export const ScanScreen: React.FC = () => {
   }
 
   function loadQRScanner() {
-    if (scanScreenController.isEmpty) {
+    if (
+      scanScreenController.isNoSharableVCs &&
+      scanScreenController.authorizationRequest === ''
+    ) {
       return noShareableVcText();
     }
     if (scanScreenController.selectIsInvalid) {
@@ -215,7 +243,7 @@ export const ScanScreen: React.FC = () => {
 
   function displayStorageLimitReachedError(): React.ReactNode {
     return (
-      !scanScreenController.isEmpty && (
+      !scanScreenController.isNoSharableVCs && (
         <ErrorMessageOverlay
           testID="storageLimitReachedError"
           isVisible={
@@ -231,7 +259,7 @@ export const ScanScreen: React.FC = () => {
 
   function displayInvalidQRpopup(): React.ReactNode {
     return (
-      !scanScreenController.isEmpty && (
+      !scanScreenController.isNoSharableVCs && (
         <SharingStatusModal
           isVisible={scanScreenController.selectIsInvalid}
           testId={'invalidQrPopup'}
@@ -246,6 +274,22 @@ export const ScanScreen: React.FC = () => {
       )
     );
   }
+
+  const getPrimaryButtonText = () => {
+    if (
+      sendVPScreenController.errorModal.showRetryButton &&
+      sendVPScreenController.openID4VPRetryCount < 3
+    ) {
+      return t('ScanScreen:status.retry');
+    }
+    return undefined;
+  };
+
+  const getTextButtonText = () => {
+    return sendVPScreenController.isOVPViaDeepLink
+      ? undefined
+      : t('ScanScreen:status.accepted.home');
+  };
 
   const faceVerificationController = sendVPScreenController.flowType.startsWith(
     'OpenID4VP',
@@ -326,15 +370,10 @@ export const ScanScreen: React.FC = () => {
           message={sendVPScreenController.errorModal.message}
           image={SvgImage.PermissionDenied()}
           primaryButtonTestID={'retry'}
-          primaryButtonText={
-            sendVPScreenController.errorModal.showRetryButton &&
-            sendVPScreenController.openID4VPRetryCount < 3
-              ? t('ScanScreen:status.retry')
-              : undefined
-          }
+          primaryButtonText={getPrimaryButtonText()}
           primaryButtonEvent={sendVPScreenController.RETRY}
           textButtonTestID={'home'}
-          textButtonText={t('ScanScreen:status.accepted.home')}
+          textButtonText={getTextButtonText()}
           textButtonEvent={handleTextButtonEvent}
           customImageStyles={{paddingBottom: 0, marginBottom: -6}}
           customStyles={{marginTop: '30%'}}

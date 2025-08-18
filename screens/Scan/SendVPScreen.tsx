@@ -1,11 +1,15 @@
 import {useFocusEffect} from '@react-navigation/native';
-import React, {useEffect, useLayoutEffect} from 'react';
+import React, {useContext, useEffect, useLayoutEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {BackHandler, I18nManager, View} from 'react-native';
 import {Button, Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {VcItemContainer} from '../../components/VC/VcItemContainer';
-import {LIVENESS_CHECK} from '../../shared/constants';
+import {
+  isIOS,
+  LIVENESS_CHECK,
+  OVP_ERROR_MESSAGES,
+} from '../../shared/constants';
 import {TelemetryConstants} from '../../shared/telemetry/TelemetryConstants';
 import {
   getImpressionEventData,
@@ -23,12 +27,45 @@ import {SvgImage} from '../../components/ui/svg';
 import {Loader} from '../../components/ui/Loader';
 import {Icon} from 'react-native-elements';
 import {ScanLayoutProps} from '../../routes/routeTypes';
+import {OpenID4VP} from '../../shared/openID4VP/OpenID4VP';
+import {GlobalContext} from '../../shared/GlobalContext';
+import {APP_EVENTS} from '../../machines/app';
+import {useScanScreen} from './ScanScreenController';
 
 export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
   const {t} = useTranslation('SendVPScreen');
   const controller = useSendVPScreen();
+  const scanScreenController = useScanScreen();
 
   const vcsMatchingAuthRequest = controller.vcsMatchingAuthRequest;
+
+  const {appService} = useContext(GlobalContext);
+  const [triggerExitFlow, setTriggerExitFlow] = useState(false);
+
+  useEffect(() => {
+    if (controller.errorModal.show && controller.isOVPViaDeepLink) {
+      const timeout = setTimeout(
+        () => {
+          OpenID4VP.sendErrorToVerifier(OVP_ERROR_MESSAGES.NO_MATCHING_VCS);
+          setTriggerExitFlow(true);
+        },
+        isIOS() ? 4000 : 2000,
+      );
+
+      return () => clearTimeout(timeout);
+    }
+  }, [controller.errorModal.show, controller.isOVPViaDeepLink]);
+
+  useEffect(() => {
+    if (triggerExitFlow) {
+      controller.RESET_LOGGED_ERROR();
+      controller.GO_TO_HOME();
+      controller.RESET_RETRY_COUNT();
+      appService.send(APP_EVENTS.RESET_AUTHORIZATION_REQUEST());
+      setTriggerExitFlow(false);
+      BackHandler.exitApp();
+    }
+  }, [triggerExitFlow]);
 
   useEffect(() => {
     sendImpressionEvent(
@@ -52,6 +89,52 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
     }, []),
   );
 
+  useEffect(() => {
+    if (scanScreenController.isStartPermissionCheck) {
+      if (
+        scanScreenController.authorizationRequest !== '' &&
+        scanScreenController.isNoSharableVCs
+      ) {
+        scanScreenController.START_PERMISSION_CHECK();
+      } else if (!scanScreenController.isNoSharableVCs) {
+        scanScreenController.START_PERMISSION_CHECK();
+      }
+    }
+  });
+
+  const handleDismiss = () => {
+    if (controller.isOVPViaDeepLink) {
+      controller.GO_TO_HOME();
+      OpenID4VP.sendErrorToVerifier(OVP_ERROR_MESSAGES.DECLINED);
+      BackHandler.exitApp();
+    } else {
+      controller.DISMISS();
+    }
+  };
+
+  const handleRejectButtonEvent = () => {
+    if (controller.isOVPViaDeepLink) {
+      controller.GO_TO_HOME();
+      OpenID4VP.sendErrorToVerifier(OVP_ERROR_MESSAGES.DECLINED);
+      BackHandler.exitApp();
+    } else {
+      controller.CANCEL();
+    }
+  };
+
+  const getAdditionalMessage = () => {
+    if (
+      controller.isOVPViaDeepLink &&
+      !(
+        controller.errorModal.showRetryButton &&
+        controller.openID4VPRetryCount < 3
+      )
+    ) {
+      return controller.errorModal.additionalMessage;
+    }
+    return undefined;
+  };
+
   useLayoutEffect(() => {
     if (controller.showLoadingScreen) {
       props.navigation.setOptions({
@@ -66,7 +149,10 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
           <View style={Theme.Styles.sendVPHeaderContainer}>
             <Text style={Theme.Styles.sendVPHeaderTitle}>{props.children}</Text>
             {controller.vpVerifierName && (
-              <Text style={Theme.Styles.sendVPHeaderSubTitle}>
+              <Text
+                numLines={1}
+                ellipsizeMode="tail"
+                style={Theme.Styles.sendVPHeaderSubTitle}>
                 {controller.vpVerifierName}
               </Text>
             )}
@@ -77,7 +163,7 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
             <Icon
               name="close"
               color={Theme.Colors.blackIcon}
-              onPress={controller.DISMISS}
+              onPress={handleDismiss}
             />
           ),
         headerLeft: () =>
@@ -85,12 +171,16 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
             <Icon
               name="close"
               color={Theme.Colors.blackIcon}
-              onPress={controller.DISMISS}
+              onPress={handleDismiss}
             />
           ),
       });
     }
-  }, [controller.showLoadingScreen, controller.vpVerifierName]);
+  }, [
+    controller.showLoadingScreen,
+    controller.vpVerifierName,
+    controller.isOVPViaDeepLink,
+  ]);
 
   if (controller.showLoadingScreen) {
     return (
@@ -104,6 +194,30 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
   const handleTextButtonEvent = () => {
     controller.GO_TO_HOME();
     controller.RESET_RETRY_COUNT();
+  };
+
+  const getPrimaryButtonEvent = () => {
+    if (controller.showConfirmationPopup && controller.isOVPViaDeepLink) {
+      return () => {
+        OpenID4VP.sendErrorToVerifier(OVP_ERROR_MESSAGES.DECLINED);
+        controller.GO_TO_HOME();
+        BackHandler.exitApp();
+      };
+    }
+    return controller.overlayDetails?.primaryButtonEvent;
+  };
+
+  const getPrimaryButtonText = () => {
+    return controller.errorModal.showRetryButton &&
+      controller.openID4VPRetryCount < 3
+      ? t('ScanScreen:status.retry')
+      : undefined;
+  };
+
+  const getTextButtonText = () => {
+    return controller.isOVPViaDeepLink
+      ? undefined
+      : t('ScanScreen:status.accepted.home');
   };
 
   const getVcKey = vcData => {
@@ -219,6 +333,7 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
                   onPress={controller.ACCEPT_REQUEST}
                 />
               )}
+              {/*If one of the selected vc has image, it needs to sent only after biometric authentication (Share with Selfie)*/}
               {controller.checkIfAnyVCHasImage(
                 controller.vcsMatchingAuthRequest,
               ) && (
@@ -240,7 +355,7 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
                 type="clear"
                 loading={controller.isCancelling}
                 title={t('SendVcScreen:reject')}
-                onPress={controller.CANCEL}
+                onPress={handleRejectButtonEvent}
               />
             </Column>
           </Column>
@@ -268,7 +383,7 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
                 controller.overlayDetails.primaryButtonTestID
               }
               primaryButtonText={controller.overlayDetails.primaryButtonText}
-              primaryButtonEvent={controller.overlayDetails.primaryButtonEvent}
+              primaryButtonEvent={getPrimaryButtonEvent()}
               secondaryButtonTestID={
                 controller.overlayDetails.secondaryButtonTestID
               }
@@ -289,29 +404,28 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
           />
         </>
       )}
-      <Error
-        isModal
-        alignActionsOnEnd
-        showClose={false}
-        isVisible={controller.errorModal.show}
-        title={controller.errorModal.title}
-        message={controller.errorModal.message}
-        image={SvgImage.PermissionDenied()}
-        primaryButtonTestID={'retry'}
-        primaryButtonText={
-          controller.errorModal.showRetryButton &&
-          controller.openID4VPRetryCount < 3
-            ? t('ScanScreen:status.retry')
-            : undefined
-        }
-        primaryButtonEvent={controller.RETRY}
-        textButtonTestID={'home'}
-        textButtonText={t('ScanScreen:status.accepted.home')}
-        textButtonEvent={handleTextButtonEvent}
-        customImageStyles={{paddingBottom: 0, marginBottom: -6}}
-        customStyles={{marginTop: '30%'}}
-        testID={'vpShareError'}
-      />
+      {controller.errorModal.show && (
+        <Error
+          isModal
+          alignActionsOnEnd
+          showClose={false}
+          isVisible={controller.errorModal.show}
+          title={controller.errorModal.title}
+          message={controller.errorModal.message}
+          additionalMessage={getAdditionalMessage()}
+          image={SvgImage.PermissionDenied()}
+          primaryButtonTestID={'retry'}
+          primaryButtonText={getPrimaryButtonText()}
+          primaryButtonEvent={controller.RETRY}
+          textButtonTestID={'home'}
+          textButtonText={getTextButtonText()}
+          textButtonEvent={handleTextButtonEvent}
+          customImageStyles={{paddingBottom: 0, marginBottom: -6}}
+          customStyles={{marginTop: '30%'}}
+          exitAppWithTimer={controller.isOVPViaDeepLink}
+          testID={'vpShareError'}
+        />
+      )}
     </React.Fragment>
   );
 };

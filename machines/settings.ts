@@ -1,4 +1,4 @@
-import {assign, ContextFrom, EventFrom, send, StateFrom} from 'xstate';
+import {assign, ContextFrom, EventFrom, send, StateFrom, sendUpdate} from 'xstate';
 import {createModel} from 'xstate/lib/model';
 import {AppServices} from '../shared/GlobalContext';
 import {
@@ -76,6 +76,7 @@ const model = createModel(
       DISMISS: () => ({}),
       SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED: () => ({}),
 
+      BIOMETRIC_CANCELLED: (requester?: string) => ({requester}),
     },
   },
 );
@@ -110,6 +111,18 @@ export const settingsMachine = model.createMachine(
             },
             {target: 'storingDefaults'},
           ],
+          BIOMETRIC_CANCELLED: {
+              actions: [
+                send(
+                  (_, event) => model.events.BIOMETRIC_CANCELLED(event.requester),
+                  {
+                    to: (_, event) => event.requester,
+                  },
+                ),
+                sendUpdate(),
+              ],
+              target: 'init',
+            },
         },
       },
       storingDefaults: {
@@ -147,9 +160,6 @@ export const settingsMachine = model.createMachine(
           },
           SET_KEY_MANAGEMENT_TOUR_GUIDE_EXPLORED: {
             actions: ['setKeyManagementTourGuideExplored'],
-          },
-          SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED: {
-            actions: ['setEmailManagementTourGuideExplored'],
           },
           UPDATE_HOST: {
             actions: [

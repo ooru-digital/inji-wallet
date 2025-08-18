@@ -1,20 +1,20 @@
 {
   "ActivityLogText": {
-    "VC_SHARED": "تم مشاركة {{idType}} {{id}} بنجاح.",
-    "VC_RECEIVED": "تم استلام {{idType}} {{id}}.",
-    "VC_RECEIVED_NOT_SAVED": "لم يتمكن من حفظ {{idType}} {{id}}.",
-    "VC_DELETED": "تم حذف {{idType}} {{id}} بنجاح.",
-    "VC_DOWNLOADED": "تم تنزيل {{idType}} {{id}}.",
-    "VC_SHARED_WITH_VERIFICATION_CONSENT": "تم مشاركة {{idType}} {{id}} بالموافقة للتحقق من الحضور.",
-    "VC_RECEIVED_WITH_PRESENCE_VERIFIED": "تم استلام {{idType}} {{id}} ونجح التحقق من الحضور.",
-    "VC_RECEIVED_BUT_PRESENCE_VERIFICATION_FAILED": "تم استلام {{idType}} {{id}} ولكن فشل التحقق من الحضور.",
-    "PRESENCE_VERIFIED_AND_VC_SHARED": "تم التحقق من الوجه بنجاح وتمت مشاركة {{idType}} {{id}}.",
-    "PRESENCE_VERIFICATION_FAILED": "فشل التحقق من الوجه أثناء محاولة مشاركة {{idType}} {{id}}.",
-    "QRLOGIN_SUCCESFULL": "نجح تسجيل الدخول باستخدام QR باستخدام {{idType}} {{id}}.",
-    "WALLET_BINDING_SUCCESSFULL": "تم تفعيل {{idType}} {{id}} بنجاح.",
-    "WALLET_BINDING_FAILURE": "فشل تفعيل {{idType}} {{id}}.",
-    "VC_REMOVED": "تم إزالة {{idType}} {{id}} من المحفظة.",
-    "TAMPERED_VC_REMOVED": "تم إزالة {{idType}} {{id}} من المحفظة بسبب العبث.",
+    "VC_SHARED": "تم مشاركة {{idType}} بنجاح.",
+    "VC_RECEIVED": "تم استلام {{idType}}.",
+    "VC_RECEIVED_NOT_SAVED": "لم يتمكن من حفظ {{idType}}.",
+    "VC_DELETED": "تم حذف {{idType}} بنجاح.",
+    "VC_DOWNLOADED": "تم تنزيل {{idType}}.",
+    "VC_SHARED_WITH_VERIFICATION_CONSENT": "تم مشاركة {{idType}} بالموافقة للتحقق من الحضور.",
+    "VC_RECEIVED_WITH_PRESENCE_VERIFIED": "تم استلام {{idType}} ونجح التحقق من الحضور.",
+    "VC_RECEIVED_BUT_PRESENCE_VERIFICATION_FAILED": "تم استلام {{idType}} ولكن فشل التحقق من الحضور.",
+    "PRESENCE_VERIFIED_AND_VC_SHARED": "تم التحقق من الوجه بنجاح وتمت مشاركة {{idType}}.",
+    "PRESENCE_VERIFICATION_FAILED": "فشل التحقق من الوجه أثناء محاولة مشاركة {{idType}}.",
+    "QRLOGIN_SUCCESFULL": "نجح تسجيل الدخول باستخدام QR باستخدام {{idType}}.",
+    "WALLET_BINDING_SUCCESSFULL": "تم تفعيل {{idType}} بنجاح.",
+    "WALLET_BINDING_FAILURE": "فشل تفعيل {{idType}}.",
+    "VC_REMOVED": "تم إزالة {{idType}} من المحفظة.",
+    "TAMPERED_VC_REMOVED": "تم إزالة {{idType}} من المحفظة بسبب العبث.",
     "vpSharing": {
       "SHARED_SUCCESSFULLY": "تمت مشاركة العرض التقديمي لبيانات الاعتماد بنجاح.",
       "SHARED_WITH_FACE_VERIFIACTION": "تم التحقق من الوجه بنجاح، وتمت مشاركة العرض التقديمي لبيانات الاعتماد بنجاح.",
@@ -69,6 +69,7 @@
     "generatedOn": "تم إنشاؤه في",
     "status": "الحالة",
     "valid": "صالح",
+    "expired": "منتهي الصلاحية",
     "pending": "قيد الانتظار",
     "photo": " صورة",
     "fullName": "الاسم الكامل",
@@ -82,6 +83,7 @@
     "id": "بطاقة تعريف",
     "qrCodeHeader": "رمز الاستجابة السريعة",
     "nationalCard": "الهوية الوطنية",
+    "identityCard": "بطاقة الهوية",
     "insuranceCard": "بطاقة التأمين",
     "beneficiaryCard": "بطاقة المستفيد",
     "socialRegistryCard": "بطاقة السجل الاجتماعي",
@@ -157,7 +159,8 @@
     "downloaded": "يملك",
     "shared": "مشترك",
     "received": "تلقى",
-    "deleted": "إزالة"
+    "deleted": "إزالة",
+    "historyHeaderLabel": "تاريخ"
   },
   "SettingScreen": {
     "header": "إعدادات",
@@ -181,14 +184,15 @@
     "keyPreferenceError": "عذرًا! حدث خطأ أثناء تعيين تفضيلات المفتاح الخاصة بك"
   },
   "AboutInji": {
-    "aboutInji": "حول إنجي",
-    "header": "حول إنجي",
+    "aboutInji": "حول محفظة إنجي",
+    "header": "حول محفظة إنجي",
     "appID": " : ID طبيق",
-    "aboutDetails": "إنجي هو تطبيق جوال يمكن استخدامه كمحفظة رقمية لتخزين بيانات الاعتماد. كما يسمح بالتحقق من الهوية في الوضعين غير المتصلين بالإنترنت وفي أي مكان وزمان.",
+    "aboutDetails": "تجعل Inji Wallet البيانات جديرة بالثقة ومحمولة، وتتميز بواجهتين رئيسيتين تلبيان احتياجات المستخدمين المتنوعة، مع كون Inji Mobile إحداهما. باعتباره تطبيق محفظة قائمًا على الهاتف المحمول، يعد Inji Mobile حلاً آمنًا ولا مركزيًا يسمح للمستخدمين بتنزيل بيانات الاعتماد التي يمكن التحقق منها وإدارتها ومشاركتها والتحقق منها مباشرة من هواتفهم الذكية، مما يوفر طريقة سلسة وجديرة بالثقة للتعامل مع بيانات الاعتماد أثناء التنقل.",
     "forMoreDetails": "لمزيد من التفاصيل",
     "clickHere": "انقر هنا",
     "version": "الإصدار",
-    "tuvaliVersion": "نسخة توفالي"
+    "tuvaliVersion": "نسخة توفالي",
+    "poweredBy": "مدعوم من Inji، منتج MOSIP"
   },
   "IssuersScreen": {
     "title": "أضف بطاقة جديدة",
@@ -219,6 +223,10 @@
       },
       "technicalDifficulty": {
         "title": "حدث خطأ!",
+        "message": "شكرا لك على صبركم! نواجه حاليًا صعوبات فنية. يرجى محاولة التنزيل مرة أخرى قريبًا."
+      },
+      "authorizationGrantTypeNotSupportedByWallet": {
+        "title": "نوع المنحة غير مدعوم خطأ في التفويض!",
         "message": "شكرًا على صبرك! نحن نواجه صعوبات تقنية في الوقت الحالي. يُرجى المحاولة مرة أخرى لاحقًا أو الاتصال بالمسؤول للحصول على مزيد من المساعدة!"
       },
       "verificationFailed": {
@@ -401,7 +409,7 @@
     }
   },
   "MyVcsTab": {
-    "searchByName": "البحث عن طريق الإسم",
+    "searchByName": "يبحث",
     "bringYourDigitalID": "أحضر هويتك الرقمية",
     "generateVcDescription": "اضغط على \"إضافة بطاقة \" أدناه لتنزيل بطاقتك",
     "generateVcFABDescription": "اضغط على \"+\" أدناه لتنزيل بطاقتك",
@@ -455,7 +463,7 @@
   },
   "OnboardingOverlay": {
     "stepOneTitle": "مرحباً!",
-    "stepOneText": "احتفظ ببيانات اعتمادك الرقمية معك في جميع الأوقات. ",
+    "stepOneText": "احتفظ ببياناتك الرقمية معك دائمًا. يساعدك Inji على إدارتها واستخدامها بفعالية. للبدء، أضف بطاقات إلى ملفك الشخصي.",
     "stepTwoTitle": "المشاركة الآمنة",
     "stepTwoText": "شارك بطاقاتك بأمان وبطريقة خالية من المتاعب واستفد من الخدمات المتنوعة.",
     "stepThreeTitle": "المحفظة الرقمية الموثوقة",
@@ -463,7 +471,7 @@
     "stepFourTitle": "الوصول السريع",
     "stepFourText": "قم بالمصادقة على نفسك بسهولة باستخدام بيانات الاعتماد الرقمية المخزنة.",
     "stepFiveTitle": "دعم & يعيد",
-    "stepFiveText": "قم بحماية بياناتك بسهولة باستخدام النسخة الاحتياطية لدينا",
+    "stepFiveText": "احمِ بياناتك بسهولة باستخدام ميزة النسخ الاحتياطي والاستعادة. خزّن بياناتك الافتراضية بأمان من الضياع أو الحوادث عن طريق إنشاء نسخ احتياطية منتظمة واستعادتها بسهولة عند الحاجة لضمان استمرارية العمل بسلاسة.",
     "getStarted": "البدء",
     "goBack": "عُد",
     "back": "خلف",
@@ -667,7 +675,7 @@
     "shareWithSelfieMessageQrLogin": "من أجل الوصول إلى البوابة، ستحتاج إلى مشاركة بيانات الاعتماد التي يمكن التحقق منها والتحقق من هويتك بشكل آمن باستخدام التحقق من الوجه. من خلال المتابعة، فإنك توافق على استخدام Inji للكاميرا الخاصة بك لهذا الغرض. \n\n سيتم استخدام بيانات وجهك فقط للتحقق ولن تتم مشاركتها. بعد التحقق بنجاح، يمكنك اختيار التفاصيل التي تريد مشاركتها.",
     "ConfirmButton": "أفهم",
     "doNotAskMessage": "لا تسألني مرة أخرى",
-    "noShareableVcs": "لا تتوفر بطاقات قابلة للمشاركة",
+    "noShareableVcs": "لا توجد بطاقات متاحة للمشاركة.",
     "bluetoothStateAndroid": "يرجى تشغيل البلوتوث من الإعدادات السريعة لدعم المشاركة المحلية",
     "bluetoothStateIos": "يرجى تشغيل البلوتوث من مركز التحكم لدعم المشاركة المحلية",
     "enableBluetoothMessage": "يرجى تمكين أذونات البلوتوث لدعم المشاركة المحلية",
@@ -717,6 +725,7 @@
       "accepted": {
         "title": "تمت مشاركة المعرف بنجاح!",
         "message": "لقد تمت مشاركة هويتك بنجاح.",
+        "additionalMessage": "يمكنك الآن العودة إلى Verifier.",
         "home": "المنزل",
         "history": "تاريخ"
       },
@@ -805,6 +814,8 @@
   },
   "SendVcScreen": {
     "reasonForSharing": "سبب المشاركة (اختياري)",
+    "introTitle": "المحقق",
+    "requestMessage": "يطلب هويتك الرقمية لغرض",
     "acceptRequest": "يشارك",
     "acceptRequestAndVerify": "شارك مع سيلفي",
     "reject": "رفض",
@@ -827,14 +838,14 @@
     }
   },
   "SendVPScreen": {
-    "requester": "الطالب",
+    "requester": "جهة التحقق",
     "cardsSelected": "البطاقات المختارة",
     "cardSelected": "card selected",
     "unCheck": "البطاقة مختارة",
     "checkAll": "تحقق من الكل",
     "consentDialog": {
       "title": "الموافقة مطلوبة",
-      "message": "نحن نطلب موافقتك على مشاركة بيانات الاعتماد الخاصة بك التي يمكن التحقق منها. وهذا سيمكننا من التحقق من هويتك وتلبية طلبات الخدمة الخاصة بك. اختر \"نعم، متابعة\" للموافقة أو \"رفض\" إذا كنت لا ترغب في المشاركة.",
+      "message": "نحن نطلب موافقتك على مشاركة بيانات اعتمادك التي يمكن التحقق منها مع {{verifierName}}. وهذا سيمكننا من التحقق من هويتك وتلبية طلبات الخدمة الخاصة بك. اختر \"نعم، متابعة\" للموافقة أو \"رفض\" إذا كنت لا ترغب في مشاركة بيانات الاعتماد الخاصة بك مع {{verifierName}}.",
       "confirmButton": "نعم، تابع",
       "cancelButton": "انخفاض"
     },
@@ -868,7 +879,12 @@
       "noImage": {
         "title": "حدث خطأ!",
         "message": "يتطلب التحقق من الوجه صورة في بيانات الاعتماد المحددة. الرجاء استخدام خيار المشاركة أو تحديد بيانات اعتماد تتضمن صورة."
-      }
+      },
+      "duplicateMdocCredential": {
+        "title": "حدث خطأ!",
+        "message": "يمكنك مشاركة رخصة قيادة متنقلة أو مستند واحد فقط في كل مرة. يرجى اختيار مستند واحد فقط للمتابعة."
+      },
+      "additionalMessage": "يرجى العودة إلى تطبيق التحقق."
     },
     "loaders": {
       "loading": "ஏற்றுகிறது...",

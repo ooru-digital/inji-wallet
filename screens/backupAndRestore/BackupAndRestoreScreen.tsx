@@ -13,14 +13,13 @@ import {ProfileInfo} from '../../shared/CloudBackupAndRestoreUtils';
 import {useBackupScreen} from './BackupController';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {useBackupRestoreScreen} from '../Settings/BackupRestoreController';
-import {Icon, colors} from 'react-native-elements';
-import testIDProps, {
+import {
   getAccountType,
   getDriveName,
 } from '../../shared/commonUtil';
 import {HelpScreen} from '../../components/HelpScreen';
-import {isAndroid, isIOS} from '../../shared/constants';
-import LinearGradient from 'react-native-linear-gradient';
+import {isIOS} from '../../shared/constants';
+import {HelpIcon} from '../../components/ui/HelpIcon';
 
 const BackupAndRestoreScreen: React.FC<BackupAndRestoreProps> = props => {
   const backupController = useBackupScreen();
@@ -209,31 +208,7 @@ const BackupAndRestoreScreen: React.FC<BackupAndRestoreProps> = props => {
       headerElevation={2}
       arrowLeft={true}
       headerRight={
-        <HelpScreen
-          source={'BackUp'}
-          triggerComponent={
-            <LinearGradient
-              style={{borderRadius: 8}}
-              colors={Theme.Colors.GradientColorsLight}
-              start={Theme.LinearGradientDirection.start}
-              end={Theme.LinearGradientDirection.end}>
-              <View testID="help" style={Theme.HelpScreenStyle.viewStyle}>
-                <Row crossAlign="center" style={Theme.HelpScreenStyle.rowStyle}>
-                  <View
-                    testID="helpIcon"
-                    style={Theme.HelpScreenStyle.iconStyle}>
-                    {SvgImage.info()}
-                  </View>
-                  <Text
-                    testID="helpText"
-                    style={Theme.HelpScreenStyle.labelStyle}>
-                    {t('help')}
-                  </Text>
-                </Row>
-              </View>
-            </LinearGradient>
-          }
-        />
+        <HelpScreen source={'BackUp'} triggerComponent={HelpIcon()} />
       }
       onDismiss={props.onBackPress}>
       <BannerNotificationContainer />
@@ -247,11 +222,11 @@ const BackupAndRestoreScreen: React.FC<BackupAndRestoreProps> = props => {
             <LoaderAnimation testID="backupAndRestoreScreen" />
           </Column>
         ) : (
-          <ScrollView>
-            {LastBackupSection}
-            {AccountSection}
-            {RestoreSection}
-          </ScrollView>
+            <ScrollView>
+              {LastBackupSection}
+              {AccountSection}
+              {RestoreSection}
+            </ScrollView>
         )}
       </View>
     </Modal>

@@ -49,8 +49,12 @@ export const scanMachine =
           actions: [
             'removeLoggers',
             'resetFlowType',
+            'resetOpenID4VPFlowType',
             'resetSelectedVc',
             'resetIsQrLoginViaDeepLink',
+            'resetIsOVPViaDeepLink',
+            'resetAuthorizationRequest',
+            'resetLinkCode',
           ],
           target: '.checkStorage',
         },
@@ -70,6 +74,14 @@ export const scanMachine =
             'setQrLoginRef',
             'setLinkCodeFromDeepLink',
             'setIsQrLoginViaDeepLink',
+          ],
+          target: '#scan.checkStorage',
+        },
+        OVP_VIA_DEEP_LINK: {
+          actions: [
+            'setAuthRequestFromDeepLink',
+            'setIsOVPViaDeepLink',
+            'setOpenId4VPFlowType',
           ],
           target: '#scan.checkStorage',
         },
@@ -113,6 +125,10 @@ export const scanMachine =
         startPermissionCheck: {
           on: {
             START_PERMISSION_CHECK: [
+              {
+                cond: 'isFlowTypeDeepLink',
+                target: '#scan.checkFaceAuthConsent',
+              },
               {
                 cond: 'uptoAndroid11',
                 target: '#scan.checkBluetoothPermission',
@@ -316,15 +332,20 @@ export const scanMachine =
           on: {
             STORE_RESPONSE: {
               actions: 'updateShowFaceAuthConsent',
-              target: '#scan.checkQrLoginViaDeepLink',
+              target: '#scan.checkForDeepLinkFlow',
             },
           },
         },
-        checkQrLoginViaDeepLink: {
+        checkForDeepLinkFlow: {
           always: [
             {
               cond: 'isQrLoginViaDeepLinking',
               target: '#scan.showQrLogin',
+            },
+            {
+              cond: 'isOVPViaDeepLink',
+              actions: ['setOpenId4VPFlowType'],
+              target: '#scan.startVPSharing',
             },
             {
               target: '#scan.findingConnection',
@@ -357,7 +378,7 @@ export const scanMachine =
               {
                 target: 'startVPSharing',
                 cond: 'isOnlineSharing',
-                actions: ['setOpenId4VPFlowType', 'setLinkCode'],
+                actions: ['setOpenId4VPFlowType', 'setAuthRequestFromDeepLink'],
               },
               {
                 target: 'decodeQuickShareData',
@@ -393,7 +414,7 @@ export const scanMachine =
             DISMISS: [
               {
                 cond: 'isFlowTypeSimpleShare',
-                actions: 'resetOpenID4VPFlowType',
+                actions: ['resetIsOVPViaDeepLink', 'resetOpenID4VPFlowType'],
                 target: 'checkStorage',
               },
               {

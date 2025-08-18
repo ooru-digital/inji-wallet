@@ -8,8 +8,8 @@ podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties
 ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = '1' if podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR'] == 'true'
 
-platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
-install! 'cocoapods', 
+platform :ios, podfile_properties['ios.deploymentTarget'] || '14'
+install! 'cocoapods',
   :deterministic_uuids => false
 
 prepare_react_native_project!
@@ -25,18 +25,6 @@ prepare_react_native_project!
 #   }
 # }
 # ```
-flipper_config = FlipperConfiguration.disabled
-if ENV['NO_FLIPPER'] == '1' then
-  # Explicitly disabled through environment variables
-  flipper_config = FlipperConfiguration.disabled
-elsif podfile_properties.key?('ios.flipper') then
-  # Configure Flipper in Podfile.properties.json
-  if podfile_properties['ios.flipper'] == 'true' then
-    flipper_config = FlipperConfiguration.enabled(["Debug", "Release"])
-  elsif podfile_properties['ios.flipper'] != 'false' then
-    flipper_config = FlipperConfiguration.enabled(["Debug", "Release"], { 'Flipper' => podfile_properties['ios.flipper'] })
-  end
-end
 
 target 'Inji' do
   use_expo_modules!
@@ -55,10 +43,39 @@ target 'Inji' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     # Note that if you have use_frameworks! enabled, Flipper will not work if enabled
-    :flipper_configuration => flipper_config
   )
 
   post_install do |installer|
+    installer.pods_project.targets.each do |target|
+      if target.name == 'RNZipArchive'
+        target.source_build_phase.files.each do |file|
+          if file.settings && file.settings['COMPILER_FLAGS']
+              file.settings['COMPILER_FLAGS'] = ''
+          end
+        end
+      end
+
+    bitcode_strip_path = `xcrun --find bitcode_strip`.chop!
+    def strip_bitcode_from_framework(bitcode_strip_path, framework_relative_path)
+      framework_path = File.join(Dir.pwd, framework_relative_path)
+      command = "#{bitcode_strip_path} #{framework_path} -r -o #{framework_path}"
+      puts "Stripping bitcode: #{command}"
+      system(command)
+    end
+
+    framework_paths = [
+      "Pods/LogRocket/LogRocket.xcframework/ios-arm64/LogRocket.framework/LogRocket",
+      "Pods/hermes-engine/destroot/Library/Frameworks/macosx/hermes.framework/hermes",
+      "Pods/hermes-engine/destroot/Library/Frameworks/macosx/hermes.framework/Versions/Current/hermes",
+      "Pods/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework/ios-arm64/hermes.framework/hermes",
+      "Pods/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework/ios-arm64_x86_64-maccatalyst/hermes.framework/hermes"
+    ]
+
+    framework_paths.each do |framework_relative_path|
+      strip_bitcode_from_framework(bitcode_strip_path, framework_relative_path)
+    end
+  end
+  
     react_native_post_install(
       installer,
       config[:reactNativePath],
@@ -66,7 +83,7 @@ target 'Inji' do
       # necessary for Mac Catalyst builds
       :mac_catalyst_enabled => false
     )
-    __apply_Xcode_12_5_M1_post_install_workaround(installer)
+
 
     # This is necessary for Xcode 14, because it signs resource bundles by default
     # when building for devices.
@@ -78,6 +95,41 @@ target 'Inji' do
         end
       end
     end
+    plist_path = File.join(__dir__, 'Inji/Info.plist')
+
+  # Check if Info.plist exists
+  if File.exist?(plist_path)
+    require 'json'
+
+    # Read the Info.plist file
+    plist = JSON.parse(`plutil -convert json -o - "#{plist_path}"`)
+
+    # Add ENABLE_AUTH key
+    plist['ENABLE_AUTH'] = ENV['ENABLE_AUTH'] || 'true'
+
+    # Write back to Info.plist
+    File.open(plist_path, 'w') do |file|
+      file.write(JSON.pretty_generate(plist))
+    end
+
+    # Convert back to XML format
+    system("plutil -convert xml1 #{plist_path}")
+  else
+    Pod::UI.warn "Info.plist not found at #{plist_path}"
+  end
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+    end
+  end
+
+  #strip bitcode from frameworks
+  bitcode_strip = `xcrun --find bitcode_strip`.strip
+  Dir.glob("Pods/**/*.framework/*") do |framework_binary|
+    next if File.directory?(framework_binary)
+    puts "Stripping bitcode from: #{framework_binary}"
+    system("#{bitcode_strip} -r \"#{framework_binary}\" -o \"#{framework_binary}\"")
+  end
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', '_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION']
@@ -95,7 +147,7 @@ target 'Inji' do
         end
       end
       target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
         config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] =  "arm64"
       end
     end
@@ -119,7 +171,7 @@ target 'Inji' do
     end
 
   # https://github.com/CocoaPods/CocoaPods/issues/8122#issuecomment-428677119
-  # Workaround for removing the multiple Assets added to the project due to react native auto-linkage  
+  # Workaround for removing the multiple Assets added to the project due to react native auto-linkage
     project_path = './Inji.xcodeproj'
     project = Xcodeproj::Project.open(project_path)
     project.targets.each do |target|

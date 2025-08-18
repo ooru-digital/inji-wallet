@@ -50,7 +50,7 @@ export const EditableListItem: React.FC<EditableListItemProps> = props => {
     </Text>
 </View>
     <Text color={Theme.Colors.textLabel} style={{marginLeft:31}}>{props.content}</Text>
-      
+
 </ListItem.Content>
 
 
