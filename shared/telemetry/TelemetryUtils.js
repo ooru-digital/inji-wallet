@@ -16,11 +16,11 @@ import * as RNLocalize from 'react-native-localize';
 import {TelemetryConstants} from './TelemetryConstants';
 
 export function sendStartEvent(data) {
-  telemetry.start({}, '', '', data, {});
+  //telemetry.start({}, '', '', data, {});
 }
 
 export function sendEndEvent(data) {
-  telemetry.end(data, {});
+  //telemetry.end(data, {});
 }
 
 export function sendImpressionEvent(data) {

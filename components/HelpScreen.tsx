@@ -10,7 +10,7 @@ import getAllConfigurations from '../shared/api';
 export const HelpScreen: React.FC<HelpScreenProps> = props => {
   const {t} = useTranslation('HelpScreen');
   const [showHelpPage, setShowHelpPage] = useState(false);
-  var [injiHelpUrl, setInjiHelpUrl] = useState('');
+  const [injiHelpUrl, setInjiHelpUrl] = useState('');
   const listingRef = useRef();
 
   useEffect(() => {
@@ -278,6 +278,7 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
   return (
     <React.Fragment>
       <Pressable
+        disabled={props.isDisabled}
         accessible={false}
         onPress={() => {
           setShowHelpPage(!showHelpPage);
@@ -325,4 +326,5 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
 interface HelpScreenProps {
   source: 'Inji' | 'BackUp';
   triggerComponent: React.ReactElement;
+  isDisabled?: boolean;
 }

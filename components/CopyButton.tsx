@@ -1,13 +1,11 @@
 import React, {useState} from 'react';
 import {Pressable} from 'react-native';
-import {Theme} from './ui/styleUtils';
-import {Icon} from 'react-native-elements';
+import Clipboard from '@react-native-clipboard/clipboard';
 import {Row, Text} from './ui';
 import {useTranslation} from 'react-i18next';
 import testIDProps from '../shared/commonUtil';
 import i18next from '../i18n';
 import {SvgImage} from './ui/svg';
-import Clipboard from '@react-native-clipboard/clipboard';
 
 
 export const CopyButton: React.FC<CopyButtonProps> = ({content}) => {

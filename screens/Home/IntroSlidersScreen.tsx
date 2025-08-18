@@ -16,6 +16,15 @@ import LinearGradient from 'react-native-linear-gradient';
 import {SvgImage} from '../../components/ui/svg';
 import testIDProps from '../../shared/commonUtil';
 import {INTRO_SLIDER_LOGO_MARGIN} from '../../shared/constants';
+import {StaticAuthScreen} from '../IntroSliders/biometricIntro';
+import {StaticScanScreen} from '../IntroSliders/quickAccessIntro';
+import StaticBackupAndRestoreScreen from '../IntroSliders/backupRestoreIntro';
+import {StaticHomeScreen} from '../IntroSliders/trustedDigitalWalletIntro';
+import {StaticSendVcScreen} from '../IntroSliders/secureShareIntro';
+import { ScrollView } from 'react-native';
+
+
+
 
 export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
   const slider = useRef<AppIntroSlider>();
@@ -23,30 +32,31 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('OnboardingOverlay');
   const controller = useWelcomeScreen(props);
 
+  // Define slides with React components
   const slides = [
     {
       key: 'one',
       title: t('stepOneTitle'),
       text: t('stepOneText'),
-      image: Theme.IntroWelcome,
+      component: <StaticAuthScreen />,
     },
     {
       key: 'three',
       title: t('stepThreeTitle'),
       text: t('stepThreeText'),
-      image: Theme.DigitalWallet,
+      component: <StaticHomeScreen />,
     },
     {
       key: 'four',
       title: t('stepFourTitle'),
       text: t('stepFourText'),
-      image: Theme.IntroShare,
+      component: <StaticScanScreen />,
     },
     {
       key: 'five',
       title: t('stepFiveTitle'),
       text: t('stepFiveText'),
-      image: Theme.IntroBackup,
+      component: <StaticBackupAndRestoreScreen />,
     },
   ];
 
@@ -54,7 +64,7 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
 
   const renderItem = ({item}) => {
     return (
-      <ImageBackground source={Theme.IntroSliderbackground}>
+      <ImageBackground source={require('./IntroBg.png')}>
         <Centered>
           <Row align="space-between" style={Theme.Styles.introSliderHeader}>
             <Column style={{marginLeft: INTRO_SLIDER_LOGO_MARGIN}}></Column>
@@ -75,12 +85,9 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
               />
             )}
           </Row>
-          <Image
-            {...testIDProps(`introImage-${item.key}`)}
-            source={item.image}
-            resizeMode="contain"
-            style={{height: Dimensions.get('screen').height * 0.6}}
-          />
+          <View style={{width: 300, height: 600}}>
+            <Centered fill>{item.component}</Centered>
+          </View>
           <Column
             testID={`introSlide-${item.key}`}
             style={Theme.OnboardingOverlayStyles.bottomContainer}
@@ -94,14 +101,23 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
               margin="0 0 18 0">
               {item.title}
             </Text>
-            <Text
-              testID={`introText-${item.key}`}
-              style={{paddingTop: 7}}
-              margin="0 0 150 0"
-              size="large"
-              color={Theme.Colors.GrayText}>
-              {item.text}
-            </Text>
+            <ScrollView
+              style={{
+                maxHeight: 60,
+                width: '100%',
+                paddingHorizontal: 10,
+                marginBottom: 400,
+              }}
+              showsVerticalScrollIndicator={true}
+              persistentScrollbar={true}>
+              <Text
+                testID={`introText-${item.key}`}
+                style={{paddingTop: 7}}
+                size="large"
+                color={Theme.Colors.GrayText}>
+                {item.text}
+              </Text>
+            </ScrollView>
           </Column>
         </Centered>
       </ImageBackground>
@@ -129,6 +145,7 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
       </View>
     );
   };
+
   const renderDoneButton = () => {
     const isPasscodeSet = controller.isPasscodeSet();
     const testId = isPasscodeSet ? 'goBack' : 'getStarted';

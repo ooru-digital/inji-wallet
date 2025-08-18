@@ -1,5 +1,4 @@
 import Storage, {MMKV} from '../shared/storage';
-import binaryToBase64 from 'react-native/Libraries/Utilities/binaryToBase64';
 import {
   EventFrom,
   Receiver,
@@ -22,7 +21,6 @@ import {NativeModules} from 'react-native';
 import {
   AUTH_TIMEOUT,
   decryptJson,
-  DUMMY_KEY_FOR_BIOMETRIC_ALIAS,
   ENCRYPTION_ID,
   encryptJson,
   HMAC_ALIAS,
@@ -37,6 +35,7 @@ import {
 } from '../shared/telemetry/TelemetryUtils';
 import {Buffer} from 'buffer';
 import {VC} from './VerifiableCredential/VCMetaMachine/vc';
+import { isVCStorageInitialised } from '../shared/fileStorage';
 
 export const keyinvalidatedString =
   'Key Invalidated due to biometric enrollment';
@@ -274,6 +273,20 @@ export const storeMachine =
             DECRYPT_ERROR: {
               actions: sendParent('DECRYPT_ERROR'),
             },
+            BIOMETRIC_CANCELLED: {
+              actions: [
+                send(
+                  (_, event) =>
+                    model.events.BIOMETRIC_CANCELLED(event.requester),
+                  {
+                    to: (_, event) => event.requester,
+                  },
+                ),
+                sendUpdate(),
+                sendParent('BIOMETRIC_CANCELLED'),
+              ],
+              target: 'checkFreshInstall',
+            },
           },
         },
       },
@@ -290,15 +303,8 @@ export const storeMachine =
           actions: sendParent('KEY_INVALIDATE_ERROR'),
         },
         BIOMETRIC_CANCELLED: {
-          actions: [
-            send(
-              (_, event) => model.events.BIOMETRIC_CANCELLED(event.requester),
-              {
-                to: (_, event) => event.requester,
-              },
-            ),
-            sendUpdate(),
-          ],
+          actions: [sendParent('BIOMETRIC_CANCELLED')],
+          target: 'checkFreshInstall',
         },
       },
     },
@@ -328,9 +334,16 @@ export const storeMachine =
           }
           return;
         },
-        checkFreshInstall: () => async _ => {
-          const response = await getItem('auth', null, '');
-          return response;
+        checkFreshInstall: () => async callback => {
+          try {
+            return await getItem('auth', null, '');
+          } catch (e) {
+            if (e instanceof BiometricCancellationError) {
+              callback(model.events.BIOMETRIC_CANCELLED());
+            } else {
+              callback(model.events.STORE_ERROR(e));
+            }
+          }
         },
         hasEncryptionKey: () => async callback => {
           let hasSetCredentials;
@@ -350,6 +363,9 @@ export const storeMachine =
                 base64EncodedString,
               );
             } catch (e) {
+              if (e instanceof BiometricCancellationError) {
+                callback(model.events.BIOMETRIC_CANCELLED(event.requester));
+              }
               sendErrorEvent(getErrorEventData('ENCRYPTION', '', e));
 
               if (e.message.includes(keyinvalidatedString)) {
@@ -378,7 +394,7 @@ export const storeMachine =
         },
 
         checkStorageInitialisedOrNot: () => async callback => {
-          const isDirectoryExist = await Storage.isVCStorageInitialised();
+          const isDirectoryExist = await isVCStorageInitialised();
           if (!isDirectoryExist) {
             callback(model.events.READY());
           } else {
@@ -406,7 +422,7 @@ export const storeMachine =
                   break;
                 }
                 case 'EXPORT': {
-                  response = await exportData(context.encryptionKey);
+                  response = await backupAndExportData(context.encryptionKey);
                   break;
                 }
                 case 'GET_VCS_DATA': {
@@ -415,10 +431,7 @@ export const storeMachine =
                 }
                 case 'RESTORE_BACKUP': {
                   // the backup data is in plain text
-                  response = await loadBackupData(
-                    event.data,
-                    context.encryptionKey,
-                  );
+                  await restoreBackedUpData(event.data, context.encryptionKey);
                   break;
                 }
                 case 'SET': {
@@ -606,12 +619,12 @@ export async function setItem(
   }
 }
 
-export async function exportData(encryptionKey: string) {
-  return Storage.exportData(encryptionKey);
+export async function backupAndExportData(encryptionKey: string) {
+  return Storage.backupData(encryptionKey);
 }
 
-export async function loadBackupData(data, encryptionKey) {
-  await Storage.loadBackupData(data, encryptionKey);
+export async function restoreBackedUpData(data, encryptionKey) {
+  await Storage.restoreBackUpData(data, encryptionKey);
 }
 
 export async function fetchAllWellknownConfig(encryptionKey: string) {

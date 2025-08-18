@@ -14,10 +14,12 @@ import {CREDENTIAL_REGISTRY_EDIT} from 'react-native-dotenv';
 import {VCVerification} from '../../VCVerification';
 import {MIMOTO_BASE_URL} from '../../../shared/constants';
 import {VCItemDetailsProps} from '../Views/VCDetailView';
-import {getMatchingCredentialIssuerMetadata} from '../../../shared/openId4VCI/Utils';
-import {parseJSON} from '../../../shared/Utils';
-import {VCItemContentProps} from '../Views/VCCardViewContent';
+import {
+  getDisplayObjectForCurrentLanguage,
+  getMatchingCredentialIssuerMetadata,
+} from '../../../shared/openId4VCI/Utils';
 import {VCFormat} from '../../../shared/VCFormat';
+import {displayType} from '../../../machines/Issuers/IssuersMachine';
 
 export const CARD_VIEW_DEFAULT_FIELDS = ['fullName'];
 export const DETAIL_VIEW_DEFAULT_FIELDS = [
@@ -75,12 +77,12 @@ export const getFieldValue = (
     case 'status':
       return (
         <VCVerification
-          wellknown={wellknown}
+           wellknown={wellknown}
           isVerified={props.verifiableCredentialData.vcMetadata.isVerified}
         />
       );
     case 'idType':
-      return getIdType(wellknown);
+      return getCredentialType(wellknown);
     case 'credentialRegistry':
       return props?.vc?.credentialRegistry;
     case 'address':
@@ -123,23 +125,31 @@ export const getFieldName = (
           'Credential definition is not available for the selected credential type',
         );
       }
-      let fieldObj = credentialDefinition?.credentialSubject[field];
+      let fieldObj = credentialDefinition?.credentialSubject?.[field];
       if (fieldObj) {
-        const newFieldObj = fieldObj.display.map(obj => {
-          return {language: obj.locale, value: obj.name};
-        });
-        return getLocalizedField(newFieldObj);
+        if (fieldObj.display && fieldObj.display.length > 0) {
+          const newFieldObj = fieldObj.display.map(obj => ({
+            language: obj.locale,
+            value: obj.name,
+          }));
+          return getLocalizedField(newFieldObj);
+        }
+        return field;
       }
     } else if (format === VCFormat.mso_mdoc) {
       const splitField = field.split('~');
       if (splitField.length > 1) {
         const [namespace, fieldName] = splitField;
-        const fieldObj = wellknown.claims[namespace][fieldName];
+        const fieldObj = wellknown.claims?.[namespace]?.[fieldName];
         if (fieldObj) {
-          const newFieldObj = fieldObj.display.map(obj => {
-            return {language: obj.locale, value: obj.name};
-          });
-          return getLocalizedField(newFieldObj);
+          if (fieldObj.display && fieldObj.display.length > 0) {
+            const newFieldObj = fieldObj.display.map(obj => ({
+              language: obj.locale,
+              value: obj.name,
+            }));
+            return getLocalizedField(newFieldObj);
+          }
+          return fieldName;
         }
       }
     }
@@ -221,8 +231,8 @@ export const fieldItemIterator = (
           key={field}
           fieldName={fieldName}
           fieldValue={fieldValue}
-          verifiableCredential={verifiableCredential}
-          wellknown={wellknown}
+          fieldNameColor={fieldNameColor}
+          fieldValueColor={fieldValueColor}
           testID={field}
         />
       </Row>
@@ -247,62 +257,128 @@ export const getMosipLogo = () => {
 /**
  *
  * @param wellknown (either supportedCredential's wellknown or whole well known response of issuer)
- * @param idType
- * @returns id Type translations (Eg - National ID)
+ * @param credentialConfigurationId
+ * @returns credential type translations (Eg - National ID)
  *
  * supportedCredential's wellknown is passed from getActivityText after fresh download
  * & all other consumers pass whole well known response of issuer
  */
-export const getIdType = (
-  wellknown: CredentialTypes | IssuerWellknownResponse,
-  credentialConfigurationId: string | undefined = undefined,
+export const getCredentialType = (
+  supportedCredentialsWellknown: CredentialTypes,
 ): string => {
-  if (
-    wellknown &&
-    wellknown['credential_configurations_supported'] === undefined &&
-    wellknown?.display
-  ) {
-
-    const idTypeObj = wellknown.display.map((displayProps: any) => {
-
-      return {language: displayProps.locale, value: displayProps.name};
-    });
-    const localizedField = getLocalizedField(idTypeObj);
-    return localizedField;
-  } else if (wellknown && Object.keys(wellknown).length > 0) {
-    let supportedCredentialsWellknown;
-    wellknown = parseJSON(wellknown) as unknown as Object[];
-    if (!!!wellknown['credential_configurations_supported']) {
-      return i18n.t('VcDetails:nationalCard');
-    }
-    try {
-      if (!!credentialConfigurationId) {
-        supportedCredentialsWellknown = getMatchingCredentialIssuerMetadata(
-          wellknown,
-          credentialConfigurationId,
-        );
-      } else {
-        console.error(
-          'credentialConfigurationId not available for fetching the ID type',
-        );
-        throw new Error(
-          `invalid credential credentialConfigurationId - ${credentialConfigurationId} passed`,
-        );
-      }
-    } catch (error) {
-      console.error(
-        `error occurred while getting supported credential's ${credentialConfigurationId} wellknown`,
-      );
-      return i18n.t('VcDetails:nationalCard');
-    }
-    if (Object.keys(supportedCredentialsWellknown).length === 0) {
-      return i18n.t('VcDetails:nationalCard');
-    }
-    return getIdType(supportedCredentialsWellknown);
+  if (!!!supportedCredentialsWellknown) {
+    return i18n.t('VcDetails:identityCard');
+  }
+  if (supportedCredentialsWellknown['display']) {
+    const wellknownDisplayProperty = getDisplayObjectForCurrentLanguage(
+      supportedCredentialsWellknown.display,
+    );
+    return wellknownDisplayProperty.name;
+  }
+  if (supportedCredentialsWellknown.format === VCFormat.ldp_vc) {
+    const types = supportedCredentialsWellknown.credential_definition
+      .type as string[];
+    return types[types.length - 1];
   } else {
-    return i18n.t('VcDetails:nationalCard');
+    return i18n.t('VcDetails:identityCard');
   }
 };
+
+export const getCredentialTypeFromWellKnown = (
+  wellknown: IssuerWellknownResponse,
+  credentialConfigurationId: string | undefined = undefined,
+): string => {
+  try {
+    if (credentialConfigurationId !== undefined) {
+      const supportedCredentialsWellknown = getMatchingCredentialIssuerMetadata(
+        wellknown,
+        credentialConfigurationId,
+      );
+      return getCredentialType(supportedCredentialsWellknown);
+    }
+    console.error(
+      'credentialConfigurationId not available for fetching the Credential type',
+    );
+    throw new Error(
+      `Invalid credentialConfigurationId - ${credentialConfigurationId} passed`,
+    );
+  } catch (error) {
+    return i18n.t('VcDetails:identityCard');
+  }
+};
+
+export class Display {
+  private readonly textColor: string | undefined = undefined;
+  private readonly backgroundColor: {backgroundColor: string};
+  private readonly backgroundImage: {uri: string} | undefined = undefined;
+
+  private defaultBackgroundColor = Theme.Colors.whiteBackgroundColor;
+
+  constructor(wellknown: any) {
+    const wellknownDisplayProperty = wellknown?.display
+      ? getDisplayObjectForCurrentLanguage(wellknown.display)
+      : {};
+
+    if (!!!Object.keys(wellknownDisplayProperty).length) {
+      this.backgroundColor = {
+        backgroundColor: this.defaultBackgroundColor,
+      };
+      return;
+    }
+
+    const display = wellknownDisplayProperty as displayType;
+
+    this.backgroundColor = {
+      backgroundColor: display.background_color ?? this.defaultBackgroundColor,
+    };
+    this.backgroundImage = display.background_image;
+    this.textColor = display.text_color;
+  }
+
+  getTextColor(defaultColor: string): string {
+    return this.textColor ?? defaultColor;
+  }
+
+  getBackgroundColor(): {backgroundColor: string} {
+    return this.backgroundColor;
+  }
+
+  getBackgroundImage(defaultBackgroundImage: string) {
+    return this.backgroundImage ?? defaultBackgroundImage;
+  }
+}
+
+export function getIssuerAuthenticationAlorithmForMdocVC(
+  proofType: any,
+): string {
+  return PROOF_TYPE_ALGORITHM_MAP[proofType] || '';
+}
+
+export function getMdocAuthenticationAlorithm(issuerAuth: any): string {
+  const deviceKey = issuerAuth?.deviceKeyInfo?.deviceKey;
+
+  if (!deviceKey) return '';
+
+  const keyType = deviceKey['1'];
+  const curve = deviceKey['-1'];
+
+  return keyType === ProtectedAlgorithm.EC2 && curve === ProtectedCurve.P256
+    ? 'ES256'
+    : '';
+}
+
+const ProtectedAlgorithm = {
+  EC2: 2,
+};
+
+const ProtectedCurve = {
+  P256: 1,
+};
+
+const PROOF_TYPE_ALGORITHM_MAP = {
+  [-7]: 'ES256',
+};
+
 
 export function DisplayName(props: VCItemContentProps): string | Object {
   if (props.verifiableCredentialData.format === VCFormat.mso_mdoc) {

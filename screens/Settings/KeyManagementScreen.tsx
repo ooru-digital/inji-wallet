@@ -20,6 +20,8 @@ import {
 import {TelemetryConstants} from '../../shared/telemetry/TelemetryConstants';
 import {SUPPORTED_KEY_TYPES} from '../../shared/constants';
 import LinearGradient from 'react-native-linear-gradient';
+import {SvgImage} from '../../components/ui/svg';
+import { HelpIcon } from '../../components/ui/HelpIcon';
 
 const {RNSecureKeystoreModule} = NativeModules;
 
@@ -143,8 +145,8 @@ export const KeyManagementScreen: React.FC<KeyManagementScreenProps> = () => {
                 justifyContent: 'center',
                 paddingHorizontal: 12,
                 paddingVertical: 6,
-                width: 60, 
-                height: 36, 
+                width: 60,
+                height: 36,
                 borderRadius: 8,
               }}>
               <Text style={{ color: '#2A2DA4', fontWeight: 'bold' }}>Help</Text>

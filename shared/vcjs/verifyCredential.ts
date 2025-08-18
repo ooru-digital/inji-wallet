@@ -255,11 +255,10 @@ function handleVcVerifierResponse(
         verificationResult.verificationErrorCode === ''
           ? VerificationErrorType.GENERIC_TECHNICAL_ERROR
           : verificationResult.verificationErrorCode;
-      const telemetryErrorMessage =
-        verificationResult.verificationMessage +
-        '-' +
-        getMosipIdentifier(verifiableCredential.credentialSubject);
-      sendVerificationErrorEvent(telemetryErrorMessage, verifiableCredential);
+      sendVerificationErrorEvent(
+        verificationResult.verificationMessage,
+        verifiableCredential,
+      );
     }
     return {
       isVerified: verificationResult.verificationStatus,
@@ -271,9 +270,7 @@ function handleVcVerifierResponse(
       'Error occurred while verifying the VC using VcVerifier Library:',
       error,
     );
-    const telemetryErrorMessage =
-      error + '-' + getMosipIdentifier(verifiableCredential.credentialSubject);
-    sendVerificationErrorEvent(telemetryErrorMessage, verifiableCredential);
+    sendVerificationErrorEvent(error, verifiableCredential);
     return {
       isVerified: false,
       verificationMessage: verificationResult.verificationMessage,
@@ -282,16 +279,31 @@ function handleVcVerifierResponse(
   }
 }
 
+function createSuccessfulVerificationResult(): VerificationResult {
+  return {
+    isVerified: true,
+    verificationMessage: VerificationErrorMessage.NO_ERROR,
+    verificationErrorCode: VerificationErrorType.NO_ERROR,
+  };
+}
+
 function sendVerificationErrorEvent(
   errorMessage: string,
   verifiableCredential: any,
 ) {
   const stacktrace = __DEV__ ? verifiableCredential : {};
+  //Add only UIN / VID in the credential into telemetry error message and not document_number or other identifiers to avoid sensitivity issues
+  let detailedError = errorMessage;
+  if (verifiableCredential.credentialSubject)
+    detailedError += `-${getMosipIdentifier(
+      verifiableCredential.credentialSubject,
+    )}`;
+
   sendErrorEvent(
     getErrorEventData(
       TelemetryConstants.FlowType.vcVerification,
       TelemetryConstants.ErrorId.vcVerificationFailed,
-      errorMessage,
+      detailedError,
       stacktrace,
     ),
   );

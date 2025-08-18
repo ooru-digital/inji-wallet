@@ -1,5 +1,5 @@
 import {useFocusEffect} from '@react-navigation/native';
-import React, {Fragment} from 'react';
+import React, {Fragment, useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {BackHandler, Dimensions, View} from 'react-native';
 import {ButtonProps as RNEButtonProps} from 'react-native-elements';
@@ -8,81 +8,133 @@ import {Header} from './Header';
 import {Theme} from './styleUtils';
 import testIDProps from '../../shared/commonUtil';
 import {Modal} from './Modal';
+import {isIOS} from '../../shared/constants';
 
 export const Error: React.FC<ErrorProps> = props => {
   const {t} = useTranslation('common');
+  const {
+    testID,
+    customStyles = {},
+    customImageStyles = {},
+    goBackType,
+    isModal = false,
+    isVisible,
+    showClose = true,
+    alignActionsOnEnd = false,
+    title,
+    message,
+    additionalMessage,
+    helpText,
+    image,
+    goBack,
+    goBackButtonVisible = false,
+    tryAgain,
+    onDismiss,
+    primaryButtonText,
+    primaryButtonEvent,
+    testIDTextButton,
+    textButtonText,
+    textButtonEvent,
+    primaryButtonTestID,
+    textButtonTestID,
+  } = props;
+
+  const [triggerExitFlow, setTriggerExitFlow] = useState(false);
+
+  useEffect(() => {
+    if (props.exitAppWithTimer) {
+      const timeout = setTimeout(
+        () => {
+          setTriggerExitFlow(true);
+        },
+        isIOS() ? 4000 : 2000,
+      );
+
+      return () => clearTimeout(timeout);
+    }
+  }, [props.exitAppWithTimer]);
+
+  useEffect(() => {
+    if (triggerExitFlow) {
+      props.textButtonEvent();
+      BackHandler.exitApp();
+    }
+  }, [triggerExitFlow]);
+
   const errorContent = () => {
     return (
       <Fragment>
-        <View style={[{alignItems: 'center'}, props.customStyles]}>
+        <View
+          style={[{alignItems: 'center', marginHorizontal: 1}, customStyles]}>
           <View>
             <Row
               align="center"
-              style={[Theme.ErrorStyles.image, props.customImageStyles]}>
-              {props.image}
+              style={[Theme.ErrorStyles.image, customImageStyles]}>
+              {image}
             </Row>
-            <Text
-              style={Theme.ErrorStyles.title}
-              testID={`${props.testID}Title`}>
-              {props.title}
+            <Text style={Theme.ErrorStyles.title} testID={`${testID}Title`}>
+              {title}
             </Text>
-            <Text
-              style={Theme.ErrorStyles.message}
-              testID={`${props.testID}Message`}>
-              {props.message}
+            <Text style={Theme.ErrorStyles.message} testID={`${testID}Message`}>
+              {message}
             </Text>
+            {additionalMessage && (
+              <Text
+                style={Theme.ErrorStyles.additionalMessage}
+                testID={`${testID}AdditionalMessage`}>
+                {additionalMessage}
+              </Text>
+            )}
           </View>
-          {!props.alignActionsOnEnd && (
+          {!alignActionsOnEnd && (
             <Fragment>
-              {props.primaryButtonText && (
+              {primaryButtonText && (
                 <Button
-                  onPress={props.primaryButtonEvent}
-                  title={t(props.primaryButtonText)}
+                  onPress={primaryButtonEvent}
+                  title={t(primaryButtonText)}
                   type={
-                    props.primaryButtonText === 'tryAgain'
-                      ? 'outline'
-                      : 'gradient'
+                    primaryButtonText === 'tryAgain' ? 'outline' : 'gradient'
                   }
                   width={
-                    props.primaryButtonText === 'tryAgain'
+                    primaryButtonText === 'tryAgain'
                       ? Dimensions.get('screen').width * 0.54
                       : undefined
                   }
-                  testID={props.primaryButtonTestID}
+                  testID={primaryButtonTestID}
                 />
               )}
-              {props.textButtonText && (
+              {textButtonText && (
                 <Button
-                  onPress={props.textButtonEvent}
+                  onPress={textButtonEvent}
                   width={Dimensions.get('screen').width * 0.54}
-                  title={t(props.textButtonText)}
+                  title={t(textButtonText)}
                   type="clear"
-                  testID={props.textButtonTestID}
+                  testID={textButtonTestID}
                 />
               )}
             </Fragment>
           )}
         </View>
-        {props.alignActionsOnEnd && (
+        {alignActionsOnEnd && (
           <Column fill crossAlign="center" align="flex-end" margin="0 0 30 0">
             <Row style={{marginHorizontal: 30, marginBottom: 15}}>
-              {props.primaryButtonText && (
+              {primaryButtonText && (
                 <Button
                   fill
-                  onPress={props.primaryButtonEvent}
-                  title={t(props.primaryButtonText)}
+                  onPress={primaryButtonEvent}
+                  title={t(primaryButtonText)}
                   type="gradient"
-                  testID={props.primaryButtonTestID}
+                  testID={primaryButtonTestID}
                 />
               )}
             </Row>
             <Row>
-              {props.textButtonText && (
+              {textButtonText && (
                 <Button
-                  onPress={props.textButtonEvent}
-                  title={t(props.textButtonText)}
+                  onPress={textButtonEvent}
+                  title={t(textButtonText)}
                   type="clear"
-                  testID={props.textButtonTestID}
+                  testID={textButtonTestID}
                 />
               )}
             </Row>
@@ -95,7 +147,7 @@ export const Error: React.FC<ErrorProps> = props => {
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        props.onDismiss && props.onDismiss();
+        onDismiss && onDismiss();
         return true;
       };
 
@@ -108,16 +160,16 @@ export const Error: React.FC<ErrorProps> = props => {
     }, []),
   );
 
-  return props.isModal ? (
+  return isModal ? (
     <Modal
-      isVisible={props.isVisible}
-      showClose={props.showClose}
-      onDismiss={props.onDismiss}
-      {...testIDProps(props.testID)}>
+      isVisible={isVisible}
+      showClose={showClose}
+      onDismiss={onDismiss}
+      {...testIDProps(testID)}>
       <Column
         fill
         safe
-        align={props.alignActionsOnEnd ? 'space-around' : 'space-evenly'}>
+        align={alignActionsOnEnd ? 'space-around' : 'space-evenly'}>
         {errorContent()}
       </Column>
     </Modal>
@@ -127,22 +179,15 @@ export const Error: React.FC<ErrorProps> = props => {
         ...Theme.ModalStyles.modal,
         backgroundColor: Theme.Colors.whiteBackgroundColor,
       }}
-      {...testIDProps(props.testID)}>
+      {...testIDProps(testID)}>
       <Column fill safe>
-        {props.goBack && <Header testID="errorHeader" goBack={props.goBack} />}
+        {goBack && <Header testID="errorHeader" goBack={goBack} />}
         <Column fill safe align="space-evenly">
           {errorContent()}
         </Column>
       </Column>
     </View>
   );
-};
-
-Error.defaultProps = {
-  isModal: false,
-  goBackButtonVisible: false,
-  alignActionsOnEnd: false,
-  showClose: true,
 };
 
 export interface ErrorProps {
@@ -156,6 +201,7 @@ export interface ErrorProps {
   alignActionsOnEnd?: boolean;
   title: string;
   message: string;
+  additionalMessage?: string;
   helpText?: string;
   image: React.ReactElement;
   goBack?: () => void;
@@ -169,4 +215,5 @@ export interface ErrorProps {
   textButtonEvent?: () => void;
   primaryButtonTestID?: string;
   textButtonTestID?: string;
+  exitAppWithTimer?: boolean;
 }

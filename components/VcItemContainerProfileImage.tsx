@@ -13,15 +13,20 @@ export const VcItemContainerProfileImage = (props: VCItemContentProps) => {
       imageStyle={Theme.Styles.faceImage}
       source={{uri: imageUri}}
       style={Theme.Styles.closeCardImage}>
-      {props?.isPinned && SvgImage.pinIcon()}
+      {isPinned && SvgImage.pinIcon()}
     </ImageBackground>
   ) : (
     <>
       <ProfileIcon
-        isPinned={props?.isPinned}
+        isPinned={isPinned}
         profileIconContainerStyles={Theme.Styles.ProfileIconContainer}
         profileIconSize={30}
       />
     </>
   );
 };
+
+interface VcItemContainerProfileImageProps {
+    verifiableCredentialData: any;
+    isPinned?: boolean;
+}

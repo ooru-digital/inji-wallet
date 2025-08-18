@@ -34,6 +34,7 @@ import {
 import {ProfileIcon} from '../../ProfileIcon';
 import {VCFormat} from '../../../shared/VCFormat';
 import {VCItemField} from '../common/VCItemField';
+import testIDProps from '../../../shared/commonUtil';
 import Share from 'react-native-share';
 import {SvgUri} from 'react-native-svg'; // Import SvgUri for SVG images
 import RNFS from 'react-native-fs';
@@ -42,11 +43,13 @@ const getProfileImage = (face) => {
   if (face) {
     return <Image source={{ uri: face }} style={Theme.Styles.detailedViewImage} />;
   }
-  return null;
+  return <></>;
 };
 
 
-export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
+export const VCDetailView: React.FC<VCItemDetailsProps> = (
+  props: VCItemDetailsProps,
+) => {
   const {t} = useTranslation('VcDetails');
   const logo = props.verifiableCredentialData.issuerLogo;
   const verifiableCredential = props.credential;
@@ -60,6 +63,8 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
   const [isImageExpanded, setIsImageExpanded] = useState(false); // State for expanded image
   const face = props.credential?.credentialSubject.face;
   const name = props.credential?.credentialSubject.recipientName;
+  const wellknownDisplayProperty = new Display(props.wellknown);
+
 
   const handleImagePress = () => {
     setIsImageExpanded(!isImageExpanded); // Toggle the expanded state
@@ -188,9 +193,13 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
               resizeMode="stretch"
               style={[
                 Theme.Styles.openCardBgContainer,
-                getBackgroundColour(props.wellknown),
+                wellknownDisplayProperty.getBackgroundColor(),
               ]}
-              source={getBackgroundImage(props.wellknown, Theme.OpenCard)}>
+              source={
+                wellknownDisplayProperty.getBackgroundImage(
+                  Theme.OpenCard,
+                ) as ImageBackgroundProps
+              }>
               <Row padding="14 14 0 14" margin="0 0 0 0">
                 <Column crossAlign="center">
                   <TouchableOpacity onPress={handleImagePress}>
@@ -227,9 +236,10 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                     style={{justifyContent: 'space-between'}}>
 
                     <Image
+                      {...testIDProps('issuerLogo')}
                       src={logo?.url}
                       alt={logo?.alt_text}
-                      style={[Theme.Styles.issuerLogo, { width: 60, height: 60, marginTop: 10 }]} 
+                      style={[Theme.Styles.issuerLogo, { width: 60, height: 60, marginTop: 10 }]}
                       resizeMethod="scale"
                       resizeMode="contain"
                     />
@@ -302,7 +312,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}>
-                    
+
 
                     {/* QR Code Modal */}
                     <Modal
@@ -406,6 +416,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                     props.fields,
                     verifiableCredential,
                     props.wellknown,
+                    wellknownDisplayProperty,
                     props,
                   )}
                 </Column>
@@ -415,8 +426,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                   style={[
                     Theme.Styles.hrLine,
                     {
-                      borderBottomColor: getTextColor(
-                        props.wellknown,
+                      borderBottomColor: wellknownDisplayProperty.getTextColor(
                         Theme.Styles.hrLine.borderBottomColor,
                       ),
                     },
@@ -427,6 +437,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                       DETAIL_VIEW_BOTTOM_SECTION_FIELDS,
                       verifiableCredential,
                       props.wellknown,
+                      wellknownDisplayProperty,
                       props,
                     )}
                   <View

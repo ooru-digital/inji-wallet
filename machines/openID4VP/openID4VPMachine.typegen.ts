@@ -8,6 +8,11 @@ export interface Typegen0 {
       data: unknown;
       __tip: 'See the XState TS docs to learn how to strongly type this.';
     };
+    'done.invoke.OpenID4VP.checkIfClientValidationIsRequired:invocation[0]': {
+      type: 'done.invoke.OpenID4VP.checkIfClientValidationIsRequired:invocation[0]';
+      data: unknown;
+      __tip: 'See the XState TS docs to learn how to strongly type this.';
+    };
     'done.invoke.OpenID4VP.checkKeyPair:invocation[0]': {
       type: 'done.invoke.OpenID4VP.checkKeyPair:invocation[0]';
       data: unknown;
@@ -75,10 +80,10 @@ export interface Typegen0 {
       | 'resetOpenID4VPRetryCount'
       | 'setAuthenticationError'
       | 'setAuthenticationResponse'
-      | 'setEncodedAuthorizationRequest'
       | 'setError'
       | 'setFlowType'
       | 'setIsFaceVerificationRetryAttempt'
+      | 'setIsOVPViaDeepLink'
       | 'setIsShareWithSelfie'
       | 'setIsShowLoadingScreen'
       | 'setMiniViewShareSelectedVC'
@@ -88,6 +93,7 @@ export interface Typegen0 {
       | 'setShowFaceAuthConsent'
       | 'setTrustedVerifiers'
       | 'setTrustedVerifiersApiCallError'
+      | 'setUrlEncodedAuthorizationRequest'
       | 'shareDeclineStatus'
       | 'storeShowFaceAuthConsent'
       | 'updateFaceCaptureBannerStatus'
@@ -96,6 +102,7 @@ export interface Typegen0 {
     guards:
       | 'hasKeyPair'
       | 'isAnyVCHasImage'
+      | 'isClientValidationRequred'
       | 'isFaceVerificationRetryAttempt'
       | 'isSelectedVCMatchingRequest'
       | 'isShareWithSelfie'
@@ -106,7 +113,8 @@ export interface Typegen0 {
       | 'getAuthenticationResponse'
       | 'getKeyPair'
       | 'getSelectedKey'
-      | 'sendVP';
+      | 'sendVP'
+      | 'shouldValidateClient';
   };
   eventsCausingActions: {
     compareAndStoreSelectedVC: 'SET_SELECTED_VC';
@@ -135,9 +143,7 @@ export interface Typegen0 {
     setFlowType: 'AUTHENTICATE';
     setIsFaceVerificationRetryAttempt: 'FACE_INVALID';
     setIsShareWithSelfie: 'AUTHENTICATE';
-    setIsShowLoadingScreen:
-      | 'STORE_RESPONSE'
-      | 'done.invoke.OpenID4VP.getTrustedVerifiersList:invocation[0]';
+    setIsShowLoadingScreen: 'AUTHENTICATE';
     setMiniViewShareSelectedVC: 'AUTHENTICATE';
     setSelectedVCs: 'ACCEPT_REQUEST' | 'VERIFY_AND_ACCEPT_REQUEST';
     setSendVPShareError: 'error.platform.OpenID4VP.sendingVP:invocation[0]';
@@ -172,10 +178,10 @@ export interface Typegen0 {
     showFaceAuthConsentScreen: 'CONFIRM';
   };
   eventsCausingServices: {
-    fetchTrustedVerifiers: never;
+    fetchTrustedVerifiers: 'done.invoke.OpenID4VP.checkIfClientValidationIsRequired:invocation[0]';
     getAuthenticationResponse: 'done.invoke.OpenID4VP.checkKeyPair:invocation[0]';
     getKeyPair:
-      | 'STORE_RESPONSE'
+      | 'done.invoke.OpenID4VP.checkIfClientValidationIsRequired:invocation[0]'
       | 'done.invoke.OpenID4VP.getTrustedVerifiersList:invocation[0]';
     getSelectedKey:
       | 'FACE_VALID'

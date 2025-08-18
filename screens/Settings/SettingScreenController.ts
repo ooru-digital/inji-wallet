@@ -17,7 +17,6 @@ import {
   SettingsEvents,
   selectAppId,
   selectEsignetHostUrl,
-  selectIsKeymanagementExplored,
   selectIsKeymanagementTourGuideExplored,
   selectIsKeyOrderSet,
 } from '../../machines/settings';
@@ -129,10 +128,6 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
       settingsService || {},
       selectBiometricUnlockEnabled,
     ),
-    isKeyManagementExplored: useSelector(
-      settingsService,
-      selectIsKeymanagementExplored,
-    ),
     isKeyManagementTourGuideExplored: useSelector(
       settingsService,
       selectIsKeymanagementTourGuideExplored,
@@ -179,7 +174,6 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
 
     CHANGE_UNLOCK_METHOD: (val: boolean) => {
       authService.send(AuthEvents.CHANGE_METHOD(true));
-      settingsService.send(SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(val, true));
       props.navigation.navigate('Passcode', {setup: true});
     },
 

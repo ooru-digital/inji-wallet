@@ -25,12 +25,14 @@ export const openID4VPGuards = () => {
       const hasImage = Object.values(context.selectedVCs)
         .flatMap(vc => vc)
         .some(
-          vc => vc.verifiableCredential?.credential?.credentialSubject.face,
+          vc => vc.verifiableCredential?.credential?.credentialSubject?.face,
         );
       return !!hasImage;
     },
 
     isFaceVerificationRetryAttempt: (context: any) =>
       context.isFaceVerificationRetryAttempt,
+
+    isClientValidationRequred: (_, event) => event.data,
   };
 };

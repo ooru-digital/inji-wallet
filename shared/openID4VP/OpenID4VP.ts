@@ -1,12 +1,15 @@
 import {NativeModules} from 'react-native';
 import {__AppId} from '../GlobalVariables';
-import {VC} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
-import {getJWT} from '../cryptoutil/cryptoUtil';
-import {getJWK} from '../openId4VCI/Utils';
+import {
+  SelectedCredentialsForVPSharing,
+  VC,
+} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
+import {createSignatureED, encodeB64} from '../cryptoutil/cryptoUtil';
+import getAllConfigurations from '../api';
+import {base64ToByteArray, parseJSON} from '../Utils';
+import {walletMetadata} from './walletMetadata';
 
-export const OpenID4VP_Key_Ref = 'OpenID4VP_KeyPair';
-export const OpenID4VP_Proof_Algo_Type = 'RsaSignature2018';
-export const OpenID4VP_Domain = 'OpenID4VP';
+export const OpenID4VP_Proof_Sign_Algo = 'EdDSA';
 
 export class OpenID4VP {
   static InjiOpenID4VP = NativeModules.InjiOpenID4VP;
@@ -16,76 +19,99 @@ export class OpenID4VP {
   }
 
   static async authenticateVerifier(
-    encodedAuthorizationRequest: string,
+    urlEncodedAuthorizationRequest: string,
     trustedVerifiersList: any,
   ) {
+    const shouldValidateClient = await isClientValidationRequired();
+    const metadata = (await getWalletMetadata()) || walletMetadata;
+
     const authenticationResponse =
       await OpenID4VP.InjiOpenID4VP.authenticateVerifier(
-        encodedAuthorizationRequest,
+        urlEncodedAuthorizationRequest,
         trustedVerifiersList,
+        metadata,
+        shouldValidateClient,
       );
     return JSON.parse(authenticationResponse);
   }
 
-  static async constructVerifiablePresentationToken(
+  static async constructUnsignedVPToken(
     selectedVCs: Record<string, VC[]>,
+    holderId,
+    signatureAlgorithm,
   ) {
-    let updatedSelectedVCs = {};
-    Object.keys(selectedVCs).forEach(inputDescriptorId => {
-      updatedSelectedVCs[inputDescriptorId] = selectedVCs[
-        inputDescriptorId
-      ].map(vc => JSON.stringify(vc));
-    });
+    let updatedSelectedVCs = this.processSelectedVCs(selectedVCs);
 
-    const vpToken =
-      await OpenID4VP.InjiOpenID4VP.constructVerifiablePresentationToken(
+    const unSignedVpTokens =
+      await OpenID4VP.InjiOpenID4VP.constructUnsignedVPToken(
         updatedSelectedVCs,
+        holderId,
+        signatureAlgorithm,
       );
-    return vpToken;
+    return parseJSON(unSignedVpTokens);
   }
 
   static async shareVerifiablePresentation(
-    vpResponseMetadata: Record<string, string>,
+    vpTokenSigningResultMap: Record<string, any>,
   ) {
     return await OpenID4VP.InjiOpenID4VP.shareVerifiablePresentation(
-      vpResponseMetadata,
+      vpTokenSigningResultMap,
     );
   }
 
   static sendErrorToVerifier(error: string) {
     OpenID4VP.InjiOpenID4VP.sendErrorToVerifier(error);
   }
+
+  private static processSelectedVCs(selectedVCs: Record<string, VC[]>) {
+    const selectedVcsData: SelectedCredentialsForVPSharing = {};
+    Object.entries(selectedVCs).forEach(([inputDescriptorId, vcsArray]) => {
+      vcsArray.forEach(vcData => {
+        const credentialFormat = vcData.vcMetadata.format;
+        vcData = vcData.verifiableCredential.credential;
+        if (!selectedVcsData[inputDescriptorId]) {
+          selectedVcsData[inputDescriptorId] = {};
+        }
+        if (!selectedVcsData[inputDescriptorId][credentialFormat]) {
+          selectedVcsData[inputDescriptorId][credentialFormat] = [];
+        }
+        selectedVcsData[inputDescriptorId][credentialFormat].push(vcData);
+      });
+    });
+    return selectedVcsData;
+  }
 }
 
-export async function constructProofJWT(
-  publicKey: string,
-  privateKey: string,
-  vpToken: Object,
+export async function constructDetachedJWT(
+  privateKey: any,
+  vpToken: string,
   keyType: string,
 ): Promise<string> {
   const jwtHeader = {
-    alg: keyType,
-    jwk: await getJWK(publicKey, keyType),
+    alg: OpenID4VP_Proof_Sign_Algo,
+    crit: ['b64'],
+    b64: false,
   };
+  const header64 = encodeB64(JSON.stringify(jwtHeader));
+  const headerBytes = new TextEncoder().encode(header64);
+  const vpTokenBytes = base64ToByteArray(vpToken);
+  const payloadBytes = new Uint8Array([...headerBytes, 46, ...vpTokenBytes]);
 
-  const jwtPayload = createJwtPayload(vpToken);
+  const signature = await createSignatureED(privateKey, payloadBytes);
 
-  return await getJWT(
-    jwtHeader,
-    jwtPayload,
-    OpenID4VP_Key_Ref,
-    privateKey,
-    keyType,
-  );
+  return header64 + '..' + signature;
 }
 
-function createJwtPayload(vpToken: {[key: string]: any}) {
-  const {'@context': context, type, verifiableCredential, id, holder} = vpToken;
-  return {
-    '@context': context,
-    type,
-    verifiableCredential,
-    id,
-    holder,
-  };
+export async function isClientValidationRequired() {
+  const config = await getAllConfigurations();
+  return config.openid4vpClientValidation === 'true';
+}
+
+export async function getWalletMetadata() {
+  const config = await getAllConfigurations();
+  if (!config.walletMetadata) {
+    return null;
+  }
+  const walletMetadata = JSON.parse(config.walletMetadata);
+  return walletMetadata;
 }

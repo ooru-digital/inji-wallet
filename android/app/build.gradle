@@ -7,14 +7,14 @@ apply plugin: "com.facebook.react"
 apply plugin: "org.sonarqube"
 apply plugin: 'com.google.gms.google-services'
 
-
 configurations.all {
-    resolutionStrategy.force 'androidx.activity:activity-ktx:1.7.1','androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
+    resolutionStrategy.force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
     all*.exclude module: 'bcprov-jdk15to18'
     all*.exclude module: 'bcutil-jdk18on'
     all*.exclude module: 'bcprov-jdk15on'
     all*.exclude module: 'bcutil-jdk15on'
     all*.exclude module: 'titanium-json-ld'
+
 }
 
 react {
@@ -115,7 +115,7 @@ android {
         applicationId 'ooru.io.credissuer_wallet'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionName "0.15.0"
+        versionName "0.17.0"
         versionCode 1
         manifestPlaceholders = [
                 APP_NAME             : APP_NAME,
@@ -252,33 +252,40 @@ android {
     }
 
     packagingOptions {
-        pickFirst 'lib/arm64-v8a/liblog.so'    
-        pickFirst 'lib/armeabi-v7a/liblog.so'  
+        pickFirst 'lib/arm64-v8a/liblog.so'
+        pickFirst 'lib/armeabi-v7a/liblog.so'
         pickFirst 'lib/x86/liblog.so'
         pickFirst 'lib/x86_64/liblog.so'
         resources {
             excludes += "META-INF/*"
             excludes += "META-INF/spring/aot.factories"
-         }
+        }
     }
 }
 
 dependencies {
-    
-    implementation("io.mosip:inji-openid4vp:0.1.0")
+    implementation("io.mosip:inji-openid4vp:0.3.0-SNAPSHOT"){
+        changing = true
+        exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
+        exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
+        exclude group: 'io.mosip', module: 'vcverifier-jar'
+        exclude group: 'com.google.crypto.tink', module: 'tink'
+        exclude group: 'com.augustcellars.cose', module:'cose-java'
+    }
     implementation("com.facebook.react:react-android")
     implementation 'com.facebook.soloader:soloader:0.10.1+'
-    implementation("io.mosip:pixelpass-aar:0.6.0")
+    implementation("io.mosip:pixelpass-aar:0.7.0-SNAPSHOT")
     implementation("io.mosip:secure-keystore:0.3.0")
-    implementation("io.mosip:tuvali:0.5.1")
-    implementation("io.mosip:inji-vci-client:0.2.0")
+    implementation("io.mosip:tuvali:0.5.2")
+    implementation("io.mosip:inji-vci-client:0.3.0-SNAPSHOT")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation project(':react-native-app-auth')
     implementation("com.google.code.gson:gson:2.10.1")
     implementation platform('com.google.firebase:firebase-bom:32.1.1')
     implementation ("com.google.firebase:firebase-messaging")
-    implementation("io.mosip:vcverifier-aar:1.1.0"){
+    implementation("io.mosip:vcverifier-aar:1.1.0") {
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
+        exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
     }
 
 
@@ -309,14 +316,6 @@ dependencies {
     }
     compileOnly project(':react-native-android-location-services-dialog-box')
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
-    debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
-    debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
-        exclude group: 'com.facebook.flipper'
-        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
-    }
-    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
-        exclude group: 'com.facebook.flipper'
-    }
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
@@ -327,8 +326,8 @@ dependencies {
 }
 
 task copyFaceSdkModel(type: Copy) {
-    from '../../assets/models/'     
-    include 'faceModel.tflite'    
+    from '../../assets/models/'
+    include 'faceModel.tflite'
     into 'src/main/assets/'
 }
 

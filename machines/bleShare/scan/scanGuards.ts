@@ -36,6 +36,10 @@ export const ScanGuards = () => {
       Boolean(event.data),
 
     isQrLoginViaDeepLinking: context => context.isQrLoginViaDeepLink === true,
+    isOVPViaDeepLink: context => context.isOVPViaDeepLink === true,
+
+    isFlowTypeDeepLink: context =>
+      context.isOVPViaDeepLink || context.isQrLoginViaDeepLink,
 
     isFlowTypeMiniViewShareWithSelfie: context =>
       context.flowType === VCShareFlowType.MINI_VIEW_SHARE_WITH_SELFIE,

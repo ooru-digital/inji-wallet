@@ -1,15 +1,37 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Theme} from '../../components/ui/styleUtils';
 import {Modal} from '../../components/ui/Modal';
-import {Pressable, Dimensions, View} from 'react-native';
+import {Pressable, Dimensions, BackHandler} from 'react-native';
 import {Button, Column, Row, Text} from '../../components/ui';
 import testIDProps from '../../shared/commonUtil';
 import {SvgImage} from '../../components/ui/svg';
+import {isIOS} from '../../shared/constants';
 
 export const SharingStatusModal: React.FC<SharingStatusModalProps> = props => {
   const {t} = useTranslation('ScanScreen');
+  const resetAndExit = () => {
+    BackHandler.exitApp();
+    props.goToHome();
+  };
 
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | undefined;
+
+    if (props.isVisible && props.buttonStatus === 'none') {
+      timeoutId = setTimeout(
+        () => {
+          resetAndExit();
+        },
+        isIOS() ? 4000 : 2000,
+      );
+    }
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [props.isVisible, props.buttonStatus]);
   return (
     <React.Fragment>
       <Modal
@@ -35,6 +57,13 @@ export const SharingStatusModal: React.FC<SharingStatusModalProps> = props => {
             style={Theme.TextStyles.regular}
             color={Theme.Colors.statusMessage}>
             {props.message}
+          </Text>
+          <Text
+            testID="sharingStatusAdditionalMessage"
+            margin="20 0"
+            style={Theme.TextStyles.bold}
+            size={'large'}>
+            {props.additionalMessage}
           </Text>
         </Column>
         {props.buttonStatus === 'homeAndHistoryIcons' ? (
@@ -98,9 +127,10 @@ export const SharingStatusModal: React.FC<SharingStatusModalProps> = props => {
 interface SharingStatusModalProps {
   isVisible: boolean;
   testId: string;
-  buttonStatus?: String;
+  buttonStatus?: 'homeAndHistoryIcons' | 'none';
   title: String;
   message: String;
+  additionalMessage?: String;
   image: React.ReactElement;
   gradientButtonTitle?: String;
   clearButtonTitle?: String;

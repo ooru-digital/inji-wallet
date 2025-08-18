@@ -82,6 +82,7 @@
     "id": "ID",
     "qrCodeHeader": "QR Code",
     "nationalCard": "Credential ",
+    "identityCard": "Identity Card",
     "insuranceCard": "Insurance Card",
     "beneficiaryCard": "Beneficiary Card",
     "socialRegistryCard": "Social Registry Card",
@@ -157,7 +158,8 @@
     "downloaded": "downloaded",
     "shared": "shared",
     "received": "received",
-    "deleted": "deleted"
+    "deleted": "deleted",
+    "historyHeaderLabel": "History"
   },
   "SettingScreen": {
     "header": "Settings",
@@ -189,7 +191,8 @@
     "forMoreDetails": "For more details",
     "clickHere": "Click here",
     "version": "Version",
-    "tuvaliVersion": "Tuvali-version"
+    "tuvaliVersion": "Tuvali-version",
+    "poweredBy": "Powered by Inji, A MOSIP Product"
   },
   "IssuersScreen": {
     "title": "Add new certificate",
@@ -220,6 +223,10 @@
       },
       "technicalDifficulty": {
         "title": "An error occurred!",
+        "message": "Thank you for your patience! We're currently experiencing technical difficulties. Please try downloading again shortly."
+      },
+      "authorizationGrantTypeNotSupportedByWallet": {
+        "title": "Grant type not supported authorization error!",
         "message": "Thanks for your patience! We're experiencing technical difficulties right now. Please try again later or contact the admin for further assistance!"
       },
       "verificationFailed": {
@@ -506,6 +513,10 @@
       "pending": {
         "title": "Pending Status:",
         "description": "Verification is currently pending due to technical issues."
+      },
+      "expired": {
+        "title": "Expired Status:",
+        "description": "The credential has expired."
       }
     }
   },
@@ -826,6 +837,8 @@
   },
   "SendVcScreen": {
     "reasonForSharing": "Reason for sharing (optional)",
+    "introTitle": "Requester",
+    "requestMessage": "is requesting your digital ID for the purpose",
     "acceptRequest": "Share",
     "acceptRequestAndVerify": "Share with Selfie",
     "reject": "Reject",
@@ -855,7 +868,7 @@
     "checkAll": "Check All",
     "consentDialog": {
       "title": "Consent Required",
-      "message": "We require your consent to share your verifiable credentials. This will enable us to verify your identity and fulfil your service requests. Choose \"Yes, Proceed\" to consent or \"Decline\" if you do not wish to share.",
+      "message": "We require your consent to share your verifiable credentials with {{verifierName}}. This will enable us to verify your identity and fulfil your service requests. Choose \"Yes, Proceed\" to consent or \"Decline\" if you do not wish to share your credentials with {{verifierName}}.",
       "confirmButton": "Yes, Proceed",
       "cancelButton": "Decline"
     },
@@ -889,7 +902,12 @@
       "noImage": {
         "title": "An Error Occured!",
         "message": "Face verification requires a photo in the selected credential(s). Please use the Share option or select a credential that includes an image."
-      }
+      },
+      "duplicateMdocCredential": {
+        "title": "An Error Occured!",
+        "message": "You can share only one Mobile Driving License or document at a time. Please select just one to continue."
+      },
+      "additionalMessage": "Please go back to the verifier app."
     },
     "loaders": {
       "loading": "Loading...",
@@ -985,8 +1003,16 @@
       "decryptionFailed": "Failed to decrypt data",
       "invalidateKeyError": {
         "title": "App was Reset",
-        "message": "Due to the fingerprint / facial recognition update, app security was impacted, and downloaded certificates were removed. Please download again."
+        "message": "Due to the fingerprint / facial recognition update, app security was impacted, and downloaded cards were removed. Please download again."
+      },
+      "appSetupIncomplete": {
+        "title": "Setup incomplete",
+        "message": "Please finish the initial setup to proceed."
       }
+    },
+    "qrLoginOverlay": {
+      "title": "Setup incomplete",
+      "message": "Please finish the initial setup to proceed."
     },
     "ignore": "Ignore"
   },

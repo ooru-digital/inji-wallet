@@ -23,7 +23,7 @@ import {VcMetaEvents} from '../../VerifiableCredential/VCMetaMachine/VCMetaMachi
 import {subscribe} from '../../../shared/openIdBLE/verifierEventHandler';
 import {VerifierDataEvent} from '../../../shared/tuvali/types/events';
 import {BLEError} from '../types';
-import Storage from '../../../shared/storage';
+import Storage, { isMinimumStorageLimitReached } from '../../../shared/storage';
 import {VCMetadata} from '../../../shared/VCMetadata';
 import {
   getEndEventData,
@@ -620,7 +620,6 @@ export const requestMachine =
               VCActivityLog.getLogFromObject({
                 _vcKey: vcMetadata.getVcKey(),
                 type: context.receiveLogType,
-                id: vcMetadata.displayId,
                 credentialConfigurationId:
                   context.incomingVc.verifiableCredential
                     .credentialConfigurationId,
@@ -886,9 +885,7 @@ export const requestMachine =
         },
 
         checkStorageAvailability: () => async () => {
-          return Promise.resolve(
-            Storage.isMinimumLimitReached('minStorageRequired'),
-          );
+          return Promise.resolve(isMinimumStorageLimitReached('minStorageRequired'));
         },
       },
 

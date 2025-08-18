@@ -6,7 +6,7 @@ import {
   Pressable,
   TouchableOpacity,
   I18nManager,
-  View
+  View,
 } from 'react-native';
 import {Modal} from '../../components/ui/Modal';
 import {Column, Row, Text} from '../../components/ui';
@@ -46,7 +46,7 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
     <ListItem.Content>
       <ListItem.Title
         {...testIDProps('aboutInjiTitle')}
-        style={{ paddingTop: 3, paddingLeft: 16 }} 
+        style={{ paddingTop: 3, paddingLeft: 16 }}
       >
         <Text weight="semibold" color={Theme.Colors.settingsLabel}>
           {t('aboutInji')}
@@ -166,6 +166,13 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
                 {t('tuvaliVersion')}: {__TuvaliVersion.getValue()}
               </Text>
             )}
+            <View style={Theme.AboutInjiScreenStyle.horizontalLineStyle} />
+            <Text
+              weight="semibold"
+              style={Theme.AboutInjiScreenStyle.poweredByTextStyle}
+              color="black">
+              {t('poweredBy')}
+            </Text>
           </Column>
         </Column>
       </Modal>
