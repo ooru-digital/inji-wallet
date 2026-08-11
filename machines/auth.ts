@@ -269,22 +269,22 @@ export function selectIsTourGuide(state: State) {
 }
 
 export function selectAuthorized(state: State) {
-  return state.matches('authorized');
+  return !!state?.matches?.('authorized');
 }
 
 export function selectUnauthorized(state: State) {
-  return state.matches('unauthorized');
+  return !!state?.matches?.('unauthorized');
 }
 
 export function selectSettingUp(state: State) {
-  return state?.matches('settingUp');
+  return !!state?.matches?.('settingUp');
 }
 
 export function selectLanguagesetup(state: State) {
-  return state.matches('languagesetup');
+  return !!state?.matches?.('languagesetup');
 }
 export function selectIntroSlider(state: State) {
-  return state.matches('introSlider');
+  return !!state?.matches?.('introSlider');
 }
 
 export function selectIsBiometricToggleFromSettings(state: State) {

@@ -65,7 +65,7 @@ end={Theme.LinearGradientDirection.end}
 style={{
 justifyContent: 'center',
 height: 20,
-marginTop: 10,
+marginStart: 6,
 }}>
 <Text
 testID="newLabel"

@@ -12,15 +12,42 @@ export const SplashScreen: React.FC<RootRouteProps> = props => {
       ? require('../assets/purpleSplashScreen.png')
       : require('../assets/SplashScreen.png');
   const controller = useAppLayout();
+
   useEffect(() => {
-    setTimeout(() => {
+    const isAuthReady =
+      controller.isLanguagesetup ||
+      controller.isUnAuthorized ||
+      controller.isAuthorized ||
+      controller.isSettingUp ||
+      controller.isIntroSlider;
+
+    if (!isAuthReady) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
       if (controller.isLanguagesetup) {
         props.navigation.navigate('Language');
-      } else if (controller.isUnAuthorized) {
+      } else if (controller.isIntroSlider) {
+        props.navigation.navigate('IntroSliders');
+      } else if (
+        controller.isUnAuthorized ||
+        controller.isSettingUp ||
+        controller.isAuthorized
+      ) {
         props.navigation.navigate('Welcome');
       }
     }, 3000);
-  }, [controller.isAuthorized || controller.isLanguagesetup]);
+
+    return () => clearTimeout(timer);
+  }, [
+    controller.isAuthorized,
+    controller.isIntroSlider,
+    controller.isLanguagesetup,
+    controller.isSettingUp,
+    controller.isUnAuthorized,
+    props.navigation,
+  ]);
 
   return (
     <Column
@@ -28,12 +55,16 @@ export const SplashScreen: React.FC<RootRouteProps> = props => {
       style={{
         flex: 1,
         justifyContent: 'center',
+        backgroundColor: '#ffffff',
         height: Dimensions.get('screen').height,
         width: Dimensions.get('screen').width,
       }}>
       <Image
-        resizeMode="contain" // Ensures aspect ratio is maintained
-        style={{width: 630, height: 710}}
+        resizeMode="contain"
+        style={{
+          width: Dimensions.get('screen').width,
+          height: Dimensions.get('screen').height,
+        }}
         source={imageResource}
       />
     </Column>
