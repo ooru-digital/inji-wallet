@@ -126,7 +126,27 @@
     "disclosureNoteTitle": "Please note",
     "disclosedFieldsDescription": "Your card includes the following selectively shareable details listed below.",
     "disclosedFieldsTitle": "Information you choose to share",
-    "disclosureInfoNote": "Fields next to this icon indicate that the information can be shared selectively."
+    "disclosureInfoNote": "Fields next to this icon indicate that the information can be shared selectively.",
+    "mdocConsent": {
+      "title": "Share Information",
+      "message": "{{verifier}} wants to verify your identity.",
+      "unknownVerifier": "A verifier",
+      "purposeLabel": "Purpose",
+      "defaultPurpose": "Data verification",
+      "credentialLabel": "Credential",
+      "defaultCredential": "mDoc credential",
+      "requestedData": "Information requested",
+      "onlyListedShared": "Only the information listed above will be shared.",
+      "confirmButton": "Share",
+      "cancelButton": "Cancel",
+      "retain": "May retain"
+    },
+    "mdocCannotSatisfy": {
+      "title": "Credential not available",
+      "message": "The verifier requested {{requested}}, but this card is {{wallet}}. Sharing was cancelled.",
+      "messageGeneric": "This card cannot satisfy the verifier's request. Sharing was cancelled.",
+      "ok": "OK"
+    }
   },
   "HomeScreenKebabPopUp": {
     "title": "More Options",

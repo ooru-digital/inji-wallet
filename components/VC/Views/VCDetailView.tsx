@@ -74,11 +74,20 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
         verifiableCredential['nameSpaces'] ??
         {};
       Object.keys(namespaces).forEach(namespace => {
-        (namespaces[namespace] as Array<Object>).forEach(element => {
-          availableFieldNames.push(
-            `${namespace}~${element['elementIdentifier']}`,
-          );
-        });
+        const entries = namespaces[namespace];
+        if (Array.isArray(entries)) {
+          entries.forEach((element: {elementIdentifier?: string}) => {
+            const id = element?.elementIdentifier;
+            if (typeof id === 'string' && id.length > 0) {
+              availableFieldNames.push(`${namespace}~${id}`);
+            }
+          });
+        } else if (entries && typeof entries === 'object') {
+          // CBOR→JSON sometimes represents IssuerSigned nameSpaces as map(elementId → value), not an array.
+          Object.keys(entries as Record<string, unknown>).forEach(elementId => {
+            availableFieldNames.push(`${namespace}~${elementId}`);
+          });
+        }
       });
     } else if (
       props.verifiableCredentialData.vcMetadata.format === VCFormat.vc_sd_jwt ||
