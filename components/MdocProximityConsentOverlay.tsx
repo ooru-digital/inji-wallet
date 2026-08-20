@@ -1,6 +1,6 @@
-import React from 'react';
-import {Dimensions, ScrollView} from 'react-native';
-import {Overlay} from 'react-native-elements';
+import React, {useState} from 'react';
+import {Dimensions, ScrollView, TouchableOpacity} from 'react-native';
+import {Overlay, Icon} from 'react-native-elements';
 import {useTranslation} from 'react-i18next';
 import {Button, Column, Row, Text} from './ui';
 import {Theme} from './ui/styleUtils';
@@ -27,11 +27,18 @@ export const MdocProximityConsentOverlay: React.FC<
   const {t} = useTranslation('VcDetails');
   const verifier =
     props.verifierName?.trim() || t('mdocConsent.unknownVerifier');
-  const purpose = props.purpose?.trim() || t('mdocConsent.defaultPurpose');
+  const purpose = props.requestInfo?.purpose
+    ? formatElementLabel(props.requestInfo.purpose)
+    : props.purpose?.trim() || t('mdocConsent.defaultPurpose');
   const credential =
     props.credentialLabel?.trim() ||
     props.docType?.trim() ||
     t('mdocConsent.defaultCredential');
+
+  const purposesList = props.requestInfo?.purposes;
+  const [unselectedPurposes, setUnselectedPurposes] = useState<Set<string>>(
+    new Set(),
+  );
 
   return (
     <Overlay
@@ -80,6 +87,64 @@ export const MdocProximityConsentOverlay: React.FC<
             color="#5D5D5D">
             {purpose}
           </Text>
+
+          {purposesList && purposesList.length > 0 && (
+            <ScrollView
+              persistentScrollbar={true}
+              showsVerticalScrollIndicator={true}
+              style={{maxHeight: Dimensions.get('screen').height * 0.25}}>
+              <Column margin="8 0 0 0">
+                {purposesList.map((p, index) => {
+                  const isSelected = !unselectedPurposes.has(p.name);
+                  const isDisabled = p.is_required;
+                  return (
+                    <TouchableOpacity
+                      key={p.name + index}
+                      disabled={isDisabled}
+                      onPress={() => {
+                        const newSet = new Set(unselectedPurposes);
+                        if (isSelected) newSet.add(p.name);
+                        else newSet.delete(p.name);
+                        setUnselectedPurposes(newSet);
+                      }}
+                      style={{marginBottom: 12}}>
+                      <Row align="flex-start" crossAlign="center">
+                        <Icon
+                          name={
+                            isSelected ? 'check-box' : 'check-box-outline-blank'
+                          }
+                          type="material"
+                          color={
+                            isDisabled
+                              ? Theme.Colors.GrayIcon
+                              : Theme.Colors.Details
+                          }
+                          size={24}
+                          containerStyle={{marginRight: 8}}
+                        />
+                        <Column style={{flex: 1}}>
+                          <Text
+                            size="base"
+                            color={Theme.Colors.Details}
+                            style={Theme.TextStyles.base}>
+                            {p.name.replace(/_/g, ' ')}
+                          </Text>
+                          {!!p.description && (
+                            <Text
+                              size="small"
+                              color={Theme.Colors.GrayIcon}
+                              weight="regular">
+                              {p.description}
+                            </Text>
+                          )}
+                        </Column>
+                      </Row>
+                    </TouchableOpacity>
+                  );
+                })}
+              </Column>
+            </ScrollView>
+          )}
         </Column>
 
         <Column width="100%" margin="4 0 4 0">
@@ -113,7 +178,9 @@ export const MdocProximityConsentOverlay: React.FC<
               color="#000000">
               {t('mdocConsent.requestedData')}
             </Text>
-            <ScrollView>
+            <ScrollView
+              persistentScrollbar={true}
+              showsVerticalScrollIndicator={true}>
               {props.elements.map((item, index) => (
                 <Row
                   key={`${item.namespace}:${item.element}:${index}`}
@@ -181,6 +248,15 @@ export interface MdocProximityConsentOverlayProps {
   verifierName?: string;
   purpose?: string;
   elements: MdocPresentmentConsentElement[];
+  requestInfo?: {
+    intent_to_retain?: boolean;
+    purpose?: string;
+    purposes?: Array<{
+      name: string;
+      is_required: boolean;
+      description?: string;
+    }>;
+  };
   onAllow: () => void;
   onDeny: () => void;
 }

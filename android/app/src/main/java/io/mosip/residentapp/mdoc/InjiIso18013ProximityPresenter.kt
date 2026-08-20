@@ -106,8 +106,9 @@ class InjiIso18013ProximityPresenter(
     @Volatile
     private var consentContextPurpose: String = ""
 
-    @Volatile
+    /** Numeric purposeHints code from ISO 18013-5 §10.2.5. */
     private var consentContextPurposeHintCode: Int? = null
+    private var consentContextRequestInfoJson: String = ""
 
     fun start(
         issuerSignedCompact: String,
@@ -229,6 +230,7 @@ class InjiIso18013ProximityPresenter(
         val purpose = consentContextPurpose.takeIf { it.isNotBlank() }
             ?: purposeFromRequestedElements(elementNames)
         val purposeHintCode = consentContextPurposeHintCode
+        val requestInfoJson = consentContextRequestInfoJson
 
         val deferred = CompletableDeferred<Boolean>()
         synchronized(consentLock) {
@@ -248,6 +250,7 @@ class InjiIso18013ProximityPresenter(
             verifierName = verifierName,
             purpose = purpose,
             purposeHintCode = purposeHintCode,
+            requestInfoJson = requestInfoJson,
             elements = elements,
         )
 
@@ -275,6 +278,7 @@ class InjiIso18013ProximityPresenter(
         verifierName: String,
         purpose: String,
         purposeHintCode: Int?,
+        requestInfoJson: String,
         elements: WritableArray,
     ) {
         val payload = Arguments.createMap()
@@ -282,6 +286,7 @@ class InjiIso18013ProximityPresenter(
         payload.putString("credentialLabel", credentialLabel ?: "")
         payload.putString("verifierName", verifierName)
         payload.putString("purpose", purpose)
+        payload.putString("requestInfoJson", requestInfoJson)
         if (purposeHintCode != null) {
             payload.putInt("purposeHintCode", purposeHintCode)
         } else {
@@ -295,7 +300,7 @@ class InjiIso18013ProximityPresenter(
      * Reads ISO 18013-5 `deviceRequestInfo.useCases[].purposeHints` (and optional free-text
      * `purpose` in otherInfo) from the reader's DeviceRequest before filtering drops that field.
      */
-    private fun rememberConsentContextFromDeviceRequest(deviceRequest: DeviceRequest) {
+    private fun rememberConsentContextFromDeviceRequest(deviceRequest: DeviceRequest, encodedDeviceRequest: ByteArray?, walletDocType: String) {
         val hints = linkedMapOf<String, Int>()
         var freeTextPurpose: String? = null
         deviceRequest.deviceRequestInfo?.let { dri ->
@@ -313,6 +318,38 @@ class InjiIso18013ProximityPresenter(
         consentContextPurpose = freeTextPurpose?.takeIf { it.isNotBlank() }
             ?: purposeLabelFromHintCode(hintCode)
             ?: ""
+            
+        if (encodedDeviceRequest != null) {
+            try {
+                val deviceReqMap = org.multipaz.cbor.Cbor.decode(encodedDeviceRequest)
+                val docReqs = deviceReqMap.getOrNull("docRequests")?.asArray
+                var foundRequestInfo: String? = null
+                docReqs?.forEach { docReq ->
+                    val itemsReqTagged = docReq.getOrNull("itemsRequest")
+                    val itemsReqDecoded = try {
+                        itemsReqTagged?.asTaggedEncodedCbor
+                    } catch (e: Exception) {
+                        null
+                    } ?: try {
+                        val bstr = itemsReqTagged?.asTagged?.asBstr
+                        if (bstr != null) org.multipaz.cbor.Cbor.decode(bstr) else null
+                    } catch (e: Exception) {
+                        null
+                    }
+                    val reqDocType = try { itemsReqDecoded?.getOrNull("docType")?.asTstr } catch (e: Exception) { null }
+                    val reqInfo = itemsReqDecoded?.getOrNull("requestInfo")
+                    if (reqInfo != null && (reqDocType == null || reqDocType == walletDocType)) {
+                        foundRequestInfo = dataItemToJson(reqInfo)
+                    }
+                }
+                consentContextRequestInfoJson = foundRequestInfo ?: "{}"
+            } catch (e: Exception) {
+                consentContextRequestInfoJson = "{\"error\": \"failed to parse\"}"
+            }
+        } else {
+            consentContextRequestInfoJson = "{}"
+        }
+        
         Log.i(
             TAG,
             "consent context from DeviceRequest: purpose='${consentContextPurpose.ifBlank { "?" }}' " +
@@ -320,9 +357,48 @@ class InjiIso18013ProximityPresenter(
         )
     }
 
+    private fun dataItemToJson(item: org.multipaz.cbor.DataItem): String {
+        return when (item.majorType) {
+            org.multipaz.cbor.MajorType.UNSIGNED_INTEGER,
+            org.multipaz.cbor.MajorType.NEGATIVE_INTEGER -> item.asNumber.toString()
+            org.multipaz.cbor.MajorType.BYTE_STRING -> "\"_bstr_\""
+            org.multipaz.cbor.MajorType.UNICODE_STRING -> "\"${item.asTstr.replace("\"", "\\\"")}\""
+            org.multipaz.cbor.MajorType.ARRAY -> {
+                val sb = java.lang.StringBuilder("[")
+                item.asArray.forEachIndexed { i, child ->
+                    if (i > 0) sb.append(",")
+                    sb.append(dataItemToJson(child))
+                }
+                sb.append("]")
+                sb.toString()
+            }
+            org.multipaz.cbor.MajorType.MAP -> {
+                val sb = java.lang.StringBuilder("{")
+                var first = true
+                item.asMap.forEach { (k, v) ->
+                    if (!first) sb.append(",")
+                    first = false
+                    sb.append(dataItemToJson(k)).append(":").append(dataItemToJson(v))
+                }
+                sb.append("}")
+                sb.toString()
+            }
+            org.multipaz.cbor.MajorType.TAG -> dataItemToJson(item.asTagged)
+            org.multipaz.cbor.MajorType.SPECIAL -> {
+                try {
+                    item.asBoolean.toString()
+                } catch (e: Exception) {
+                    "null"
+                }
+            }
+            else -> "\"unknown\""
+        }
+    }
+
     private fun clearConsentContext() {
         consentContextPurpose = ""
         consentContextPurposeHintCode = null
+        consentContextRequestInfoJson = ""
     }
 
     /**
@@ -1582,7 +1658,7 @@ class InjiIso18013ProximityPresenter(
                 }
                 val originalDeviceRequest =
                     DeviceRequest.fromDataItem(Cbor.decode(encodedDeviceRequest!!))
-                rememberConsentContextFromDeviceRequest(originalDeviceRequest)
+                rememberConsentContextFromDeviceRequest(originalDeviceRequest, encodedDeviceRequest, walletDocType)
                 logDocRequestDiffAgainstCredential(
                     sid = sid,
                     deviceRequest = originalDeviceRequest,

@@ -86,6 +86,15 @@ export interface MdocPresentmentConsentRequest {
   /** Numeric purposeHints code when present (ISO 18013-5 §10.2.5). */
   purposeHintCode?: number | null;
   elements: MdocPresentmentConsentElement[];
+  requestInfo?: {
+    intent_to_retain?: boolean;
+    purpose?: string;
+    purposes?: Array<{
+      name: string;
+      is_required: boolean;
+      description?: string;
+    }>;
+  };
 }
 
 export const MDOC_PRESENTMENT_CONSENT_REQUIRED =
@@ -157,7 +166,7 @@ function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
       typeof obj.credentialLabel === 'string' ? obj.credentialLabel : undefined,
     verifierName:
       typeof obj.verifierName === 'string' ? obj.verifierName : undefined,
-    purpose: typeof obj.purpose === 'string' ? obj.purpose : undefined,
+    purpose: typeof obj.purpose === 'string' ? obj.purpose : '',
     purposeHintCode,
     elements: Array.isArray(obj.elements)
       ? obj.elements.map(el => ({
@@ -167,6 +176,16 @@ function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
           optional: !!el?.optional,
         }))
       : [],
+    requestInfo: (() => {
+      if (typeof obj.requestInfoJson === 'string' && obj.requestInfoJson) {
+        try {
+          return JSON.parse(obj.requestInfoJson);
+        } catch (e) {
+          return undefined;
+        }
+      }
+      return undefined;
+    })(),
   };
 }
 
@@ -182,6 +201,24 @@ export function subscribeMdocPresentmentConsentRequired(
     return {remove: () => {}};
   }
   return emitter.addListener(MDOC_PRESENTMENT_CONSENT_REQUIRED, raw => {
+    console.log(
+      '[DEBUG] Raw mDoc Consent Request:',
+      JSON.stringify(raw, null, 2),
+    );
+    if (raw && (raw as any).requestInfoJson) {
+      console.log('[DEBUG] requestInfo field detected!');
+      try {
+        const parsed = JSON.parse((raw as any).requestInfoJson);
+        console.log(
+          '[DEBUG] Parsed requestInfo:\n' + JSON.stringify(parsed, null, 2),
+        );
+      } catch (e) {
+        console.log(
+          '[DEBUG] requestInfo (raw string):',
+          (raw as any).requestInfoJson,
+        );
+      }
+    }
     listener(normalizeConsentPayload(raw));
   });
 }

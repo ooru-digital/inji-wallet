@@ -439,6 +439,7 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
         verifierName={consentRequest?.verifierName}
         purpose={consentRequest?.purpose}
         elements={consentRequest?.elements ?? []}
+        requestInfo={consentRequest?.requestInfo}
         onAllow={handleConsentAllow}
         onDeny={handleConsentDeny}
       />
