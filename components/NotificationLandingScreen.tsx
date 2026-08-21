@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   FlatList,
   Pressable,
@@ -11,21 +11,32 @@ import {
   Platform,
   TouchableOpacity,
 } from 'react-native';
-import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
-import { useMachine } from '@xstate/react';
-import { notificationMachine } from '../machines/Notifications/NotificationMachine';
-import { Modal } from './ui/Modal';
-import { Column, Text } from './ui';
-import { Theme } from './ui/styleUtils';
-import { BannerNotificationContainer } from './BannerNotificationContainer';
-import { Button } from './ui';
-import { CopyButton } from './CopyButton';
-import { NotificationEvents } from '../machines/Notifications/NotificationEvents';
+import {getApps} from '@react-native-firebase/app';
+import messaging, {
+  FirebaseMessagingTypes,
+} from '@react-native-firebase/messaging';
+
+// This app flavor's applicationId has no matching client entry in
+// google-services.json, so no default Firebase app is initialized natively.
+// Calling messaging() in that state throws, so guard every entry point.
+const isFirebaseAvailable = (): boolean => getApps().length > 0;
+import {useMachine} from '@xstate/react';
+import {notificationMachine} from '../machines/Notifications/NotificationMachine';
+import {Modal} from './ui/Modal';
+import {Column, Text} from './ui';
+import {Theme} from './ui/styleUtils';
+import {BannerNotificationContainer} from './BannerNotificationContainer';
+import {Button} from './ui';
+import {CopyButton} from './CopyButton';
+import {NotificationEvents} from '../machines/Notifications/NotificationEvents';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BackButton } from './ui/backButton/BackButton';
-import { useNavigation } from '@react-navigation/native';
+import {BackButton} from './ui/backButton/BackButton';
+import {useNavigation} from '@react-navigation/native';
 
 async function requestPermission(): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    return;
+  }
   const authStatus = await messaging().requestPermission();
   const enabled =
     authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
@@ -40,7 +51,9 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
 }) => {
   const [showNotificationPage, setShowNotificationPage] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(
+    null,
+  );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showImagePreview, setShowImagePreview] = useState(false);
@@ -56,7 +69,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
 
   const handleAddToWallet = () => {
     if (!selectedNotification) return;
-    send({ type: NotificationEvents.ADD_TO_WALLET, data: selectedNotification });
+    send({type: NotificationEvents.ADD_TO_WALLET, data: selectedNotification});
     setShowDetailsModal(false);
     setShowNotificationPage(false);
   };
@@ -77,11 +90,16 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
     requestPermission();
     loadStoredNotifications();
 
+    if (!isFirebaseAvailable()) {
+      return;
+    }
+
     const unsubscribe = messaging().onMessage(
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
         const newNotification = {
           title: remoteMessage.notification?.title || 'New Notification',
-          message: remoteMessage.notification?.body || 'You have a new message.',
+          message:
+            remoteMessage.notification?.body || 'You have a new message.',
           credential_id: remoteMessage.data?.credential_id || 'N/A',
           org_code: remoteMessage.data?.org_code || 'N/A',
           org_name: remoteMessage.data?.org_name || 'N/A',
@@ -92,7 +110,9 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
 
         setNotifications(prev => {
           const updated = [newNotification, ...prev];
-          AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(console.error);
+          AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(
+            console.error,
+          );
           return updated;
         });
 
@@ -106,7 +126,8 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
       async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
         const newNotification = {
           title: remoteMessage.notification?.title || 'New Notification',
-          message: remoteMessage.notification?.body || 'You have a new message.',
+          message:
+            remoteMessage.notification?.body || 'You have a new message.',
           credential_id: remoteMessage.data?.credential_id || 'N/A',
           org_code: remoteMessage.data?.org_code || 'N/A',
           org_name: remoteMessage.data?.org_name || 'N/A',
@@ -117,7 +138,9 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
 
         setNotifications(prev => {
           const updated = [newNotification, ...prev];
-          AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(console.error);
+          AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(
+            console.error,
+          );
           return updated;
         });
 
@@ -136,7 +159,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
           setShowNotificationPage(true);
           setUnreadCount(0);
         }}
-        style={{ position: 'relative' }}>
+        style={{position: 'relative'}}>
         {triggerComponent}
         {unreadCount > 0 && (
           <View style={styles.badge}>
@@ -152,21 +175,31 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         headerTitle="Notifications"
         showClose={false}>
         <View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, marginTop: -65 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: 10,
+              marginTop: -65,
+            }}>
             <BackButton onPress={() => setShowNotificationPage(false)} />
           </View>
           <View style={styles.horizontalLine} />
         </View>
         <BannerNotificationContainer />
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{flex: 1}}>
           <Column fill padding="10">
             <FlatList
               keyExtractor={(item, index) => 'Notification' + index.toString()}
-              renderItem={({ item }) => (
+              renderItem={({item}) => (
                 <View style={styles.notificationItem}>
                   <Pressable onPress={() => handleNotificationPress(item)}>
-                    <Text style={Theme.TextStyles.helpHeader}>{item.title}</Text>
-                    <Text style={Theme.TextStyles.helpDetails}>{item.message}</Text>
+                    <Text style={Theme.TextStyles.helpHeader}>
+                      {item.title}
+                    </Text>
+                    <Text style={Theme.TextStyles.helpDetails}>
+                      {item.message}
+                    </Text>
                   </Pressable>
                 </View>
               )}
@@ -183,22 +216,29 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         onDismiss={() => setShowDetailsModal(false)}
         showClose={false}>
         <View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, marginTop: -65 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: 10,
+              marginTop: -65,
+            }}>
             <BackButton onPress={() => setShowDetailsModal(false)} />
           </View>
           <View style={styles.horizontalLine} />
-
         </View>
-        <SafeAreaView style={{ padding: 20, alignItems: 'center' }}>
+        <SafeAreaView style={{padding: 20, alignItems: 'center'}}>
           <View style={styles.card}>
             <TouchableOpacity
               onPress={() => {
-                setPreviewImageUri(selectedNotification?.certificate_url || null);
+                setPreviewImageUri(
+                  selectedNotification?.certificate_url || null,
+                );
                 setShowImagePreview(true);
               }}>
               <View style={styles.cardImageContainer}>
                 <Image
-                  source={{ uri: selectedNotification?.certificate_url }}
+                  source={{uri: selectedNotification?.certificate_url}}
                   style={styles.cardImage}
                   resizeMode="contain"
                 />
@@ -209,7 +249,9 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
                 <Text style={Theme.TextStyles.helpDetails}>
                   Credential ID: {selectedNotification?.credential_id}
                 </Text>
-                <CopyButton content={selectedNotification?.credential_id || ''} />
+                <CopyButton
+                  content={selectedNotification?.credential_id || ''}
+                />
               </View>
               <Text style={Theme.TextStyles.helpDetails}>
                 Issued by: {selectedNotification?.org_name}
@@ -217,7 +259,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
             </View>
           </View>
         </SafeAreaView>
-        <View style={{ position: 'absolute', bottom: 20, left: 20, right: 20 }}>
+        <View style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
           <Button
             testID="addToWallet"
             type="gradient"
@@ -233,11 +275,12 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
         isVisible={showImagePreview}
         onDismiss={() => setShowImagePreview(false)}
         showClose>
-        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <SafeAreaView
+          style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
           {previewImageUri && (
             <Image
-              source={{ uri: previewImageUri }}
-              style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
+              source={{uri: previewImageUri}}
+              style={{width: '100%', height: '100%', resizeMode: 'contain'}}
             />
           )}
         </SafeAreaView>
@@ -257,7 +300,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -307,7 +350,7 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#ccc',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,

@@ -1,9 +1,13 @@
 plugins {
     id 'com.gladed.androidgitversion' version '0.4.14'
+    id 'expo-updates-gradle-plugin' apply false
 }
 
 apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
+// Must be applied after com.facebook.react: it reads the ReactExtension
+// (registered by that plugin) to locate the entry file for manifest generation.
+apply plugin: "expo-updates-gradle-plugin"
 apply plugin: "org.sonarqube"
 apply plugin: 'kotlin-android'
 // apply plugin: 'com.google.gms.google-services' // disabled temporarily: no Firebase client registered for io.ooru.credissuerwallet yet
@@ -12,32 +16,40 @@ apply plugin: 'kotlin-android'
 configurations.all {
     resolutionStrategy {
         force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
-        // Confirmed via `./gradlew :app:dependencyInsight --dependency bcpkix-jdk15on`: the legacy
-        // jar is pulled in transitively via androidx.security:security-identity-credential, which
-        // some io.mosip AAR depends on. Neither a plain exclude() nor dependencySubstitution{} caused
-        // it to actually drop out of the resolved graph, so intercept every dependency request
-        // directly (eachDependency runs unconditionally for every edge in this configuration).
-        //
-        // The same legacy jars also arrive under a *different group*: the chain
-        //   io.mosip:vcverifier-aar -> info.weboftrust:ld-signatures-java -> org.bitcoinj:bitcoinj-core
-        // pulls com.madgag.spongycastle:bcpkix-jdk15on:1.56.0.0, which despite the "spongycastle"
-        // group name is a straight republish of the original BouncyCastle jar and still ships the
-        // org.bouncycastle.* packages -- so it collides with org.bouncycastle:bcpkix-jdk15to18:1.68
-        // (pulled in via io.mosip:tuvali) in :app:checkResidentappDebugDuplicateClasses.
-        // Match on the artifact name across both groups.
+        // BouncyCastle appears in this graph under THREE different artifact families at once:
+        //   - "jdk15on"    (very old naming, e.g. com.madgag.spongycastle:bcpkix-jdk15on:1.56.0.0,
+        //                   pulled via :react-native-rsa-native, io.mosip:secure-keystore, and
+        //                   transitively via io.mosip:vcverifier-aar -> ld-signatures-java -> bitcoinj-core)
+        //   - "jdk15to18"  (LTS branch, frozen around 1.70, e.g. org.bouncycastle:bcpkix/bcprov/bcutil-
+        //                   jdk15to18, pulled via io.mosip:tuvali and, for bcutil, via expo-updates -> expo)
+        //   - "jdk18on"    (the actively maintained branch, e.g. org.bouncycastle:bcprov-jdk18on:1.74,
+        //                   pulled via io.mosip:vcverifier-aar -> ld-signatures-java ->
+        //                   com.danubetech:key-formats-java)
+        // "jdk15on" is literally the pre-2016 name for what's now "jdk15to18" (safe, same-lineage
+        // rename), but "jdk15to18" and "jdk18on" are genuinely separate maintained forks that both
+        // ship the same org.bouncycastle.* packages -- mixing any two of these three trips
+        // :app:checkResidentappDebugDuplicateClasses. Confirmed via
+        // `./gradlew :app:dependencyInsight --configuration residentappDebugRuntimeClasspath --dependency bouncycastle`.
+        // Standardize the whole graph on "jdk18on", since that's the branch still receiving updates
+        // and the one key-formats-java requires natively -- redirecting it backwards to "jdk15to18"
+        // risks losing API it needs. bcpkix/bcprov/bcutil-jdk18on:1.74 were published together as a
+        // matched set (2023-06-15), so redirect everything to that version for consistency.
+        // Neither a plain exclude() nor dependencySubstitution{} actually dropped the losing side out
+        // of the resolved graph, so intercept every dependency request directly (eachDependency runs
+        // unconditionally for every edge in this configuration).
         def legacyBcGroups = ['org.bouncycastle', 'com.madgag.spongycastle']
+        def legacyBcNames = ['jdk15on', 'jdk15to18']
         eachDependency { DependencyResolveDetails details ->
-            if (details.requested.group in legacyBcGroups && details.requested.name == 'bcpkix-jdk15on') {
-                details.useTarget('org.bouncycastle:bcpkix-jdk15to18:1.68')
-                details.because('avoid duplicate classes with bcpkix-jdk15to18 pulled in elsewhere')
-            }
-            if (details.requested.group in legacyBcGroups && details.requested.name == 'bcprov-jdk15on') {
-                details.useTarget('org.bouncycastle:bcprov-jdk15to18:1.68')
-                details.because('avoid duplicate classes with bcprov-jdk15to18 pulled in elsewhere')
-            }
-            if (details.requested.group in legacyBcGroups && details.requested.name == 'bcutil-jdk15on') {
-                details.useTarget('org.bouncycastle:bcutil-jdk18on:1.68')
-                details.because('avoid duplicate classes with bcutil-jdk18on pulled in elsewhere')
+            if (details.requested.group in legacyBcGroups) {
+                def name = details.requested.name
+                for (suffix in legacyBcNames) {
+                    ['bcpkix', 'bcprov', 'bcutil'].each { artifact ->
+                        if (name == "${artifact}-${suffix}") {
+                            details.useTarget("org.bouncycastle:${artifact}-jdk18on:1.74")
+                            details.because("standardize on the jdk18on BouncyCastle family to avoid duplicate classes")
+                        }
+                    }
+                }
             }
         }
     }
@@ -147,7 +159,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionName "1.0.0"
-        versionCode 2
+        versionCode 4
         manifestPlaceholders = [
                 APP_NAME             : APP_NAME,
                 appAuthRedirectScheme: 'io.mosip.residentapp.inji'
@@ -316,7 +328,7 @@ dependencies {
         exclude group: 'com.augustcellars.cose', module:'cose-java'
     }
     implementation("com.facebook.react:react-android")
-    implementation 'com.facebook.soloader:soloader:0.10.1+'
+    implementation 'com.facebook.soloader:soloader:0.10.4+'
     implementation("io.mosip:pixelpass-aar:0.7.0")
     implementation("io.mosip:secure-keystore:0.3.0")
     implementation platform('com.google.firebase:firebase-bom:32.1.1')

@@ -16,10 +16,13 @@ import {Theme} from '../../components/ui/styleUtils';
 import {NotificationHelpScreen} from '../../components/NotificationHelpScreen';
 import {BackButton} from '../../components/ui/backButton/BackButton';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {getApps} from '@react-native-firebase/app';
 import messaging from '@react-native-firebase/messaging';
 import LinearGradient from 'react-native-linear-gradient';
 
-export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () => {
+export const EmailManagementScreen: React.FC<
+  EmailManagementScreenProps
+> = () => {
   const {t} = useTranslation('SetupEmail');
   const navigation = useNavigation();
   const route =
@@ -89,18 +92,30 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
           const data = await response.json();
 
           if (response.ok) {
-            Alert.alert('OTP Sent', 'We’ve sent a 6-digit code to your email. Please enter it  to continue.');
+            Alert.alert(
+              'OTP Sent',
+              'We’ve sent a 6-digit code to your email. Please enter it  to continue.',
+            );
             setModalStep('otp');
           } else {
-            Alert.alert('Error', data.message || 'We couldn’t send the OTP. Please try again.');
+            Alert.alert(
+              'Error',
+              data.message || 'We couldn’t send the OTP. Please try again.',
+            );
           }
         } catch (error) {
           console.error('Error sending OTP:', error);
-          Alert.alert('Something Went Wrong', 'We couldn’t reach our servers. Please check your internet connection and try again.');
+          Alert.alert(
+            'Something Went Wrong',
+            'We couldn’t reach our servers. Please check your internet connection and try again.',
+          );
         }
       }
     } else {
-      Alert.alert('Email Required', 'Please enter a valid email address before continuing.');
+      Alert.alert(
+        'Email Required',
+        'Please enter a valid email address before continuing.',
+      );
     }
   };
 
@@ -133,8 +148,12 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
 
         if (response.ok) {
           Alert.alert('Success', 'Your email has been verified successfully.');
-          const fcmToken = await messaging().getToken();
-          await storeFCMToken(email, fcmToken);
+          // No default Firebase app is initialized natively for this app
+          // flavor (see NotificationScreen.tsx), so messaging() would throw.
+          if (getApps().length > 0) {
+            const fcmToken = await messaging().getToken();
+            await storeFCMToken(email, fcmToken);
+          }
 
           setRegisteredEmails(prevEmails => {
             const updatedEmails = [...prevEmails, email];
@@ -147,13 +166,20 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
           setEmail('');
           setOtpDigits(['', '', '', '', '', '']);
         } else {
-          Alert.alert('Incorrect OTP', data.message || 'The code you entered is incorrect. Please try again.');
+          Alert.alert(
+            'Incorrect OTP',
+            data.message ||
+              'The code you entered is incorrect. Please try again.',
+          );
           setModalStep('email');
           setOtpDigits(['', '', '', '', '', '']);
         }
       } catch (error) {
         console.error('Error verifying OTP:', error);
-        Alert.alert('Something Went Wrong', 'Failed to verify OTP. Please check your internet and try again.');
+        Alert.alert(
+          'Something Went Wrong',
+          'Failed to verify OTP. Please check your internet and try again.',
+        );
         setModalStep('email');
         setOtpDigits(['', '', '', '', '', '']);
       }
@@ -172,18 +198,18 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
           body: JSON.stringify({email, token}),
         },
       );
-  
+
       const data = await response.json();
       if (!response.ok) {
       }
-    } catch (error) {          }
+    } catch (error) {}
   };
-  
+
   const handleCancel = () => {
     setModalVisible(false);
     setEmail('');
   };
-  
+
   const removeEmail = (emailToRemove: string) => {
     Alert.alert(
       'Confirm Delete',
@@ -197,7 +223,9 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
           text: 'Yes',
           onPress: () => {
             setRegisteredEmails(prevEmails => {
-              const updatedEmails = prevEmails.filter(email => email !== emailToRemove);
+              const updatedEmails = prevEmails.filter(
+                email => email !== emailToRemove,
+              );
               saveEmails(updatedEmails);
               return updatedEmails;
             });
@@ -205,7 +233,7 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
           style: 'destructive',
         },
       ],
-      { cancelable: true },
+      {cancelable: true},
     );
   };
   return (
@@ -236,22 +264,21 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
               end={Theme.LinearGradientDirection.end}>
               <View testID="help"></View>
               <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                width: 60, 
-                height: 36, 
-                borderRadius: 8,
-              }}>
-              <Text style={{ color: '#2A2DA4', fontWeight: 'bold' }}>Help</Text>
-            </View>
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  width: 60,
+                  height: 36,
+                  borderRadius: 8,
+                }}>
+                <Text style={{color: '#2A2DA4', fontWeight: 'bold'}}>Help</Text>
+              </View>
             </LinearGradient>
           }
-          />
-
+        />
       </View>
 
       <ScrollView contentContainerStyle={{paddingBottom: 80}}>
@@ -270,7 +297,7 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
       </ScrollView>
 
       <View style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
-              <Button
+        <Button
           testID="saveEmailOrderingPreference"
           type="gradient"
           title={t('Register Email')}
@@ -313,8 +340,8 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
               <Text style={{fontSize: 16, flex: 1}}>
                 {modalStep === 'email' ? t('Enter your Email') : t('Enter OTP')}
               </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}></TouchableOpacity>
             </View>
 
             {modalStep === 'email' ? (
@@ -362,23 +389,23 @@ export const EmailManagementScreen: React.FC<EmailManagementScreenProps> = () =>
                   ))}
               </View>
             )}
-              
-          <Row>
-            <Button
-              testID="cancel"
-              fill
-              type="clear"
-              title={t('Cancel')}
-              onPress={handleCancel}
-            />
-            <Button
-              testID="sendotp"
-              fill
-              type="gradient"
-              title={modalStep === 'email' ? t('Send OTP') : t('Verify')}
-              onPress={modalStep === 'email' ? addEmailToList : verifyOtp}
-            />
-          </Row>
+
+            <Row>
+              <Button
+                testID="cancel"
+                fill
+                type="clear"
+                title={t('Cancel')}
+                onPress={handleCancel}
+              />
+              <Button
+                testID="sendotp"
+                fill
+                type="gradient"
+                title={modalStep === 'email' ? t('Send OTP') : t('Verify')}
+                onPress={modalStep === 'email' ? addEmailToList : verifyOtp}
+              />
+            </Row>
           </View>
         </View>
       </Modal>

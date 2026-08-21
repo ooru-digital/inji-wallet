@@ -1,11 +1,22 @@
+import {getApps} from '@react-native-firebase/app';
 import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
 import {Alert} from 'react-native';
 import {useEffect} from 'react';
 
+// This app flavor's applicationId has no matching client entry in
+// google-services.json, so the google-services gradle plugin is disabled
+// and no default Firebase app is initialized natively. Calling messaging()
+// in that state throws ("No Firebase App '[DEFAULT]' has been created"),
+// so every entry point below must no-op until that's registered.
+const isFirebaseAvailable = (): boolean => getApps().length > 0;
+
 // Request notification permissions
 export async function requestPermission(): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    return;
+  }
   const authStatus = await messaging().requestPermission();
   const enabled =
     authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
@@ -19,6 +30,9 @@ export async function requestPermission(): Promise<void> {
 // Handle foreground notifications
 export function useForegroundNotification(): void {
   useEffect(() => {
+    if (!isFirebaseAvailable()) {
+      return;
+    }
     requestPermission();
 
     const unsubscribe = messaging().onMessage(
@@ -36,6 +50,9 @@ export function useForegroundNotification(): void {
 // Handle background notifications
 export function useBackgroundNotification(): void {
   useEffect(() => {
+    if (!isFirebaseAvailable()) {
+      return;
+    }
     requestPermission();
 
     // Handle notifications when the app is in the background and opened

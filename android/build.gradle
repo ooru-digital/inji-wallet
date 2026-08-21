@@ -34,9 +34,10 @@ allprojects { repositories {
     maven {url("https://repo.danubetech.com/repository/maven-public/")}
     configurations.all {
         resolutionStrategy {
-            // use 0.9.0 to fix crash on Android 11
             cacheChangingModulesFor 0, 'seconds'
-            force "com.facebook.soloader:soloader:0.9.0+"
+            // 0.10.4+ fixes a 64-bit-only device crash (Play Console requirement);
+            // also newer than the 0.9.0 pin previously used to fix an Android 11 crash
+            force "com.facebook.soloader:soloader:0.10.4+"
             force "com.apicatalog:titanium-json-ld:1.3.1"
 
         }
