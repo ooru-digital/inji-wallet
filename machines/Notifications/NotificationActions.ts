@@ -11,7 +11,7 @@ import {
 } from '../../shared/constants';
 import {assign, send} from 'xstate';
 import {StoreEvents} from '../store';
-import {BackupEvents} from '../backupAndRestore/backup';
+import {BackupEvents} from '../backupAndRestore/backup/backupMachine';
 import {getVCMetadata, VCMetadata} from '../../shared/VCMetadata';
 import {isHardwareKeystoreExists} from '../../shared/cryptoutil/cryptoUtil';
 import {ActivityLogEvents} from '../activityLog';
@@ -30,10 +30,9 @@ const {RNSecureKeystoreModule} = NativeModules;
 export const NotificationActions = (model: any) => {
   return {
     storeOriginalEventData: (context, event) => {
-      const { org_code, certificate_type } = event.data;
+      const {org_code, certificate_type} = event.data;
 
       context.originalEventData = event.data;
-    
     },
     setIsVerified: assign({
       vcMetadata: (context: any) => {
@@ -71,7 +70,7 @@ export const NotificationActions = (model: any) => {
       loadingReason: null,
     }),
     setSelectedCredentialType: model.assign({
-      selectedCredentialType: (context: any) => context.selectedCredentialType, 
+      selectedCredentialType: (context: any) => context.selectedCredentialType,
       wellknownKeyTypes: (context: any) => {
         if (!context.selectedCredentialType) {
           console.warn('selectedCredentialType is undefined!');
@@ -289,7 +288,8 @@ export const NotificationActions = (model: any) => {
     }),
 
     setVerifiableCredential: model.assign({
-      verifiableCredential: (_: any, event: any) => event.data.verifiableCredential,
+      verifiableCredential: (_: any, event: any) =>
+        event.data.verifiableCredential,
     }),
 
     setCredentialWrapper: model.assign({
