@@ -311,6 +311,9 @@ android {
             excludes += "META-INF/*"
             excludes += "META-INF/spring/aot.factories"
         }
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
