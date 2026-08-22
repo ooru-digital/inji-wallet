@@ -22,6 +22,7 @@ import {useNavigation} from '@react-navigation/native';
 import {useSelector} from '@xstate/react';
 import {selectAuthorizationRequest, selectIsLinkCode} from '../machines/app';
 import {BOTTOM_TAB_ROUTES} from '../routes/routesConstants';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const {Navigator, Screen} = createBottomTabNavigator();
 
@@ -30,11 +31,17 @@ export const MainLayout: React.FC = () => {
 
   const {appService} = useContext(GlobalContext);
   const scanService = appService.children.get('scan');
+  const insets = useSafeAreaInsets();
 
   const options: BottomTabNavigationOptions = {
     tabBarShowLabel: true,
     tabBarActiveTintColor: Theme.Colors.IconBg,
     ...Theme.BottomTabBarStyle,
+    tabBarStyle: {
+      ...Theme.BottomTabBarStyle.tabBarStyle,
+      height: Theme.BottomTabBarStyle.tabBarStyle.height + insets.bottom,
+      paddingBottom: insets.bottom,
+    },
   };
   const navigation = useNavigation<ScanLayoutNavigation>();
 

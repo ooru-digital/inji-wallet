@@ -15,10 +15,12 @@ import {isIOS} from '../shared/constants';
 import {Copilot} from '../components/ui/Copilot';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('IssuersScreen');
   const {Navigator, Screen} = createNativeStackNavigator();
+  const insets = useSafeAreaInsets();
 
   React.useLayoutEffect(() => {
     const routeName = getFocusedRouteNameFromRoute(props.route);
@@ -33,8 +35,9 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
           fontFamily: 'Montserrat_600SemiBold',
         },
         tabBarStyle: {
-          height: 75,
+          height: 75 + insets.bottom,
           paddingHorizontal: 10,
+          paddingBottom: insets.bottom,
         },
         tabBarItemStyle: {
           height: 83,
@@ -42,7 +45,7 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
         },
       });
     }
-  }, [props.navigation, props.route]);
+  }, [props.navigation, props.route, insets.bottom]);
 
   const screenOptions = (
     <NotificationScreen
@@ -88,7 +91,7 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
       ) : (
         screenOptions
       )}
-      <Text style={{ marginLeft: -70, fontSize: 16, fontWeight: 'bold', color: '#2A2DA4' }}>
+      <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: 'bold', color: '#2A2DA4' }}>
         CREDISSUER WALLET
       </Text>
     </View>
