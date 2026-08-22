@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {Icon} from 'react-native-elements';
-import {Column} from '../../components/ui';
+import {Column, Row} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {HomeRouteProps} from '../../routes/routeTypes';
 import {MyVcsTab} from './MyVcsTab';
@@ -46,27 +46,27 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
         color={Theme.Colors.whiteText}
       />
     );
-        
+
     return (
-<LinearGradient
-  colors={Theme.Colors.gradientBtn}
-  start={Theme.LinearGradientDirection.start}
-  end={Theme.LinearGradientDirection.end}
+      <LinearGradient
+        colors={Theme.Colors.gradientBtn}
+        start={Theme.LinearGradientDirection.start}
+        end={Theme.LinearGradientDirection.end}
         style={Theme.Styles.downloadFabIconContainer}>
-  <Pressable
-    onPress={() => {
-      controller.GOTO_ISSUERS();
-    }}
-    {...testIDProps('downloadCardButton')}
-    accessible={false}
-    style={({pressed}) =>
-      pressed
-        ? Theme.Styles.downloadFabIconPressed
-        : Theme.Styles.downloadFabIconNormal
-    }>
-    {plusIcon}
-  </Pressable>
-</LinearGradient>
+        <Pressable
+          onPress={() => {
+            controller.GOTO_ISSUERS();
+          }}
+          {...testIDProps('downloadCardButton')}
+          accessible={false}
+          style={({pressed}) =>
+            pressed
+              ? Theme.Styles.downloadFabIconPressed
+              : Theme.Styles.downloadFabIconNormal
+          }>
+          {plusIcon}
+        </Pressable>
+      </LinearGradient>
     );
   };
 
@@ -89,14 +89,37 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
                 vcItemActor={controller.selectedVc}
               />
             </Column>
-            <Column style={{alignItems: 'center', paddingVertical: 8}}>
-              <Text style={{color: 'gray', fontSize: 14}}>
+            <Row
+              crossAlign="flex-start"
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 12,
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                paddingRight: 90,
+                borderRadius: 12,
+                backgroundColor: '#EEF0FB',
+              }}>
+              <Icon
+                name="information-outline"
+                type="material-community"
+                size={16}
+                color={Theme.Colors.Icon}
+                style={{marginTop: 1, marginRight: 8}}
+              />
+              <Text
+                style={{
+                  flex: 1,
+                  color: Theme.Colors.GrayText,
+                  fontSize: 13,
+                  lineHeight: 18,
+                }}>
                 {t(
                   'home:refreshNote',
-                  'Please refresh if you don’t see your  credential downloaded  upon Notification.',
+                  'Please refresh if you don’t see your credential downloaded upon notification.',
                 )}
               </Text>
-            </Column>
+            </Row>
           </>
         )}
       </Column>

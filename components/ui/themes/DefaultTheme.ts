@@ -251,11 +251,6 @@ export const DefaultTheme = {
     homeScreenContainer: {
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 10,
-      backgroundColor: '#fff',
-      shadowColor: '#000',
-      shadowOpacity: 0.4,
-      elevation: 5,
       padding: 10,
     },
     vertloadingContainer: {
@@ -435,7 +430,7 @@ export const DefaultTheme = {
       resizeMode: 'contain',
       aspectRatio: 1,
       height: 35,
-      marginRight: 10
+      marginRight: 10,
     },
     vcDetailsLogo: {
       height: 65,
@@ -636,7 +631,7 @@ export const DefaultTheme = {
       borderRadius: 200,
       position: 'absolute',
       bottom: Dimensions.get('window').width * 0.1,
-      right: Dimensions.get('window').width * 0.1,
+      right: Dimensions.get('window').width * 0.05,
     },
     downloadFabIconContainer: {
       height: 70,

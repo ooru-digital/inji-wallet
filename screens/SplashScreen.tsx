@@ -21,6 +21,7 @@ export const SplashScreen: React.FC<RootRouteProps> = props => {
       }
     }, 3000);
   }, [controller.isAuthorized || controller.isLanguagesetup]);
+  const splashPadding = 24;
   return (
     <Column
       crossAlign="center"
@@ -29,10 +30,15 @@ export const SplashScreen: React.FC<RootRouteProps> = props => {
         justifyContent: 'center',
         height: Dimensions.get('screen').height,
         width: Dimensions.get('screen').width,
+        padding: splashPadding,
+        backgroundColor: '#ffffff',
       }}>
       <Image
-        resizeMode="contain" // Ensures aspect ratio is maintained
-        style={{width: 630, height: 710}}
+        resizeMode="contain"
+        style={{
+          width: Dimensions.get('screen').width - splashPadding * 2,
+          height: Dimensions.get('screen').height - splashPadding * 2,
+        }}
         source={imageResource}
       />
     </Column>

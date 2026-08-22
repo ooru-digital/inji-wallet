@@ -14,7 +14,7 @@ import testIDProps from '../shared/commonUtil';
 import {SvgImage} from '../components/ui/svg';
 import {isIOS} from '../shared/constants';
 import {CopilotProvider} from 'react-native-copilot';
-import {View} from 'react-native';
+import {StatusBar, View} from 'react-native';
 import {CopilotTooltip} from '../components/CopilotTooltip';
 import {Copilot} from '../components/ui/Copilot';
 import LinearGradient from 'react-native-linear-gradient';
@@ -62,6 +62,7 @@ export const MainLayout: React.FC = () => {
     <CopilotProvider
       stopOnOutsideClick
       androidStatusBarVisible
+      verticalOffset={-(StatusBar.currentHeight || 0)}
       tooltipComponent={CopilotTooltip}
       tooltipStyle={Theme.Styles.copilotStyle}
       stepNumberComponent={() => null}
