@@ -1,0 +1,305 @@
+diff --git a/node_modules/@unimodules/core/android/build.gradle b/node_modules/@unimodules/core/android/build.gradle
+index 00a3dea..0222733 100644
+--- a/node_modules/@unimodules/core/android/build.gradle
++++ b/node_modules/@unimodules/core/android/build.gradle
+@@ -1,6 +1,5 @@
+ apply plugin: 'com.android.library'
+ apply plugin: 'kotlin-android'
+-apply plugin: 'maven'
+ 
+ group = 'org.unimodules'
+ version = '7.2.0'
+@@ -20,31 +19,6 @@ buildscript {
+   }
+ }
+ 
+-//Upload android library to maven with javadoc and android sources
+-configurations {
+-  deployerJars
+-}
+-
+-//Creating sources with comments
+-task androidSourcesJar(type: Jar) {
+-  classifier = 'sources'
+-  from android.sourceSets.main.java.srcDirs
+-}
+-
+-//Put the androidSources and javadoc to the artifacts
+-artifacts {
+-  archives androidSourcesJar
+-}
+-
+-uploadArchives {
+-  repositories {
+-    mavenDeployer {
+-      configuration = configurations.deployerJars
+-      repository(url: mavenLocal().url)
+-    }
+-  }
+-}
+-
+ android {
+   compileSdkVersion safeExtGet("compileSdkVersion", 30)
+ 
+diff --git a/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/results.bin b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/results.bin
+new file mode 100644
+index 0000000..7ed749e
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/results.bin
+@@ -0,0 +1 @@
++o/bundleLibRuntimeToDirDebug
+diff --git a/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/org/unimodules/core/BuildConfig.dex b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/org/unimodules/core/BuildConfig.dex
+new file mode 100644
+index 0000000..44dca5a
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/org/unimodules/core/BuildConfig.dex differ
+diff --git a/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/org/unimodules/core/interfaces/SingletonModule.dex b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/org/unimodules/core/interfaces/SingletonModule.dex
+new file mode 100644
+index 0000000..12709d9
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/org/unimodules/core/interfaces/SingletonModule.dex differ
+diff --git a/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin
+new file mode 100644
+index 0000000..601f245
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/.transforms/5e254852a3dab6c0fec4b2b7ac42cafc/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin differ
+diff --git a/node_modules/@unimodules/core/android/build/.transforms/ffe315a73f04128126b787e4f2325d44/results.bin b/node_modules/@unimodules/core/android/build/.transforms/ffe315a73f04128126b787e4f2325d44/results.bin
+new file mode 100644
+index 0000000..0d259dd
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/.transforms/ffe315a73f04128126b787e4f2325d44/results.bin
+@@ -0,0 +1 @@
++o/classes
+diff --git a/node_modules/@unimodules/core/android/build/.transforms/ffe315a73f04128126b787e4f2325d44/transformed/classes/classes_dex/classes.dex b/node_modules/@unimodules/core/android/build/.transforms/ffe315a73f04128126b787e4f2325d44/transformed/classes/classes_dex/classes.dex
+new file mode 100644
+index 0000000..da685f1
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/.transforms/ffe315a73f04128126b787e4f2325d44/transformed/classes/classes_dex/classes.dex differ
+diff --git a/node_modules/@unimodules/core/android/build/generated/source/buildConfig/debug/org/unimodules/core/BuildConfig.java b/node_modules/@unimodules/core/android/build/generated/source/buildConfig/debug/org/unimodules/core/BuildConfig.java
+new file mode 100644
+index 0000000..6ff0623
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/generated/source/buildConfig/debug/org/unimodules/core/BuildConfig.java
+@@ -0,0 +1,10 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package org.unimodules.core;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = Boolean.parseBoolean("true");
++  public static final String LIBRARY_PACKAGE_NAME = "org.unimodules.core";
++  public static final String BUILD_TYPE = "debug";
++}
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/@unimodules/core/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..1cafa34
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="org.unimodules.core" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/@unimodules/core/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..b1534db
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "org.unimodules.core",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/@unimodules/core/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/@unimodules/core/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/@unimodules/core/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+new file mode 100644
+index 0000000..cb145d5
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/@unimodules/core/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..6a28ffa
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/@unimodules/core/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/@unimodules/core/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..cfae6e0
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Sat Aug 22 11:54:26 IST 2026
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/@unimodules/core/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..71b517e
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/build/generated/res/resValues/debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/build/generated/res/resValues/debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/@unimodules/core/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+new file mode 100644
+index 0000000..46dac05
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/debug/jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/@unimodules/core/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+new file mode 100644
+index 0000000..4e47121
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/debug/shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/incremental/packageDebugAssets/merger.xml b/node_modules/@unimodules/core/android/build/intermediates/incremental/packageDebugAssets/merger.xml
+new file mode 100644
+index 0000000..19f8606
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/incremental/packageDebugAssets/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/debug/assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/build/intermediates/shader_assets/debug/compileDebugShaders/out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/org/unimodules/core/BuildConfig.class b/node_modules/@unimodules/core/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/org/unimodules/core/BuildConfig.class
+new file mode 100644
+index 0000000..93e484c
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/org/unimodules/core/BuildConfig.class differ
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/org/unimodules/core/interfaces/SingletonModule.class b/node_modules/@unimodules/core/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/org/unimodules/core/interfaces/SingletonModule.class
+new file mode 100644
+index 0000000..abf1bef
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/org/unimodules/core/interfaces/SingletonModule.class differ
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/@unimodules/core/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/@unimodules/core/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..06cf92d
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,7 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="org.unimodules.core" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7</manifest>
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/@unimodules/core/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..1cafa34
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="org.unimodules.core" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/@unimodules/core/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/@unimodules/core/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/org/unimodules/core/BuildConfig.class b/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/org/unimodules/core/BuildConfig.class
+new file mode 100644
+index 0000000..93e484c
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/org/unimodules/core/BuildConfig.class differ
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/org/unimodules/core/interfaces/SingletonModule.class b/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/org/unimodules/core/interfaces/SingletonModule.class
+new file mode 100644
+index 0000000..abf1bef
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/org/unimodules/core/interfaces/SingletonModule.class differ
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+new file mode 100644
+index 0000000..e5ed7c0
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+diff --git a/node_modules/@unimodules/core/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/@unimodules/core/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..8bc8bfe
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++org.unimodules.core
+diff --git a/node_modules/@unimodules/core/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/@unimodules/core/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..3403dee
+--- /dev/null
++++ b/node_modules/@unimodules/core/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,15 @@
++-- Merging decision tree log ---
++manifest
++ADDED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml:2:1-4:12
++INJECTED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml:2:1-4:12
++	package
++		ADDED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml:2:11-40
++		INJECTED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml
++uses-sdk
++INJECTED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml
++INJECTED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from /Users/akshaykumarh/Documents/Ooru-proj/inji-wallet/node_modules/@unimodules/core/android/src/main/AndroidManifest.xml
+diff --git a/node_modules/@unimodules/core/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/@unimodules/core/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
+new file mode 100644
+index 0000000..94f0b42
+Binary files /dev/null and b/node_modules/@unimodules/core/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ

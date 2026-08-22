@@ -8,7 +8,7 @@ buildscript {
         targetSdkVersion = 36
         // NDK r27+ is 16 KB page-size aligned by default (Android 15 / API 35 requirement).
         ndkVersion = "27.1.12297006"
-        kotlinVersion = "1.9.22"
+        kotlinVersion = "2.0.21"
     }
     repositories {
         google()
@@ -16,7 +16,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.4.0")
+        classpath("com.android.tools.build:gradle:8.6.0")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.3")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
