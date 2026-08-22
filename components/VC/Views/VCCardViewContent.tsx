@@ -325,6 +325,8 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = ({
                   vcHasImage={faceImage !== undefined}
                 />
               </Pressable>
+            </>
+          )}
 
           {vcSelectableButton}
           {flow === VCItemContainerFlowType.VP_SHARE &&
