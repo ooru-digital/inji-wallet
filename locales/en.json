@@ -61,7 +61,9 @@
     "imageCaptureGuide": "Hold the phone steady, keep your face focused in the centre and click on Capture.",
     "capture": "Capture",
     "cancel": "Cancel",
-    "flipCamera": "Flip Camera"
+    "flipCamera": "Flip Camera",
+    "missingPermissionText": "Camera access is needed to verify your identity. Please allow it in Settings.",
+    "allowCameraButton": "Open Settings"
   },
   "OIDcAuth": {
     "title": "OIDC Authentication",

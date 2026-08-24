@@ -227,7 +227,15 @@ export const MdocProximityConsentOverlay: React.FC<
           margin={'10 0 0 0'}
           type="gradient"
           title={t('mdocConsent.confirmButton')}
-          onPress={props.onAllow}
+          onPress={() => {
+            const purposesResponse =
+              purposesList?.map(p => ({
+                id: p.id || 'NA',
+                name: p.name,
+                accepted: !unselectedPurposes.has(p.name),
+              })) || [];
+            props.onAllow(purposesResponse);
+          }}
         />
         <Button
           testID="mdocConsentDeny"
@@ -252,11 +260,14 @@ export interface MdocProximityConsentOverlayProps {
     intent_to_retain?: boolean;
     purpose?: string;
     purposes?: Array<{
+      id?: string;
       name: string;
       is_required: boolean;
       description?: string;
     }>;
   };
-  onAllow: () => void;
+  onAllow: (
+    purposesResponse: Array<{id: string; name: string; accepted: boolean}>,
+  ) => void;
   onDeny: () => void;
 }

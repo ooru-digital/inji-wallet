@@ -122,7 +122,7 @@ export class Iso18013PresentmentNotImplementedError extends Error {
 type MdocNative = {
   startPresentment: (config: Record<string, unknown>) => Promise<boolean>;
   stopPresentment: () => void;
-  approvePresentment?: () => Promise<boolean>;
+  approvePresentment?: (purposesJson?: string) => Promise<boolean>;
   denyPresentment?: () => Promise<boolean>;
   addListener?: (eventName: string) => void;
   removeListeners?: (count: number) => void;
@@ -148,6 +148,7 @@ function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
     verifierName?: string;
     purpose?: string;
     purposeHintCode?: number | null;
+    requestInfoJson?: string;
     elements?: Array<{
       namespace?: string;
       element?: string;
@@ -316,14 +317,16 @@ export function stopIso18013ProximityPresentment(): void {
 }
 
 /** Approve sharing after [MDOC_PRESENTMENT_CONSENT_REQUIRED]. */
-export async function approveIso18013PresentmentConsent(): Promise<void> {
+export async function approveIso18013PresentmentConsent(
+  purposesJson?: string,
+): Promise<void> {
   const nm = getNativeModule();
   if (!nm?.approvePresentment) {
     throw new Iso18013PresentmentNotImplementedError(
       'approvePresentment is not available on this build',
     );
   }
-  await nm.approvePresentment();
+  await nm.approvePresentment(purposesJson);
 }
 
 /** Deny sharing after [MDOC_PRESENTMENT_CONSENT_REQUIRED] — no DeviceResponse is sent. */

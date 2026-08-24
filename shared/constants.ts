@@ -4,6 +4,9 @@ import {
   ESIGNET_HOST,
   MIMOTO_HOST,
   LIVENESS_DETECTION,
+  SNAPKYC_LIVENESS,
+  SNAPKYC_RELAYING_PARTY_NAME,
+  SNAPKYC_DEBUG_SKIP_FACE_IMAGE,
 } from 'react-native-dotenv';
 import {Argon2iConfig} from './commonUtil';
 import {VcIdType} from '../machines/VerifiableCredential/VCMetaMachine/vc';
@@ -16,6 +19,19 @@ export let CACHE_TTL = 60 * 60 * 1000;
 
 export const LIVENESS_CHECK = LIVENESS_DETECTION === 'true';
 export const LIVENESS_THRESHOLD = 0.4;
+
+/**
+ * SnapKYC native liveness (Android only) — gates the face check that runs after the user taps
+ * Share on the mDOC proximity consent overlay. Explicit opt-in: a missing .env key leaves it off.
+ */
+export const SNAPKYC_LIVENESS_ENABLED =
+  isAndroid() && SNAPKYC_LIVENESS === 'true';
+export const SNAPKYC_RELAYING_PARTY_NAME_VALUE =
+  (SNAPKYC_RELAYING_PARTY_NAME || '').trim().replace(/\s+/g, ' ') ||
+  'YourRelyingPartyName';
+/** Debug-only: launch liveness without the credential portrait, to isolate SDK start failures. */
+export const SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED =
+  SNAPKYC_DEBUG_SKIP_FACE_IMAGE === 'true';
 
 export const changeCrendetialRegistry = (host: string) =>
   (MIMOTO_BASE_URL = host);

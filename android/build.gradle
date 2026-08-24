@@ -1,5 +1,34 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+// SnapKYC face-liveness AARs live on a private Artifactory. Credentials come from an untracked
+// android/artifactory.local.properties, falling back to ARTIFACTORY_USERNAME/PASSWORD for CI.
+def artifactoryProps = new Properties()
+def artifactoryFile = rootProject.file("artifactory.local.properties")
+if (artifactoryFile.exists()) artifactoryProps.load(new FileInputStream(artifactoryFile))
+artifactoryProps.each { key, value -> rootProject.ext.set(key, value) }
+
+def snapKycArtifactoryUsername = {
+    artifactoryProps.getProperty("artifactoryUsername")
+        ?: System.getenv("ARTIFACTORY_USERNAME")
+        ?: ""
+}
+def snapKycArtifactoryPassword = {
+    artifactoryProps.getProperty("artifactoryPassword")
+        ?: System.getenv("ARTIFACTORY_PASSWORD")
+        ?: ""
+}
+def biochqUseLocalMaven =
+    (artifactoryProps.getProperty("biochqUseLocalMaven") ?: "false").toBoolean()
+def artifactorySnapshotUrl =
+    artifactoryProps.getProperty("artifactorySnapshotUrl")
+        ?: "http://biometrics.credissuer.com:8081/repository/maven-snapshots/"
+def artifactoryReleaseUrl =
+    artifactoryProps.getProperty("artifactoryReleaseUrl")
+        ?: "http://biometrics.credissuer.com:8081/repository/maven-releases/"
+def biochqLocalMavenPath =
+    artifactoryProps.getProperty("biochqLocalMavenPath")
+        ?: "${rootProject.projectDir}/local-maven"
+
 buildscript {
     ext {
         buildToolsVersion = "35.0.0"
@@ -32,6 +61,37 @@ allprojects { repositories {
     maven { url(expoCameraMavenPath) }
     mavenCentral()
     maven {url("https://repo.danubetech.com/repository/maven-public/")}
+    if (biochqUseLocalMaven) {
+        maven {
+            url uri(biochqLocalMavenPath)
+            content { includeGroup "io.ooru.biometrics" }
+        }
+    } else {
+        // SnapKYC deps are -SNAPSHOT, so both repos are declared. `includeGroup` keeps every other
+        // dependency off this (plain-http, credentialed) host.
+        maven {
+            allowInsecureProtocol = true
+            url artifactorySnapshotUrl
+            credentials {
+                username = snapKycArtifactoryUsername()
+                password = snapKycArtifactoryPassword()
+            }
+            content {
+                includeGroup "io.ooru.biometrics"
+            }
+        }
+        maven {
+            allowInsecureProtocol = true
+            url artifactoryReleaseUrl
+            credentials {
+                username = snapKycArtifactoryUsername()
+                password = snapKycArtifactoryPassword()
+            }
+            content {
+                includeGroup "io.ooru.biometrics"
+            }
+        }
+    }
     configurations.all {
         resolutionStrategy {
             // use 0.9.0 to fix crash on Android 11

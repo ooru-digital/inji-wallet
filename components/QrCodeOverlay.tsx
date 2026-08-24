@@ -33,6 +33,19 @@ import {shareImageToAllSupportedApps} from '../shared/sharing/imageUtils';
 import {ShareOptions} from 'react-native-share';
 import {MdocProximityConsentOverlay} from './MdocProximityConsentOverlay';
 
+type PurposesResponse = Array<{id: string; name: string; accepted: boolean}>;
+
+/**
+ * DIAGNOSTIC TOGGLE — remove once the verifier freeze is understood.
+ *
+ * `false` sends a spec-standard ISO 18013-5 DeviceResponse. `true` (the current product
+ * behaviour) makes native add a non-standard top-level `purposes` key to the DeviceResponse
+ * CBOR map, see InjiIso18013ProximityPresenter.kt injection block.
+ *
+ * Flip to false to test whether a strict reader is choking on that extra key.
+ */
+const SEND_PURPOSES_IN_DEVICE_RESPONSE = false;
+
 type QrSvgRef = {toDataURL: (callback: (dataURL: string) => void) => void};
 
 /**
@@ -321,13 +334,25 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
     else setIsQrOverlayVisible(!overlayVisible);
   };
 
-  async function handleConsentAllow() {
+  async function handleConsentAllow(purposesResponse: PurposesResponse) {
     if (consentBusy) {
       return;
     }
     setConsentBusy(true);
     try {
-      await approveIso18013PresentmentConsent();
+      const purposesJson = JSON.stringify(purposesResponse);
+      console.log(
+        '[DEBUG] Outgoing purposes response to verifier:\n' +
+          JSON.stringify(purposesResponse, null, 2),
+      );
+      if (SEND_PURPOSES_IN_DEVICE_RESPONSE) {
+        await approveIso18013PresentmentConsent(purposesJson);
+      } else {
+        console.log(
+          '[DEBUG] SEND_PURPOSES_IN_DEVICE_RESPONSE=false — sending standard DeviceResponse',
+        );
+        await approveIso18013PresentmentConsent();
+      }
       setConsentRequest(null);
     } catch (e) {
       setConsentBusy(false);

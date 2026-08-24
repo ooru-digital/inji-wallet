@@ -11,6 +11,22 @@ apply plugin: 'kotlin-android'
 configurations.all {
     resolutionStrategy {
         force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
+        // SnapKYC face-liveness SDK needs CameraX 1.4.1; expo-camera pins 1.4.0-beta02 and 1.3.x
+        // causes NoSuchFieldError: ProcessCameraProvider$Companion at runtime. Only these six
+        // artifacts are forced — camera-mlkit-vision (expo-camera) has no 1.4.1 release.
+        force 'androidx.camera:camera-core:1.4.1'
+        force 'androidx.camera:camera-camera2:1.4.1'
+        force 'androidx.camera:camera-lifecycle:1.4.1'
+        force 'androidx.camera:camera-video:1.4.1'
+        force 'androidx.camera:camera-view:1.4.1'
+        force 'androidx.camera:camera-extensions:1.4.1'
+        force 'org.apache.commons:commons-text:1.10.0'
+        // Deliberately no force on play-services-location/base: react-native-location only
+        // `compileOnly`s the GMS API (never bundles a runtime jar), so whichever version wins
+        // the normal highest-wins resolution is what it runs against, and GMS keeps old API
+        // surface across 18.x/21.x. Forcing an old floor here previously stripped
+        // OptionalModuleApi that play-services-mlkit-barcode-scanning (expo-camera's QR
+        // scanner) needs -> NoClassDefFoundError on camera open. Let it resolve naturally.
         // Multipaz → ktor-client-core 3.x; Iris biometric SDK still pulls ktor-client-okhttp 2.x.
         // Gradle then upgrades only core → 3.x; OkHttpEngine (2.x) still references
         // io.ktor.client.plugins.HttpTimeout removed/relocated → crash on BiometricSdkFactory.initialize.
@@ -31,6 +47,8 @@ configurations.all {
     all*.exclude module: 'bcprov-jdk15on'
     all*.exclude module: 'bcutil-jdk15on'
     all*.exclude module: 'titanium-json-ld'
+    // SnapKYC SDK brings spring-jcl; drop commons-logging to avoid duplicate classes
+    all*.exclude group: 'commons-logging', module: 'commons-logging'
 }
 
 react {
@@ -323,6 +341,36 @@ dependencies {
     implementation("io.mosip:vcverifier-aar:1.6.0") {
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
     }
+
+    // SnapKYC native face-liveness SDK (io.ooru.face.liveness.frontend.BioChqFaceLivenessMainActivity).
+    // Transitive androidx.camera / GMS / commons are excluded and pinned explicitly below.
+    implementation("io.ooru.biometrics:faceliveness-sdk:1.0.1-SNAPSHOT") {
+        changing = true
+        exclude group: 'androidx.camera'
+        exclude group: 'com.google.android.gms'
+        exclude group: 'org.apache.commons'
+    }
+    implementation("io.ooru.biometrics:faceliveness-frontend:1.0.1-SNAPSHOT") {
+        changing = true
+        exclude group: 'androidx.camera'
+        exclude group: 'com.google.android.gms'
+        exclude group: 'org.apache.commons'
+    }
+    // CameraX 1.4.1 required by the SnapKYC SDK (also forced in resolutionStrategy above)
+    implementation 'androidx.camera:camera-core:1.4.1'
+    implementation 'androidx.camera:camera-camera2:1.4.1'
+    implementation 'androidx.camera:camera-lifecycle:1.4.1'
+    implementation 'androidx.camera:camera-video:1.4.1'
+    implementation 'androidx.camera:camera-view:1.4.1'
+    implementation 'androidx.camera:camera-extensions:1.4.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    // Backfills GMS location/base classes for SnapKYC (its own `com.google.android.gms` group is
+    // excluded above). play-services-base is pinned to what the rest of the graph naturally
+    // resolves to (play-services-mlkit-barcode-scanning, expo-camera's QR scanner, needs
+    // base >= 18.1.0 for OptionalModuleApi); play-services-location has no 18.1.0 release
+    // (18.0.0 -> 19.0.0), so it stays on its own last-known-good version — independent artifact.
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
+    implementation 'com.google.android.gms:play-services-base:18.1.0'
 
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";

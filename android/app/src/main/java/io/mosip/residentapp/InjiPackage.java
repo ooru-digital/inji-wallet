@@ -31,6 +31,7 @@ public class InjiPackage implements ReactPackage {
         modules.add(new RNVCVerifierModule(reactApplicationContext));
         modules.add(new RNInjiVcRendererModule(reactApplicationContext));
         modules.add(new MdocIso18013PresentmentModule(reactApplicationContext));
+        modules.add(new RNSnapKycLivenessModule(reactApplicationContext));
         return modules;
     }
 

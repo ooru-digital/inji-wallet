@@ -162,9 +162,9 @@ class MdocIso18013PresentmentModule(
 
     /** User approved sharing requested mDOC elements — resumes native presentment. */
     @ReactMethod
-    fun approvePresentment(promise: Promise) {
+    fun approvePresentment(purposesJson: String?, promise: Promise) {
         try {
-            getPresenter().approveConsent()
+            getPresenter().approveConsent(purposesJson)
             promise.resolve(true)
         } catch (e: Exception) {
             promise.reject("E_MDOC_CONSENT", e.message, e)

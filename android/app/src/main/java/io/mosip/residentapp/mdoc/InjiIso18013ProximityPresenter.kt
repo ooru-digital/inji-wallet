@@ -109,6 +109,7 @@ class InjiIso18013ProximityPresenter(
     /** Numeric purposeHints code from ISO 18013-5 §10.2.5. */
     private var consentContextPurposeHintCode: Int? = null
     private var consentContextRequestInfoJson: String = ""
+    private var consentContextPurposesJson: String? = null
 
     fun start(
         issuerSignedCompact: String,
@@ -166,14 +167,16 @@ class InjiIso18013ProximityPresenter(
     }
 
     /** RN Approve — resume [promptModelRnBridgedConsent] with the Multipaz credential selection. */
-    fun approveConsent() {
-        Log.i(TAG, "approveConsent() from JS")
+    fun approveConsent(purposesJson: String?) {
+        Log.i(TAG, "approveConsent() from JS with purposesJson: $purposesJson")
+        this.consentContextPurposesJson = purposesJson
         completePendingConsent(approved = true)
     }
 
     /** RN Deny — resume consent with null selection → [PresentmentCanceledException]. */
     fun denyConsent() {
         Log.i(TAG, "denyConsent() from JS")
+        this.consentContextPurposesJson = null
         completePendingConsent(approved = false)
         emitConsentDismissed()
     }
@@ -399,6 +402,7 @@ class InjiIso18013ProximityPresenter(
         consentContextPurpose = ""
         consentContextPurposeHintCode = null
         consentContextRequestInfoJson = ""
+        consentContextPurposesJson = null
     }
 
     /**
@@ -1741,9 +1745,47 @@ class InjiIso18013ProximityPresenter(
                     onDocumentsInFocus = {},
                 )
                 Log.i(TAG, "runSession#$sid Iso18013Presentment: sending DeviceResponse…")
+                
+                // Intercept and inject custom purposes into the DeviceResponse CBOR
+                var finalDeviceResponseDataItem = responseObject.deviceResponse.toDataItem()
+                if (consentContextPurposesJson != null) {
+                    try {
+                        val originalMap = finalDeviceResponseDataItem.asMap
+                        val newBuilder = org.multipaz.cbor.CborMap.builder()
+                        for ((key, value) in originalMap) {
+                            newBuilder.put(key, value)
+                        }
+                        
+                        val purposesArray = org.json.JSONArray(consentContextPurposesJson)
+                        val cborPurposes = org.multipaz.cbor.CborArray.builder()
+                        for (i in 0 until purposesArray.length()) {
+                            val purposeObj = purposesArray.getJSONObject(i)
+                            val mapBuilder = org.multipaz.cbor.CborMap.builder()
+                            mapBuilder.put("id", purposeObj.optString("id", purposeObj.getString("name")))
+                            mapBuilder.put("name", purposeObj.getString("name"))
+                            mapBuilder.put("accepted", purposeObj.getBoolean("accepted"))
+                            cborPurposes.add(mapBuilder.end().build())
+                        }
+                        newBuilder.put("purposes", cborPurposes.end().build())
+                        finalDeviceResponseDataItem = newBuilder.end().build()
+                        Log.i(TAG, "runSession#$sid [DEBUG] Injected purposes into DeviceResponse!")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "runSession#$sid Failed to inject purposes into DeviceResponse", e)
+                    }
+                }
+
+                // Log the final outgoing payload
+                try {
+                    val finalJson = dataItemToJson(finalDeviceResponseDataItem)
+                    val prettified = org.json.JSONObject(finalJson).toString(2)
+                    Log.i(TAG, "[DEBUG] Outgoing DeviceResponse:\n$prettified")
+                } catch (e: Exception) {
+                    Log.i(TAG, "[DEBUG] Outgoing DeviceResponse (Failed to format as JSON)")
+                }
+
                 transport.sendMessage(
                     sessionEncryption.encryptMessage(
-                        messagePlaintext = Cbor.encode(responseObject.deviceResponse.toDataItem()),
+                        messagePlaintext = org.multipaz.cbor.Cbor.encode(finalDeviceResponseDataItem),
                         statusCode = null,
                     ),
                 )
