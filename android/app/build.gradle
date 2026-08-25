@@ -239,7 +239,7 @@ android {
         residentapp {
             versionName defaultConfig.versionName
             dimension "inji"
-            resValue "string", "app_name", "Inji"
+            resValue "string", "app_name", "CredIssuer Wallet"
         }
         inji {
             applicationId "io.mosip.inji.wallet"
