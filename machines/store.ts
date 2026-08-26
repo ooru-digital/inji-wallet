@@ -8,7 +8,7 @@ import {
   StateFrom,
 } from 'xstate';
 import {createModel} from 'xstate/lib/model';
-import {log} from 'xstate/lib/actions';
+import {choose, log} from 'xstate/lib/actions';
 import {
   isIOS,
   MY_VCS_STORE_KEY,
@@ -292,12 +292,22 @@ export const storeMachine =
       },
       on: {
         STORE_ERROR: {
-          actions: [
-            send((_, event) => model.events.STORE_ERROR(event.error), {
-              to: (_, event) => event.requester,
-            }),
-            sendUpdate(),
-          ],
+          // Only replies to a requester if one actually exists. STORE_ERROR fires for
+          // checkFreshInstall's very first read too, before any GET/SET was ever forwarded —
+          // sending to an undefined target there throws inside the interpreter, which was
+          // silently respawning this whole machine in a tight infinite loop (visible as the
+          // app hanging forever on the splash screen).
+          actions: choose([
+            {
+              cond: (_, event) => !!event.requester,
+              actions: [
+                send((_, event) => model.events.STORE_ERROR(event.error), {
+                  to: (_, event) => event.requester,
+                }),
+                sendUpdate(),
+              ],
+            },
+          ]),
         },
         KEY_INVALIDATE_ERROR: {
           actions: sendParent('KEY_INVALIDATE_ERROR'),
@@ -340,6 +350,16 @@ export const storeMachine =
           } catch (e) {
             if (e instanceof BiometricCancellationError) {
               callback(model.events.BIOMETRIC_CANCELLED());
+            } else if (e.message?.includes(keyinvalidatedString)) {
+              // Same recovery as hasEncryptionKey/STORE_REQUEST below: the biometric-bound
+              // key is gone (enrollment changed), so the persisted blob can never be
+              // decrypted. STORE_ERROR here has no `requester` to reply to (this runs before
+              // any GET/SET was ever forwarded), so it goes nowhere and the app silently
+              // re-spawns this same failing check forever — an infinite loop stuck on the
+              // splash screen. Clear the unreadable store and route through the app's actual
+              // KEY_INVALIDATE_ERROR recovery UI instead.
+              await clear();
+              callback(model.events.KEY_INVALIDATE_ERROR());
             } else {
               callback(model.events.STORE_ERROR(e));
             }
