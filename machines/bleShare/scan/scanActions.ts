@@ -22,6 +22,7 @@ import {
   sendStartEvent,
   getStartEventData,
 } from '../../../shared/telemetry/TelemetryUtils';
+import {normalizeAuthorizationRequest} from '../../../shared/openID4VP/normalizeAuthorizationRequest';
 import {createQrLoginMachine} from '../../QrLogin/QrLoginMachine';
 import {VcMetaEvents} from '../../VerifiableCredential/VCMetaMachine/VCMetaEvents';
 import {ActivityLogEvents} from '../../activityLog';
@@ -296,7 +297,9 @@ export const ScanActions = (model: any) => {
 
     setAuthRequestFromDeepLink: assign({
       authorizationRequest: (_, event) => {
-        return event.params ?? event.authorizationRequest;
+        return normalizeAuthorizationRequest(
+          event.params ?? event.authorizationRequest,
+        );
       },
     }),
 

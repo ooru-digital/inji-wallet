@@ -9,8 +9,8 @@ import {
 import {Spacing, Theme} from '../styleUtils';
 import {COPILOT_HEIGHT, isIOS} from '../../../shared/constants';
 import Constants from 'expo-constants';
-import HomeScreenLogo from '../../../assets/InjiHomeLogo.svg';
-import InjiLogoSmall from '../../../assets/InjiLogo.svg';
+import HomeScreenLogo from '../../../assets/CredIssuerHorizontalLogo.svg';
+import InjiLogoSmall from '../../../assets/InjiHomeLogo.svg';
 import i18next from '../../../i18n';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -423,9 +423,11 @@ export const DefaultTheme = {
       width: 150,
       height: 150,
     },
+    // CredIssuerHorizontalLogo.svg's own viewBox is 206x33 (icon + wordmark side by side),
+    // so this box is sized to that ratio rather than the square box the icon-only mark used.
     injiLogo: {
-      width: 40,
-      height: 40,
+      width: 175,
+      height: 28,
     },
     injiHomeLogo: {
       marginLeft: 12,
@@ -1081,19 +1083,29 @@ export const DefaultTheme = {
       borderBottomWidth: 1,
       borderBottomColor: Colors.Secondary,
     },
+    // Rounded, inset pill (rather than the old edge-to-edge underline bar) for the Home
+    // screen's VC search. Margins replace the previous `width: window width` full-bleed
+    // override, and the shadow gives it definition against the tab's own light-grey
+    // background instead of hairline borders.
     vcSearchBarContainer: {
       alignItems: 'center',
-      borderBottomWidth: 0.5,
-      borderTopWidth: 0.5,
-      borderColor: Colors.DimGray,
-      width: Dimensions.get('window').width,
+      marginHorizontal: 8,
+      marginVertical: 10,
+      height: 46,
+      borderRadius: 23,
       backgroundColor: Colors.White,
+      shadowColor: Colors.Black,
+      shadowOffset: {width: 0, height: 1},
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 1,
     },
     vcSearchIcon: {
       justifyContent: 'center',
-      height: Dimensions.get('window').height * 0.055,
-      width: Dimensions.get('window').width * 0.1,
-      paddingLeft: 15,
+      alignItems: 'center',
+      height: 46,
+      width: 44,
+      paddingLeft: 14,
     },
     searchIcon: {
       justifyContent: 'center',
@@ -1104,6 +1116,12 @@ export const DefaultTheme = {
       textAlign: I18nManager.isRTL ? 'right' : 'left',
       height: Dimensions.get('window').height * 0.055,
       width: Dimensions.get('window').width * 0.75,
+    },
+    vcSearchBar: {
+      textAlign: I18nManager.isRTL ? 'right' : 'left',
+      height: 46,
+      flex: 1,
+      paddingRight: 12,
     },
     clearSearch: {
       padding: 10,

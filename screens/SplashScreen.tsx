@@ -1,16 +1,19 @@
-import {Dimensions} from 'react-native';
+import {Dimensions, Image} from 'react-native';
 import {RootRouteProps} from '../routes';
-import {Image} from 'react-native';
 import React, {useEffect} from 'react';
 import {APPLICATION_THEME} from 'react-native-dotenv';
 import {Column} from '../components/ui';
+import {Theme} from '../components/ui/styleUtils';
 import {useAppLayout} from './AppLayoutController';
+import CredIssuerLogo from '../assets/CredIssuerFullLogo.svg';
+
+const isPurpleTheme = APPLICATION_THEME?.toLowerCase() === 'purple';
+
+// The logo's own viewBox aspect ratio (width/height), used to size it without distortion.
+const LOGO_ASPECT_RATIO = 1082 / 608;
+const LOGO_WIDTH = Dimensions.get('screen').width * 0.65;
 
 export const SplashScreen: React.FC<RootRouteProps> = props => {
-  const imageResource =
-    APPLICATION_THEME?.toLowerCase() === 'purple'
-      ? require('../assets/images/png/purpleSplashScreen.png')
-      : require('../assets/images/png/SplashScreen.png');
   const controller = useAppLayout();
   useEffect(() => {
     setTimeout(() => {
@@ -29,12 +32,17 @@ export const SplashScreen: React.FC<RootRouteProps> = props => {
         justifyContent: 'center',
         height: Dimensions.get('screen').height,
         width: Dimensions.get('screen').width,
+        backgroundColor: Theme.Colors.White,
       }}>
-      <Image
-        resizeMode="stretch"
-        style={{width: 400, height: 450}}
-        source={imageResource}
-      />
+      {isPurpleTheme ? (
+        <Image
+          resizeMode="stretch"
+          style={{width: 400, height: 450}}
+          source={require('../assets/images/png/purpleSplashScreen.png')}
+        />
+      ) : (
+        <CredIssuerLogo width={LOGO_WIDTH} height={LOGO_WIDTH / LOGO_ASPECT_RATIO} />
+      )}
     </Column>
   );
 };

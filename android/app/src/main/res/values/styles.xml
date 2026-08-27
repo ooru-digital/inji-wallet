@@ -9,7 +9,7 @@
          image is not permitted here regardless of theme config. Ignored as unknown attributes on
          pre-31 devices, where no system splash is shown at all. -->
     <item name="android:windowSplashScreenBackground">@color/splashscreen_background</item>
-    <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+    <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
   </style>
   <style name="ResetEditText" parent="@android:style/Widget.EditText">
     <item name="android:padding">0dp</item>

@@ -44,7 +44,7 @@ type PurposesResponse = Array<{id: string; name: string; accepted: boolean}>;
  *
  * Flip to false to test whether a strict reader is choking on that extra key.
  */
-const SEND_PURPOSES_IN_DEVICE_RESPONSE = false;
+const SEND_PURPOSES_IN_DEVICE_RESPONSE = true;
 
 type QrSvgRef = {toDataURL: (callback: (dataURL: string) => void) => void};
 

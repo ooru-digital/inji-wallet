@@ -310,7 +310,16 @@ export class SvgImage {
 
   static InjiSmallLogo() {
     const InjiLogoSmall = Theme.InjiLogoSmall;
-    return <InjiLogoSmall {...testIDProps('injiSmallLogo')} />;
+    // Theme.InjiLogoSmall's own viewBox is 1599x1599 (unlike the old flag mark it replaced,
+    // which was already a compact 64x55), so it needs an explicit size here or it renders
+    // at native scale and fills the header.
+    return (
+      <InjiLogoSmall
+        width={48}
+        height={48}
+        {...testIDProps('injiSmallLogo')}
+      />
+    );
   }
 
   static ProgressIcon() {
