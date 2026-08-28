@@ -147,7 +147,7 @@
       "shareSuccessTitle": "Verification Successful",
       "shareSuccessMessage": "Your credential was shared and verified successfully.",
       "shareFailureTitle": "Verification Unsuccessful",
-      "shareFailureMessage": "We couldn't complete the verification. You can try again from your credential.",
+      "shareFailureMessage": "We couldn't complete the verification. Kindly try again.",
       "goToHome": "Go to Home"
     },
     "mdocCannotSatisfy": {
