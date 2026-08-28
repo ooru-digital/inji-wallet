@@ -222,6 +222,7 @@ export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
           svgTemplate={svgTemplate}
           svgRendererError={svgRendererError}
           loadingSvg={loadingSvg}
+          onCloseDetails={handleModalDismiss}
         />
       )}
 

@@ -32,7 +32,7 @@ export const SplashScreen: React.FC<RootRouteProps> = props => {
         justifyContent: 'center',
         height: Dimensions.get('screen').height,
         width: Dimensions.get('screen').width,
-        backgroundColor: Theme.Colors.White,
+        backgroundColor: Theme.Colors.whiteBackgroundColor,
       }}>
       {isPurpleTheme ? (
         <Image

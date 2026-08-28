@@ -75,6 +75,21 @@ export interface MdocPresentmentConsentElement {
   optional: boolean;
 }
 
+/**
+ * One element from the verifier's *original* DeviceRequest, before the wallet narrows it to what
+ * this credential can serve (ISO 18013-5 §8.3.2.1.2). `elements` on the consent request is the
+ * narrowed set that will actually be disclosed; this is the full ask.
+ */
+export interface MdocPresentmentRequestedElement {
+  namespace: string;
+  element: string;
+  intentToRetain: boolean;
+  /** False when the credential has no matching element, so it is omitted from the response. */
+  servable: boolean;
+  /** Wallet element name when it differs from the verifier's (synonym remap), else null. */
+  servedAs: string | null;
+}
+
 export interface MdocPresentmentConsentRequest {
   docType: string;
   /** Human-readable credential label (e.g. "Authorized Inji Certificate"). */
@@ -85,9 +100,15 @@ export interface MdocPresentmentConsentRequest {
   purpose?: string;
   /** Numeric purposeHints code when present (ISO 18013-5 §10.2.5). */
   purposeHintCode?: number | null;
+  /** The narrowed set the wallet will disclose. */
   elements: MdocPresentmentConsentElement[];
+  /** Everything the verifier asked for, including elements the wallet cannot serve. */
+  requestedElements?: MdocPresentmentRequestedElement[];
   requestInfo?: {
     intent_to_retain?: boolean;
+    /** Verifier's own display name for itself, when it sends one — preferred over the
+     * readerAuth/trust-metadata-derived verifierName above when present. */
+    verifier_name?: string;
     purpose?: string;
     purposes?: Array<{
       name: string;
@@ -102,6 +123,7 @@ export const MDOC_PRESENTMENT_CONSENT_REQUIRED =
 export const MDOC_PRESENTMENT_CONSENT_DISMISSED =
   'MdocPresentmentConsentDismissed';
 export const MDOC_PRESENTMENT_CANNOT_SATISFY = 'MdocPresentmentCannotSatisfy';
+export const MDOC_PRESENTMENT_RESPONSE_SENT = 'MdocPresentmentResponseSent';
 
 export interface MdocPresentmentCannotSatisfyEvent {
   reason: string;
@@ -191,6 +213,17 @@ function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
 }
 
 /**
+ * Stand-in returned by the subscribe helpers when there is no event emitter to attach
+ * to (non-Android, or the native module isn't registered in this build), so callers can
+ * always call .remove() unconditionally.
+ */
+const noopSubscription = {
+  remove: () => {
+    // Nothing was ever subscribed, so there is nothing to detach.
+  },
+};
+
+/**
  * Subscribe to native "consent required" events (after DeviceRequest, before DeviceResponse).
  * Keep the subscription active for the whole presentment lifetime.
  */
@@ -199,7 +232,7 @@ export function subscribeMdocPresentmentConsentRequired(
 ): EmitterSubscription | {remove: () => void} {
   const emitter = getEventEmitter();
   if (!emitter) {
-    return {remove: () => {}};
+    return noopSubscription;
   }
   return emitter.addListener(MDOC_PRESENTMENT_CONSENT_REQUIRED, raw => {
     console.log(
@@ -224,13 +257,31 @@ export function subscribeMdocPresentmentConsentRequired(
   });
 }
 
+/**
+ * Subscribe to "the DeviceResponse actually went out" — fired after DeviceAuth signing
+ * (so after the keystore biometric prompt) and the transport send both succeeded.
+ * MDOC_PRESENTMENT_CONSENT_DISMISSED fires on the success *and* teardown paths, so this
+ * is the only reliable way to tell a completed share from a cancelled/failed one.
+ */
+export function subscribeMdocPresentmentResponseSent(
+  listener: () => void,
+): EmitterSubscription | {remove: () => void} {
+  const emitter = getEventEmitter();
+  if (!emitter) {
+    return noopSubscription;
+  }
+  return emitter.addListener(MDOC_PRESENTMENT_RESPONSE_SENT, () => {
+    listener();
+  });
+}
+
 /** Subscribe when the consent overlay should close. */
 export function subscribeMdocPresentmentConsentDismissed(
   listener: () => void,
 ): EmitterSubscription | {remove: () => void} {
   const emitter = getEventEmitter();
   if (!emitter) {
-    return {remove: () => {}};
+    return noopSubscription;
   }
   return emitter.addListener(MDOC_PRESENTMENT_CONSENT_DISMISSED, () => {
     listener();
@@ -246,7 +297,7 @@ export function subscribeMdocPresentmentCannotSatisfy(
 ): EmitterSubscription | {remove: () => void} {
   const emitter = getEventEmitter();
   if (!emitter) {
-    return {remove: () => {}};
+    return noopSubscription;
   }
   return emitter.addListener(MDOC_PRESENTMENT_CANNOT_SATISFY, raw => {
     const obj = (raw ?? {}) as {

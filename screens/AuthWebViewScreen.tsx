@@ -27,7 +27,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
   const parsed = psl.parse(hostName);
   const rootDomain = parsed.domain || hostName;
   const ALERT_TITLE = t('title', {
-    wallet: 'Inji Wallet',
+    wallet: 'CredIssuer Wallet',
     domain: rootDomain || 'mosip.net',
   });
   const ALERT_MESSAGE = t('message');

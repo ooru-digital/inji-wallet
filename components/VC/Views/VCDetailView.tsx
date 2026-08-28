@@ -196,6 +196,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
                 showInlineQr={false}
                 forceVisible={true}
                 onClose={() => setShowQrOverlay(false)}
+                onCloseDetails={props.onCloseDetails}
               />
             )}
           </Column>
@@ -436,4 +437,7 @@ export interface VCItemDetailsProps {
   svgTemplate?: string[] | null;
   svgRendererError?: string | null;
   loadingSvg?: string | null;
+  /** Closes the whole VC-details modal. The mDoc share flow needs this: dismissing
+   * only the QR overlay leaves this modal covering the Home screen it navigates to. */
+  onCloseDetails?: () => void;
 }

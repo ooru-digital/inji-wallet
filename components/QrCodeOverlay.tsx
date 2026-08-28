@@ -1,7 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Alert, Pressable, View} from 'react-native';
-import {Icon, Overlay} from 'react-native-elements';
-import {Centered, Column, Row, Text, Button} from './ui';
+import {Modal, Pressable, StyleSheet, View} from 'react-native';
+import {Icon} from 'react-native-elements';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {Centered, Column, Text, Button} from './ui';
+import {Header} from './ui/Header';
+import {MainBottomTabParamList} from '../routes/routeTypes';
+import {BOTTOM_TAB_ROUTES} from '../routes/routesConstants';
 import QRCode from 'react-native-qrcode-svg';
 import {Theme} from './ui/styleUtils';
 import {useTranslation} from 'react-i18next';
@@ -29,12 +34,73 @@ import {
   subscribeMdocPresentmentCannotSatisfy,
   subscribeMdocPresentmentConsentDismissed,
   subscribeMdocPresentmentConsentRequired,
+  subscribeMdocPresentmentResponseSent,
 } from '../shared/mdoc/iso18013PresentmentInterop';
 import {shareImageToAllSupportedApps} from '../shared/sharing/imageUtils';
 import {ShareOptions} from 'react-native-share';
 import {MdocProximityConsentOverlay} from './MdocProximityConsentOverlay';
+import {MdocPresentmentResultOverlay} from './MdocPresentmentResultOverlay';
 
 type PurposesResponse = Array<{id: string; name: string; accepted: boolean}>;
+
+/**
+ * Logs the verifier's "Information requested" set on the way in, mirroring the prettified
+ * purposes logging. `requestedElements` is everything the verifier asked for; `elements` is the
+ * narrowed set the wallet can actually serve, so anything requested-but-not-servable is called
+ * out explicitly rather than silently missing from the response.
+ */
+function logIncomingInformationRequested(
+  request: MdocPresentmentConsentRequest,
+) {
+  const requested = request.requestedElements ?? [];
+  const summary = {
+    verifier: request.verifierName || '(unknown)',
+    docType: request.docType,
+    requestedCount: requested.length || request.elements.length,
+    willDiscloseCount: request.elements.length,
+    requested: (requested.length > 0
+      ? requested
+      : request.elements.map(e => ({...e, servable: true, servedAs: null}))
+    ).map(item => ({
+      namespace: item.namespace,
+      element: item.element,
+      intentToRetain: item.intentToRetain,
+      willDisclose: item.servable,
+      ...(item.servedAs ? {servedAsWalletElement: item.servedAs} : {}),
+    })),
+  };
+  console.log(
+    '[DEBUG] Incoming information requested from verifier:\n' +
+      JSON.stringify(summary, null, 2),
+  );
+  const dropped = requested.filter(item => !item.servable);
+  if (dropped.length > 0) {
+    console.log(
+      `[DEBUG] Requested but NOT in this credential (verifier will see these as missing): ${dropped
+        .map(item => `${item.namespace}/${item.element}`)
+        .join(', ')}`,
+    );
+  }
+}
+
+/** Logs the elements actually going back to the verifier in the DeviceResponse. */
+function logOutgoingInformationRequested(
+  request: MdocPresentmentConsentRequest | null,
+) {
+  const disclosed = (request?.elements ?? []).map(item => ({
+    namespace: item.namespace,
+    element: item.element,
+    intentToRetain: item.intentToRetain,
+  }));
+  console.log(
+    '[DEBUG] Outgoing information requested to verifier:\n' +
+      JSON.stringify(
+        {disclosedCount: disclosed.length, disclosed},
+        null,
+        2,
+      ),
+  );
+}
 
 /**
  * DIAGNOSTIC TOGGLE — remove once the verifier freeze is understood.
@@ -47,6 +113,24 @@ type PurposesResponse = Array<{id: string; name: string; accepted: boolean}>;
  */
 const SEND_PURPOSES_IN_DEVICE_RESPONSE = true;
 
+/**
+ * The verifier gives up and shows its own "wallet didn't respond" 30s after sending
+ * the DeviceRequest. There's no native event for that on the wallet side — if the
+ * verifier doesn't tear down the BLE session cleanly, MdocPresentmentConsentDismissed
+ * never fires either, and the consent screen would otherwise just sit there forever.
+ * Firing a bit ahead of the verifier's own deadline means the wallet's own failure
+ * page shows instead of silently doing nothing.
+ */
+const CONSENT_RESPONSE_TIMEOUT_MS = 28000;
+
+/**
+ * Ceiling on the gap between native accepting the approval and the DeviceResponse
+ * actually going out. That window contains the keystore biometric prompt, so it has to
+ * be generous — this is only a backstop against native never reporting either outcome,
+ * not a deadline the user is expected to beat.
+ */
+const RESPONSE_SENT_TIMEOUT_MS = 60000;
+
 type QrSvgRef = {toDataURL: (callback: (dataURL: string) => void) => void};
 
 /**
@@ -58,13 +142,56 @@ let isoPresentmentGeneration = 0;
 export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
   const {RNPixelpassModule} = NativeModules;
   const {t} = useTranslation('VcDetails');
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp<MainBottomTabParamList>>();
   const [qrString, setQrString] = useState('');
   const [qrError, setQrError] = useState(false);
   const [consentRequest, setConsentRequest] =
     useState<MdocPresentmentConsentRequest | null>(null);
+  const [consentResult, setConsentResult] = useState<
+    'success' | 'failure' | null
+  >(null);
   const [consentBusy, setConsentBusy] = useState(false);
   const base64ImageType = 'data:image/png;base64,';
   const {RNSecureKeystoreModule} = NativeModules;
+
+  /**
+   * The consent-dismissed subscription below is set up once in a useEffect with a
+   * narrow dependency array, so its closure would otherwise see whatever
+   * consentRequest was at setup time forever (a stale closure) — this ref gives it a
+   * way to read the live value instead.
+   */
+  const consentRequestRef = useRef(consentRequest);
+  consentRequestRef.current = consentRequest;
+  /** Set the moment the user taps Share or Cancel, so the timeout below backs off
+   * instead of yanking away a response the user already sent. */
+  const hasUserActedRef = useRef(false);
+  /**
+   * `consentBusy` (state) can't act as a re-entrancy guard on its own: two rapid
+   * onPress firings both read it as `false` before either has re-rendered, so both
+   * slip past `if (consentBusy) return` — this was showing the biometric prompt
+   * twice per tap. A ref updates synchronously, so the second call sees the first
+   * one's flag immediately.
+   */
+  const consentActionInFlightRef = useRef(false);
+  /**
+   * True once native confirms the DeviceResponse actually went out. Set before the
+   * ConsentDismissed that always follows a successful send, so that handler knows not
+   * to overwrite the success result with a failure.
+   */
+  const responseSentRef = useRef(false);
+  /** Safety timer for the gap between "approve accepted" and the signing/send finishing,
+   * so a native stall can't leave the consent screen spinning forever. */
+  const responseWaitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  function clearResponseWaitTimer() {
+    if (responseWaitTimerRef.current) {
+      clearTimeout(responseWaitTimerRef.current);
+      responseWaitTimerRef.current = null;
+    }
+  }
 
   /** Latest VC for native proximity — ref avoids BLE cancel/restart when parent re-renders new object identity. */
   const verifiableCredentialRef = useRef(props.verifiableCredential);
@@ -198,33 +325,85 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
           request.elements.length,
         );
       }
+      logIncomingInformationRequested(request);
+      hasUserActedRef.current = false;
+      responseSentRef.current = false;
       setConsentRequest(request);
       setConsentBusy(false);
     });
-    const dismissedSub = subscribeMdocPresentmentConsentDismissed(() => {
-      setConsentRequest(null);
+    // The only trustworthy "it actually worked" signal: DeviceAuth signing (and so the
+    // keystore biometric prompt) and the transport send both completed.
+    const responseSentSub = subscribeMdocPresentmentResponseSent(() => {
+      responseSentRef.current = true;
+      clearResponseWaitTimer();
       setConsentBusy(false);
+      setConsentRequest(null);
+      setConsentResult('success');
     });
-    const cannotSatisfySub = subscribeMdocPresentmentCannotSatisfy(event => {
+    const dismissedSub = subscribeMdocPresentmentConsentDismissed(() => {
+      // Native emits this on the success path too (right after the send), so defer to
+      // responseSentRef; otherwise this means the session ended without a completed
+      // DeviceResponse — Cancel, a cancelled keystore biometric, the verifier going
+      // back, BLE dropping — all of which are failures.
+      if (responseSentRef.current) {
+        return;
+      }
+      const wasPending = consentRequestRef.current != null;
+      clearResponseWaitTimer();
+      setConsentBusy(false);
+      setConsentRequest(null);
+      if (wasPending) {
+        setConsentResult('failure');
+      }
+    });
+    const cannotSatisfySub = subscribeMdocPresentmentCannotSatisfy(() => {
+      clearResponseWaitTimer();
       setConsentRequest(null);
       setConsentBusy(false);
-      const requested =
-        event.requestedDocTypes.filter(Boolean).join(', ') || 'unknown';
-      const wallet = event.walletDocType || 'unknown';
-      Alert.alert(
-        t('mdocCannotSatisfy.title'),
-        event.reason === 'credential_not_present'
-          ? t('mdocCannotSatisfy.message', {requested, wallet})
-          : t('mdocCannotSatisfy.messageGeneric'),
-        [{text: t('mdocCannotSatisfy.ok')}],
-      );
+      setConsentResult('failure');
     });
     return () => {
       requiredSub.remove();
+      responseSentSub.remove();
       dismissedSub.remove();
       cannotSatisfySub.remove();
+      clearResponseWaitTimer();
     };
   }, [props.meta?.format, t]);
+
+  // Starts fresh for each new consent request (dependency below) and is cleared the
+  // moment that request resolves for any reason — approve, deny, dismiss, or a new
+  // request replacing this one — so it never fires against a request that's already
+  // been dealt with.
+  useEffect(() => {
+    if (consentRequest == null) {
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      if (hasUserActedRef.current) {
+        // Share/Cancel was already tapped — let that call's own outcome decide the
+        // result instead of racing a timeout-triggered failure against it.
+        return;
+      }
+      if (__DEV__) {
+        console.warn(
+          '[QrCodeOverlay] No response within the consent timeout — the verifier will have given up by now.',
+        );
+      }
+      setConsentRequest(null);
+      setConsentBusy(false);
+      setConsentResult('failure');
+      denyIso18013PresentmentConsent().catch(e => {
+        if (__DEV__) {
+          console.warn(
+            '[QrCodeOverlay] deny after consent timeout failed:',
+            e,
+          );
+        }
+      });
+    }, CONSENT_RESPONSE_TIMEOUT_MS);
+    return () => clearTimeout(timeoutId);
+  }, [consentRequest]);
 
   useEffect(() => {
     let cancelled = false;
@@ -345,16 +524,24 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
   };
 
   async function handleConsentAllow(purposesResponse: PurposesResponse) {
-    if (consentBusy) {
+    if (consentActionInFlightRef.current) {
       return;
     }
+    consentActionInFlightRef.current = true;
+    hasUserActedRef.current = true;
     setConsentBusy(true);
     try {
+      // No biometric prompt here on purpose. DeviceAuth signing already goes through
+      // InjiSecureKeystoreSecureArea.sign(), which calls Biometrics.authenticateAndPerform
+      // and shows the keystore's own "Unlock App" prompt — that is the real gate (no
+      // biometric => no signature => no DeviceResponse). Prompting here as well just
+      // showed the user two fingerprint dialogs back to back.
       const purposesJson = JSON.stringify(purposesResponse);
       console.log(
         '[DEBUG] Outgoing purposes response to verifier:\n' +
           JSON.stringify(purposesResponse, null, 2),
       );
+      logOutgoingInformationRequested(consentRequest);
       if (SEND_PURPOSES_IN_DEVICE_RESPONSE) {
         await approveIso18013PresentmentConsent(purposesJson);
       } else {
@@ -363,28 +550,75 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
         );
         await approveIso18013PresentmentConsent();
       }
-      setConsentRequest(null);
+      // Deliberately no success here: approvePresentment resolves as soon as native
+      // accepts the approval, *before* DeviceAuth signing (and its keystore biometric
+      // prompt) and the send have happened. Showing success now is what put the success
+      // page on screen underneath the fingerprint dialog. Stay busy and let the
+      // ResponseSent / ConsentDismissed subscriptions decide the outcome.
+      clearResponseWaitTimer();
+      responseWaitTimerRef.current = setTimeout(() => {
+        if (responseSentRef.current) {
+          return;
+        }
+        if (__DEV__) {
+          console.warn(
+            '[QrCodeOverlay] No ResponseSent/Dismissed after approve — treating as failed.',
+          );
+        }
+        setConsentBusy(false);
+        setConsentRequest(null);
+        setConsentResult('failure');
+      }, RESPONSE_SENT_TIMEOUT_MS);
     } catch (e) {
+      clearResponseWaitTimer();
       setConsentBusy(false);
+      setConsentRequest(null);
+      setConsentResult('failure');
       if (__DEV__) {
         console.warn('[QrCodeOverlay] approve mDOC consent failed:', e);
       }
+    } finally {
+      consentActionInFlightRef.current = false;
     }
   }
 
+  // Shared by both the success page's "Go to Home" and the failure page's button —
+  // neither returns the user to the QR page anymore, both go straight Home.
+  function handleGoHome() {
+    setConsentResult(null);
+    if (props.onClose) {
+      props.onClose();
+    } else {
+      setIsQrOverlayVisible(false);
+    }
+    // Closing the QR overlay alone isn't enough — the VC-details modal that hosts it
+    // is a separate Modal stacked above the tab navigator, so it would keep covering
+    // the Home screen we navigate to.
+    props.onCloseDetails?.();
+    navigation.navigate(BOTTOM_TAB_ROUTES.home);
+  }
+
   async function handleConsentDeny() {
-    if (consentBusy) {
+    if (consentActionInFlightRef.current) {
       return;
     }
+    consentActionInFlightRef.current = true;
+    hasUserActedRef.current = true;
     setConsentBusy(true);
     try {
       await denyIso18013PresentmentConsent();
       setConsentRequest(null);
+      setConsentBusy(false);
+      setConsentResult('failure');
     } catch (e) {
       setConsentBusy(false);
+      setConsentRequest(null);
+      setConsentResult('failure');
       if (__DEV__) {
         console.warn('[QrCodeOverlay] deny mDOC consent failed:', e);
       }
+    } finally {
+      consentActionInFlightRef.current = false;
     }
   }
 
@@ -415,56 +649,64 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
             )}
           </View>
 
-          <Overlay
-            isVisible={overlayVisible}
-            onBackdropPress={toggleQrOverlay}
-            overlayStyle={{padding: 1, borderRadius: 21}}>
-            <Column style={Theme.QrCodeStyles.expandedQrCode}>
-              <Row pY={20} style={Theme.QrCodeStyles.QrCodeHeader}>
+          {/* Full page rather than a floating modal card — also doubles as the "before
+              scan" / "retry" state of the mDoc proximity flow: once a verifier's
+              DeviceRequest arrives (consentRequest != null) this hides and
+              MdocProximityConsentOverlay's own full-screen Modal takes over, and once
+              that's resolved (consentResult != null) the result page takes over instead
+              — so none of the three ever stack on top of each other. */}
+          <Modal
+            visible={
+              overlayVisible && consentRequest == null && consentResult == null
+            }
+            animationType="slide"
+            presentationStyle="fullScreen"
+            onRequestClose={toggleQrOverlay}>
+            <Column fill backgroundColor={Theme.Colors.whiteBackgroundColor}>
+              <Header
+                goBack={toggleQrOverlay}
+                title={t('qrCodeHeader')}
+                testID="qrCodeHeader"
+              />
+              <Centered fill style={qrPageStyles.content}>
                 <Text
-                  testID="qrCodeHeader"
+                  testID="qrCodeInstruction"
+                  size="mediumSmall"
                   align="center"
-                  style={Theme.TextStyles.header}
-                  weight="bold">
-                  {t('qrCodeHeader')}
+                  color={Theme.Colors.GrayIcon}
+                  style={qrPageStyles.instruction}>
+                  {t('qrCodeInstruction')}
                 </Text>
-                <Icon
-                  {...testIDProps('qrCodeCloseIcon')}
-                  name="close"
-                  onPress={toggleQrOverlay}
-                  color={Theme.Colors.Details}
-                  size={32}
-                />
-              </Row>
-              <Centered testID="qrCodeDetails" pY={30}>
-                <QRCode
-                  {...testIDProps('qrCodeExpandedView')}
-                  size={300}
-                  value={qrString}
-                  backgroundColor={Theme.Colors.QRCodeBackgroundColor}
-                  ecl={DEFAULT_ECL}
-                  quietZone={10}
-                  onError={onQRError}
-                  getRef={data => (qrRef.current = data)}
-                />
+                <View style={qrPageStyles.qrCard}>
+                  <QRCode
+                    {...testIDProps('qrCodeExpandedView')}
+                    size={240}
+                    value={qrString}
+                    backgroundColor={Theme.Colors.QRCodeBackgroundColor}
+                    ecl={DEFAULT_ECL}
+                    quietZone={10}
+                    onError={onQRError}
+                    getRef={data => (qrRef.current = data)}
+                  />
+                </View>
                 <Button
                   testID="share"
-                  styles={Theme.QrCodeStyles.shareQrCodeButton}
                   title={t('shareQRCode')}
                   type="gradient"
                   icon={
                     <Icon
                       name="share-variant-outline"
                       type="material-community"
-                      size={24}
+                      size={22}
                       color="white"
                     />
                   }
                   onPress={handleShareQRCodePress}
                 />
               </Centered>
+              <View style={{paddingBottom: Math.max(insets.bottom, 16)}} />
             </Column>
-          </Overlay>
+          </Modal>
         </React.Fragment>
       )}
       <MdocProximityConsentOverlay
@@ -477,10 +719,34 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
         requestInfo={consentRequest?.requestInfo}
         onAllow={handleConsentAllow}
         onDeny={handleConsentDeny}
+        isBusy={consentBusy}
       />
+      <MdocPresentmentResultOverlay result={consentResult} onGoHome={handleGoHome} />
     </>
   );
 };
+
+const qrPageStyles = StyleSheet.create({
+  content: {
+    paddingHorizontal: 24,
+  },
+  instruction: {
+    marginBottom: 28,
+  },
+  qrCard: {
+    backgroundColor: Theme.Colors.whiteBackgroundColor,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EDEDED',
+    padding: 20,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+});
 
 interface QrCodeOverlayProps {
   verifiableCredential: VerifiableCredential;
@@ -490,4 +756,7 @@ interface QrCodeOverlayProps {
   showInlineQr?: boolean;
   forceVisible?: boolean;
   onClose?: () => void;
+  /** Dismisses the enclosing VC-details modal — without this, navigating to the Home
+   * tab is invisible because that modal stays stacked on top of it. */
+  onCloseDetails?: () => void;
 }

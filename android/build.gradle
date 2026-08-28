@@ -19,12 +19,15 @@ def snapKycArtifactoryPassword = {
 }
 def biochqUseLocalMaven =
     (artifactoryProps.getProperty("biochqUseLocalMaven") ?: "false").toBoolean()
+// Defaults point at the public Nexus, which needs no VPN. The old internal host
+// (http://biometrics.credissuer.com:8081) resolved to an RFC1918 address and so
+// only built from inside the corporate network; it still works if set explicitly.
 def artifactorySnapshotUrl =
     artifactoryProps.getProperty("artifactorySnapshotUrl")
-        ?: "http://biometrics.credissuer.com:8081/repository/maven-snapshots/"
+        ?: "https://nexus-biochq.credissuer.com/repository/maven-snapshots/"
 def artifactoryReleaseUrl =
     artifactoryProps.getProperty("artifactoryReleaseUrl")
-        ?: "http://biometrics.credissuer.com:8081/repository/maven-releases/"
+        ?: "https://nexus-biochq.credissuer.com/repository/maven-releases/"
 def biochqLocalMavenPath =
     artifactoryProps.getProperty("biochqLocalMavenPath")
         ?: "${rootProject.projectDir}/local-maven"
@@ -68,9 +71,10 @@ allprojects { repositories {
         }
     } else {
         // SnapKYC deps are -SNAPSHOT, so both repos are declared. `includeGroup` keeps every other
-        // dependency off this (plain-http, credentialed) host.
+        // dependency off this credentialed host. Cleartext is permitted only when the configured
+        // URL is actually plain http, so the default https Nexus is never downgraded.
         maven {
-            allowInsecureProtocol = true
+            allowInsecureProtocol = artifactorySnapshotUrl.startsWith("http://")
             url artifactorySnapshotUrl
             credentials {
                 username = snapKycArtifactoryUsername()
@@ -81,7 +85,7 @@ allprojects { repositories {
             }
         }
         maven {
-            allowInsecureProtocol = true
+            allowInsecureProtocol = artifactoryReleaseUrl.startsWith("http://")
             url artifactoryReleaseUrl
             credentials {
                 username = snapKycArtifactoryUsername()

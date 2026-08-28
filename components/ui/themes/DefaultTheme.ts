@@ -682,9 +682,11 @@ export const DefaultTheme = {
       marginTop: 10,
     },
     introSliderHeader: {
+      // Android's extra offset was bumped from +40 — the Skip button sat too close to
+      // (almost under) the status bar at that value.
       marginTop: isIOS()
         ? Constants.statusBarHeight + 40
-        : StatusBar.currentHeight + 40,
+        : (StatusBar.currentHeight ?? 0) + 130,
       width: '100%',
       marginBottom: 50,
     },

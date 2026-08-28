@@ -111,6 +111,24 @@ class InjiIso18013ProximityPresenter(
     private var consentContextRequestInfoJson: String = ""
     private var consentContextPurposesJson: String? = null
 
+    /** One data element the reader asked for, and whether this credential can serve it. */
+    private data class RequestedElement(
+        val namespace: String,
+        val element: String,
+        val intentToRetain: Boolean,
+        val servable: Boolean,
+        /** Wallet element name when it differs from the reader's (synonym remap). */
+        val servedAs: String?,
+    )
+
+    /**
+     * The reader's *original* ask, captured in [filterDeviceRequestToSatisfiable] before the
+     * request is narrowed. The consent event only ever carries the filtered set, so without this
+     * snapshot JS cannot tell what the verifier requested but the wallet dropped.
+     */
+    @Volatile
+    private var consentContextRequestedElements: List<RequestedElement> = emptyList()
+
     fun start(
         issuerSignedCompact: String,
         deviceEngagementCbor: ByteArray,
@@ -296,7 +314,30 @@ class InjiIso18013ProximityPresenter(
             payload.putNull("purposeHintCode")
         }
         payload.putArray("elements", elements)
+        payload.putArray("requestedElements", buildRequestedElementsArray())
         emitJsEvent(EVENT_CONSENT_REQUIRED, payload)
+    }
+
+    /**
+     * The reader's original ask as captured before filtering. `elements` above is the narrowed set
+     * the wallet will actually disclose; this is what was asked for, so JS can show both sides.
+     */
+    private fun buildRequestedElementsArray(): WritableArray {
+        val array = Arguments.createArray()
+        for (requested in consentContextRequestedElements) {
+            val row = Arguments.createMap()
+            row.putString("namespace", requested.namespace)
+            row.putString("element", requested.element)
+            row.putBoolean("intentToRetain", requested.intentToRetain)
+            row.putBoolean("servable", requested.servable)
+            if (requested.servedAs != null) {
+                row.putString("servedAs", requested.servedAs)
+            } else {
+                row.putNull("servedAs")
+            }
+            array.pushMap(row)
+        }
+        return array
     }
 
     /**
@@ -403,6 +444,7 @@ class InjiIso18013ProximityPresenter(
         consentContextPurposeHintCode = null
         consentContextRequestInfoJson = ""
         consentContextPurposesJson = null
+        consentContextRequestedElements = emptyList()
     }
 
     /**
@@ -1451,6 +1493,7 @@ class InjiIso18013ProximityPresenter(
         val keptAny = mutableListOf<String>()
         val synonymRemaps = mutableListOf<String>()
         val docTypeMismatches = mutableListOf<String>()
+        val requestedSnapshot = mutableListOf<RequestedElement>()
 
         val filteredCbor = buildCborMap {
             put("version", deviceRequest.version)
@@ -1473,6 +1516,15 @@ class InjiIso18013ProximityPresenter(
                         val kept = LinkedHashMap<String, Boolean>()
                         els.forEach { (requestedName, intentToRetain) ->
                             val walletName = resolveWalletElementName(requestedName, have)
+                            requestedSnapshot.add(
+                                RequestedElement(
+                                    namespace = ns,
+                                    element = requestedName,
+                                    intentToRetain = intentToRetain,
+                                    servable = walletName != null,
+                                    servedAs = walletName?.takeIf { it != requestedName },
+                                ),
+                            )
                             if (walletName == null) {
                                 droppedAll.add("DocRequest[$docIndex] $ns/$requestedName")
                             } else {
@@ -1526,6 +1578,10 @@ class InjiIso18013ProximityPresenter(
             // Second-Edition features and their `internal` toDataItem helpers aren't visible
             // outside Multipaz. Tap2iD-style readers don't depend on them.
         }
+
+        // Publish the reader's original ask before any early return, so the consent event can
+        // report requested-but-dropped elements even when the filter narrows things heavily.
+        consentContextRequestedElements = requestedSnapshot
 
         if (docTypeMismatches.isNotEmpty() && keptAny.isEmpty()) {
             Log.e(
@@ -1791,6 +1847,7 @@ class InjiIso18013ProximityPresenter(
                 )
                 numRequestsServed += 1
                 Log.i(TAG, "runSession#$sid response sent, keeping connection open")
+                emitJsEvent(EVENT_RESPONSE_SENT, Arguments.createMap())
                 emitConsentDismissed()
             }
         } finally {
@@ -1825,6 +1882,15 @@ class InjiIso18013ProximityPresenter(
         const val EVENT_CONSENT_REQUIRED = "MdocPresentmentConsentRequired"
         const val EVENT_CONSENT_DISMISSED = "MdocPresentmentConsentDismissed"
         const val EVENT_CANNOT_SATISFY = "MdocPresentmentCannotSatisfy"
+
+        /**
+         * Emitted only once the encrypted DeviceResponse has actually been handed to the
+         * transport — i.e. after DeviceAuth signing (and therefore after the keystore
+         * biometric prompt) succeeded. EVENT_CONSENT_DISMISSED fires on both the success
+         * and the teardown paths, so JS cannot use it alone to tell a completed share from
+         * a cancelled/failed one; this event is that missing signal.
+         */
+        const val EVENT_RESPONSE_SENT = "MdocPresentmentResponseSent"
         private val sessionSeq = AtomicInteger(0)
 
         /** Values commonly encoded at BLE option key 21 for QR interop (not Bluetooth L2CAP PSM). */
