@@ -689,20 +689,6 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
                     getRef={data => (qrRef.current = data)}
                   />
                 </View>
-                <Button
-                  testID="share"
-                  title={t('shareQRCode')}
-                  type="gradient"
-                  icon={
-                    <Icon
-                      name="share-variant-outline"
-                      type="material-community"
-                      size={22}
-                      color="white"
-                    />
-                  }
-                  onPress={handleShareQRCodePress}
-                />
               </Centered>
               <View style={{paddingBottom: Math.max(insets.bottom, 16)}} />
             </Column>

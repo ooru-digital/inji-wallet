@@ -227,6 +227,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
                       }
                       meta={props.verifiableCredentialData.vcMetadata}
                       showInlineQr={true}
+                      onCloseDetails={props.onCloseDetails}
                     />
                     <Column
                       width={80}
