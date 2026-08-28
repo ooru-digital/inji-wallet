@@ -15,6 +15,8 @@ import com.facebook.soloader.SoLoader;
 import timber.log.Timber;
 import java.util.List;
 
+import io.mosip.residentapp.jsonld.BundledJsonLdDocumentLoader;
+
 public class MainApplication extends Application implements ReactApplication {
   private final ReactNativeHost mReactNativeHost =
     new ReactNativeHostWrapper(this, new DefaultReactNativeHost(this) {
@@ -65,6 +67,7 @@ public class MainApplication extends Application implements ReactApplication {
     if (BuildConfig.DEBUG) {
       Timber.plant(new Timber.DebugTree());
     }
+    BundledJsonLdDocumentLoader.install(this);
     ApplicationLifecycleDispatcher.onApplicationCreate(this);
   }
 

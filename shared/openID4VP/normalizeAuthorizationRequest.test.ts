@@ -17,7 +17,7 @@ describe('normalizeAuthorizationRequest', () => {
       'openid4vp://authorize?client_id=http%3A%2F%2Fstaging-verify.credissuer.com' +
         '&response_type=vp_token' +
         '&nonce=GGsUVnXo%2FiLcwKGqSxeiLg%3D%3D' +
-        '&client_metadata=%7B%22name%22%3A%20%22CredIssuer%20Verifier%20App%22%7D' +
+        '&client_metadata=%7B%22client_name%22%3A%22CredIssuer%20Verifier%20App%22%7D' +
         '&client_id_scheme=pre-registered',
     );
   });
@@ -35,7 +35,7 @@ describe('normalizeAuthorizationRequest', () => {
         'openid4vp://authorize?client_id=did:example:123&client_metadata={"name": "X"}',
       ),
     ).toBe(
-      'openid4vp://authorize?client_id=did%3Aexample%3A123&client_metadata=%7B%22name%22%3A%20%22X%22%7D',
+      'openid4vp://authorize?client_id=did%3Aexample%3A123&client_metadata=%7B%22client_name%22%3A%22X%22%7D',
     );
   });
 
@@ -95,7 +95,7 @@ describe('normalizeAuthorizationRequest', () => {
       );
 
       expect(metadataOf(result)).toEqual({
-        name: 'CredIssuer Verifier App',
+        client_name: 'CredIssuer Verifier App',
         vp_formats: {ldp_vc: {proof_type: ['Ed25519Signature2020']}},
       });
     });
@@ -122,8 +122,41 @@ describe('normalizeAuthorizationRequest', () => {
       expect(normalizeAuthorizationRequest(request)).toBe(request);
     });
 
-    it('leaves the request alone when no format is declared anywhere', () => {
-      const request = build('{"id": "pd-1"}', '{"name": "V"}');
+    it('maps verifier `name` to spec `client_name` so the SDK keeps the display name', () => {
+      const result = normalizeAuthorizationRequest(
+        build('{"id": "pd-1"}', '{"name": "CredIssuer Verifier App"}'),
+      );
+
+      expect(metadataOf(result)).toEqual({
+        client_name: 'CredIssuer Verifier App',
+      });
+    });
+
+    it('does not overwrite a client_name the verifier already sent', () => {
+      const request = build(
+        '{"id": "pd-1"}',
+        '{"client_name": "Official Name", "name": "Alias"}',
+      );
+
+      expect(normalizeAuthorizationRequest(request)).toBe(request);
+    });
+
+    it('maps name even when vp_formats is already present', () => {
+      const result = normalizeAuthorizationRequest(
+        build(
+          '{"format": {"ldp_vc": {"proof_type": ["Ed25519Signature2020"]}}}',
+          '{"name": "V", "vp_formats": {"jwt_vp": {"alg": ["ES256"]}}}',
+        ),
+      );
+
+      expect(metadataOf(result)).toEqual({
+        client_name: 'V',
+        vp_formats: {jwt_vp: {alg: ['ES256']}},
+      });
+    });
+
+    it('leaves the request alone when no format is declared anywhere and name is already client_name', () => {
+      const request = build('{"id": "pd-1"}', '{"client_name": "V"}');
 
       expect(normalizeAuthorizationRequest(request)).toBe(request);
     });
@@ -173,7 +206,7 @@ describe('normalizeAuthorizationRequest', () => {
     );
 
     expect(result).toBe(
-      'openid4vp://authorize?client_metadata=%7B%22name%22%3A%20%22A%20%26%20B%22%7D' +
+      'openid4vp://authorize?client_metadata=%7B%22client_name%22%3A%22A%20%26%20B%22%7D' +
         '&response_type=vp_token',
     );
   });

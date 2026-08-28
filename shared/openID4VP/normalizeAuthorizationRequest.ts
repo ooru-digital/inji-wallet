@@ -24,6 +24,9 @@ import {Buffer} from 'buffer';
  *  4. `client_metadata.vp_formats` is mandatory in draft 22+; `ClientMetadata`
  *     rejects a request without it. Draft 21 verifiers routinely omit it and
  *     declare formats only inside `presentation_definition`.
+ *  5. Some verifiers (CredIssuer) send `client_metadata.name` instead of the
+ *     spec field `client_name`. The SDK only deserialises `client_name`, so
+ *     the display name is otherwise dropped and the UI shows "Unknown verifier".
  *
  * For 3 and 4 the correction is a restatement of what the older draft already
  * means, not an invention: `pre-registered` is that draft's documented default
@@ -44,6 +47,8 @@ const PARAM_NAME = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const CLIENT_ID = 'client_id';
 const CLIENT_ID_SCHEME = 'client_id_scheme';
 const CLIENT_METADATA = 'client_metadata';
+const CLIENT_NAME = 'client_name';
+const CLIENT_NAME_ALIAS = 'name';
 const PRESENTATION_DEFINITION = 'presentation_definition';
 const VP_FORMATS = 'vp_formats';
 const PRE_REGISTERED = 'pre-registered';
@@ -159,30 +164,47 @@ function deriveVpFormats(presentationDefinition: string): PlainObject | undefine
   return sanitizeFormats(declared);
 }
 
+function hasNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
 /**
- * Returns a replacement `client_metadata` carrying `vp_formats`, or undefined if
- * the verifier already supplied it or nothing can be derived. A missing
- * `client_metadata` is left missing — that is a distinct, clearer SDK error.
+ * Returns a replacement `client_metadata` when the verifier's payload needs a
+ * spec-shaped restatement (`name` → `client_name`, or missing `vp_formats`
+ * derived from the presentation definition). Undefined means leave the original
+ * bytes alone. A missing `client_metadata` is left missing — that is a
+ * distinct, clearer SDK error.
  */
-function clientMetadataWithVpFormats(pairs: Pairs): string | undefined {
+function normalizedClientMetadata(pairs: Pairs): string | undefined {
   const raw = findValue(pairs, CLIENT_METADATA);
   if (raw === undefined) return undefined;
 
   const metadata = parseJson(raw);
   if (!isPlainObject(metadata)) return undefined;
 
-  const existing = metadata[VP_FORMATS];
-  if (isPlainObject(existing) && Object.keys(existing).length > 0) {
-    return undefined;
+  const next: PlainObject = {...metadata};
+  let changed = false;
+
+  if (!hasNonEmptyString(next[CLIENT_NAME]) && hasNonEmptyString(next[CLIENT_NAME_ALIAS])) {
+    next[CLIENT_NAME] = next[CLIENT_NAME_ALIAS];
+    delete next[CLIENT_NAME_ALIAS];
+    changed = true;
   }
 
-  const presentationDefinition = findValue(pairs, PRESENTATION_DEFINITION);
-  if (presentationDefinition === undefined) return undefined;
+  const existing = next[VP_FORMATS];
+  const hasVpFormats = isPlainObject(existing) && Object.keys(existing).length > 0;
+  if (!hasVpFormats) {
+    const presentationDefinition = findValue(pairs, PRESENTATION_DEFINITION);
+    if (presentationDefinition !== undefined) {
+      const formats = deriveVpFormats(presentationDefinition);
+      if (formats !== undefined) {
+        next[VP_FORMATS] = formats;
+        changed = true;
+      }
+    }
+  }
 
-  const formats = deriveVpFormats(presentationDefinition);
-  if (formats === undefined) return undefined;
-
-  return JSON.stringify({...metadata, [VP_FORMATS]: formats});
+  return changed ? JSON.stringify(next) : undefined;
 }
 
 export function normalizeAuthorizationRequest(request: string): string {
@@ -236,7 +258,7 @@ export function normalizeAuthorizationRequest(request: string): string {
     additions.push([CLIENT_ID_SCHEME, PRE_REGISTERED]);
   }
 
-  const metadata = clientMetadataWithVpFormats(decodedPairs);
+  const metadata = normalizedClientMetadata(decodedPairs);
   if (metadata !== undefined) overrides.set(CLIENT_METADATA, metadata);
 
   const unchanged =

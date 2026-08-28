@@ -54,7 +54,7 @@ import io.mosip.openID4VP.constants.RequestSigningAlgorithm;
 import io.mosip.openID4VP.constants.ResponseType;
 import io.mosip.openID4VP.constants.VPFormatType;
 import io.mosip.openID4VP.exceptions.OpenID4VPExceptions;
-import io.mosip.residentapp.utils.FormatConverter;
+import io.mosip.residentapp.jsonld.V2LdpVpTokenBuilder;
 import io.mosip.residentapp.utils.*;
 
 
@@ -114,8 +114,14 @@ public class InjiOpenID4VPModule extends ReactContextBaseJavaModule {
             Promise promise) {
         try {
             Map<String, Map<FormatType, List<Object>>> selectedVCsMap = parseSelectedVCs(selectedVCs);
-            Map<FormatType, UnsignedVPToken> vpTokens = openID4VP.constructUnsignedVPToken(selectedVCsMap, holderId,
-                    signatureSuite);
+            Map<FormatType, UnsignedVPToken> vpTokens;
+            if (V2LdpVpTokenBuilder.containsVcDataModelV2(selectedVCsMap)) {
+                vpTokens = V2LdpVpTokenBuilder.constructAndStore(
+                        openID4VP, selectedVCsMap, holderId, signatureSuite);
+            } else {
+                vpTokens = openID4VP.constructUnsignedVPToken(selectedVCsMap, holderId,
+                        signatureSuite);
+            }
             promise.resolve(toJsonString(vpTokens));
         } catch (Exception e) {
             rejectWithOpenID4VPExceptions(e, promise);
