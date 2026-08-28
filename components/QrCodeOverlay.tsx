@@ -10,6 +10,7 @@ import {SvgImage} from './ui/svg';
 import {NativeModules, Platform} from 'react-native';
 import {VerifiableCredential} from '../machines/VerifiableCredential/VCMetaMachine/vc';
 import {DEFAULT_ECL, MAX_QR_DATA_LENGTH} from '../shared/constants';
+import {compactVcForQr} from '../shared/qr/compactVcForQr';
 import {buildMdocDeviceEngagementQrForVc} from '../shared/mdoc/buildMdocQrData';
 import {loadOrCreateMdocProximityQrPayload} from '../shared/mdoc/mdocProximitySessionCoordinator';
 import {logMdocProximitySessionDiagnostics} from '../shared/mdoc/mdocProximitySessionStore';
@@ -106,6 +107,9 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
       const keyData = await RNSecureKeystoreModule.getData(props.meta.id);
       if (keyData[1] && keyData.length > 0) {
         qrData = keyData[1];
+        if (qrData.length >= MAX_QR_DATA_LENGTH) {
+          throw new Error('Cached QR exceeds MAX_QR_DATA_LENGTH');
+        }
       } else {
         throw new Error('No key data found');
       }
@@ -115,12 +119,18 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
         qrData = claim169QrData;
       } else {
         const {credential} = props.verifiableCredential;
-        qrData = await RNPixelpassModule.generateQRData(
-          JSON.stringify(credential),
-          '',
-        );
+        const vcJson = JSON.stringify(credential);
+        qrData = await RNPixelpassModule.generateQRData(vcJson, '');
+        if (qrData?.length >= MAX_QR_DATA_LENGTH) {
+          qrData = await RNPixelpassModule.generateQRData(
+            compactVcForQr(credential),
+            '',
+          );
+        }
       }
-      await RNSecureKeystoreModule.storeData(props.meta.id, qrData);
+      if (qrData?.length < MAX_QR_DATA_LENGTH) {
+        await RNSecureKeystoreModule.storeData(props.meta.id, qrData);
+      }
     }
     return qrData;
   }
