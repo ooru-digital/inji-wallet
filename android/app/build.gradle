@@ -10,7 +10,7 @@ apply plugin: "com.facebook.react"
 apply plugin: "expo-updates-gradle-plugin"
 apply plugin: "org.sonarqube"
 apply plugin: 'kotlin-android'
-// apply plugin: 'com.google.gms.google-services' // disabled temporarily: no Firebase client registered for io.ooru.credissuerwallet yet
+apply plugin: 'com.google.gms.google-services'
 
 
 configurations.all {
@@ -332,7 +332,7 @@ dependencies {
         exclude group: 'com.augustcellars.cose', module:'cose-java'
     }
     implementation("com.facebook.react:react-android")
-    implementation 'com.facebook.soloader:soloader:0.10.4+'
+    implementation 'com.facebook.soloader:soloader:0.12.1+'
     implementation("io.mosip:pixelpass-aar:0.7.0")
     implementation("io.mosip:secure-keystore:0.3.0")
     implementation platform('com.google.firebase:firebase-bom:32.1.1')
