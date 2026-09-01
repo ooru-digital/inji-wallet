@@ -52,6 +52,11 @@ configurations.all {
 }
 
 react {
+    // React Native 0.75+ replacement for the old
+    // `applyNativeModulesAppBuildGradle(project)` call that used to sit at the
+    // bottom of this file. Pairs with the settings plugin in settings.gradle.
+    autolinkLibrariesWithApp()
+
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '..'
     // root = file("../")
@@ -434,8 +439,6 @@ task CaptureLibraryVersion {
         }
     }
 }
-
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
 
 // https://github.com/oblador/react-native-vector-icons?tab=readme-ov-file#android-setup
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

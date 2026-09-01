@@ -31,6 +31,7 @@ import {CopilotProvider} from 'react-native-copilot';
 import {CopilotTooltip} from './components/CopilotTooltip';
 import {Theme} from './components/ui/styleUtils';
 import {selectAppSetupComplete} from './machines/auth';
+import {roundedSvgMaskPath} from './shared/copilotMask';
 
 const {RNSecureKeystoreModule} = NativeModules;
 // kludge: this is a bad practice but has been done temporarily to surface
@@ -59,7 +60,8 @@ const AppLayoutWrapper: React.FC = () => {
   const authService = appService.children.get('auth');
   const isAppSetupComplete = useSelector(authService, selectAppSetupComplete);
 
-  const [isDeepLinkOverlayVisible, setDeepLinkOverlayVisible] = useState(isDeepLinkFlow);
+  const [isDeepLinkOverlayVisible, setDeepLinkOverlayVisible] =
+    useState(isDeepLinkFlow);
 
   useEffect(() => {
     if (AppState.currentState === 'active') {
@@ -171,6 +173,7 @@ export default function App() {
         tooltipComponent={CopilotTooltip}
         tooltipStyle={Theme.Styles.copilotStyle}
         stepNumberComponent={() => null}
+        svgMaskPath={roundedSvgMaskPath}
         animated>
         <AppInitialization />
       </CopilotProvider>

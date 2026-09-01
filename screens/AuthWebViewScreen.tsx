@@ -119,7 +119,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
     return true;
   };
 
-  const Header = () => (
+  const renderHeader = () => (
     <View style={Theme.AuthWebViewScreenStyle.header}>
       <TouchableOpacity
         onPress={() => {
@@ -135,7 +135,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
 
   return (
     <View style={{flex: 1}}>
-      <Header />
+      {renderHeader()}
       {shouldRenderWebView && !showWebView && (
         <WebView style={{width: 0, height: 0}} source={{uri: 'about:blank'}} />
       )}
