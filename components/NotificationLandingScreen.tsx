@@ -159,7 +159,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({
           setShowNotificationPage(true);
           setUnreadCount(0);
         }}
-        style={{position: 'relative'}}>
+        style={{position: 'relative', overflow: 'visible'}}>
         {triggerComponent}
         {unreadCount > 0 && (
           <View style={styles.badge}>

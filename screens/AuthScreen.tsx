@@ -1,5 +1,6 @@
 import React from 'react';
 import {useTranslation} from 'react-i18next';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {MessageOverlay} from '../components/MessageOverlay';
 import {Button, Column, Text} from '../components/ui';
 import {Theme} from '../components/ui/styleUtils';
@@ -17,6 +18,7 @@ import {SvgImage} from '../components/ui/svg';
 export const AuthScreen: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('AuthScreen');
   const controller = useAuthScreen(props);
+  const insets = useSafeAreaInsets();
 
   const handleUsePasscodeButtonPress = () => {
     sendStartEvent(
@@ -34,7 +36,7 @@ export const AuthScreen: React.FC<RootRouteProps> = props => {
   return (
     <Column
       fill
-      padding={[32, 25, 32, 32]}
+      padding={[32, 25, 32 + insets.bottom, 32]}
       backgroundColor={Theme.Colors.whiteBackgroundColor}
       align="space-between">
       <MessageOverlay

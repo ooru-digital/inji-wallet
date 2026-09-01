@@ -19,6 +19,12 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {getApps} from '@react-native-firebase/app';
 import messaging from '@react-native-firebase/messaging';
 import LinearGradient from 'react-native-linear-gradient';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {getUniqueId} from 'react-native-device-info';
+
+// app.credissuer.com serves the static web frontend (CloudFront/S3) - it has
+// no /api routes. The holders API is served from api.credissuer.com.
+const HOLDERS_API_BASE_URL = 'https://api.credissuer.com/api/holders';
 
 export const EmailManagementScreen: React.FC<
   EmailManagementScreenProps
@@ -28,6 +34,7 @@ export const EmailManagementScreen: React.FC<
   const route =
     useRoute<RouteProp<{params: EmailManagementScreenProps}, 'params'>>();
   const {controller, isClosed} = route.params;
+  const insets = useSafeAreaInsets();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalStep, setModalStep] = useState<'email' | 'otp'>('email');
@@ -81,7 +88,7 @@ export const EmailManagementScreen: React.FC<
       } else {
         try {
           const response = await fetch(
-            'https://app.credissuer.com/api/holders/send-email-otp',
+            `${HOLDERS_API_BASE_URL}/send-email-otp`,
             {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
@@ -136,7 +143,7 @@ export const EmailManagementScreen: React.FC<
     if (otp.length === 6) {
       try {
         const response = await fetch(
-          'https://app.credissuer.com/api/holders/verify-email-otp',
+          `${HOLDERS_API_BASE_URL}/verify-email-otp`,
           {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -190,19 +197,23 @@ export const EmailManagementScreen: React.FC<
 
   const storeFCMToken = async (email: string, token: string) => {
     try {
+      const deviceId = await getUniqueId();
       const response = await fetch(
-        'https://app.credissuer.com/api/holders/store-token/fcm/',
+        `${HOLDERS_API_BASE_URL}/store-token/fcm/`,
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({email, token}),
+          body: JSON.stringify({email, token, device_id: deviceId}),
         },
       );
 
       const data = await response.json();
       if (!response.ok) {
+        console.error('Failed to store FCM token:', data);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('Error storing FCM token:', error);
+    }
   };
 
   const handleCancel = () => {
@@ -296,7 +307,13 @@ export const EmailManagementScreen: React.FC<
         ))}
       </ScrollView>
 
-      <View style={{position: 'absolute', bottom: 20, left: 20, right: 20}}>
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 20 + insets.bottom,
+          left: 20,
+          right: 20,
+        }}>
         <Button
           testID="saveEmailOrderingPreference"
           type="gradient"

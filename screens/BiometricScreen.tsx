@@ -1,6 +1,7 @@
 import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {TouchableOpacity} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Button, Centered, Column} from '../components/ui';
 import {Theme} from '../components/ui/styleUtils';
 import {RootRouteProps} from '../routes';
@@ -17,6 +18,7 @@ import {SvgImage} from '../components/ui/svg';
 export const BiometricScreen: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('BiometricScreen');
   const controller = useBiometricScreen(props);
+  const insets = useSafeAreaInsets();
 
   const handlePasscodeMismatch = (error: string) => {
     incrementRetryCount(
@@ -34,8 +36,7 @@ export const BiometricScreen: React.FC<RootRouteProps> = props => {
   return (
     <Column
       fill
-      pY={32}
-      pX={32}
+      padding={[32, 32, 32 + insets.bottom, 32]}
       backgroundColor={Theme.Colors.whiteBackgroundColor}>
       <Centered fill>
         <TouchableOpacity onPress={controller.useBiometrics}>

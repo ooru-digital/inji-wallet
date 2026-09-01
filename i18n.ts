@@ -15,7 +15,8 @@ import {getItem} from './machines/store';
 import {LocalizedField} from './machines/VerifiableCredential/VCMetaMachine/vc';
 
 const resources = {en, fil, ar, hi, kn, ta};
-const locale = Localization.locale;
+// expo-localization 16 dropped the static `.locale` export in favor of getLocales().
+const locale = Localization.getLocales()[0]?.languageTag;
 const languageCodeMap = {} as {[key: string]: string};
 
 export const SUPPORTED_LANGUAGES = {

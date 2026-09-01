@@ -1,6 +1,5 @@
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
-require File.join(File.dirname(`node --print "require.resolve('@react-native-community/cli-platform-ios/package.json')"`), "native_modules")
 
 require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
@@ -8,9 +7,15 @@ podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties
 ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = '1' if podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR'] == 'true'
 
+# Pinned below @react-native-firebase's default (11.11.0) so Firebase/Messaging's
+# GoogleDataTransport requirement (~> 9.x) stays compatible with expo-face-detector's
+# MLKitCommon 5.0.0 pin (which also requires GoogleDataTransport ~> 9.0).
+ENV['FIREBASE_SDK_VERSION'] = '10.29.0'
+
 platform :ios, podfile_properties['ios.deploymentTarget'] || '14'
 install! 'cocoapods',
   :deterministic_uuids => false
+use_modular_headers!
 
 prepare_react_native_project!
 
@@ -147,7 +152,7 @@ target 'Inji' do
         end
       end
       target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
         config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] =  "arm64"
       end
     end

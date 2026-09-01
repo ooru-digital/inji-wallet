@@ -1,4 +1,4 @@
-import {getVersion} from 'react-native-device-info';
+import {getVersion, getBuildNumber} from 'react-native-device-info';
 import ShortUniqueId from 'short-unique-id';
 import {APP_ID_LENGTH, isIOS} from './constants';
 import {NativeModules} from 'react-native';
@@ -33,6 +33,13 @@ export class __InjiVersion {
 
   public static getValue(): string {
     return __InjiVersion.value;
+  }
+}
+export class __InjiVersionCode {
+  private static value = getBuildNumber();
+
+  public static getValue(): string {
+    return __InjiVersionCode.value;
   }
 }
 export class __SessionId {

@@ -15,7 +15,10 @@ import {ListItem} from 'react-native-elements';
 import getAllConfigurations from '../../shared/api';
 import {CopyButton} from '../../components/CopyButton';
 import testIDProps from '../../shared/commonUtil';
-import {__InjiVersion} from '../../shared/GlobalVariables';
+import {
+  __InjiVersion,
+  __InjiVersionCode,
+} from '../../shared/GlobalVariables';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {SvgImage} from '../../components/ui/svg';
 import LinearGradient from 'react-native-linear-gradient';
@@ -136,6 +139,21 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
                 style={Theme.AboutInjiScreenStyle.injiVersionText}
                 color={Theme.Colors.aboutVersion}>
                 {__InjiVersion.getValue()}
+              </Text>
+            </Row>
+            <Row style={Theme.AboutInjiScreenStyle.injiVersionContainerStyle}>
+              <Text
+                testID="versionCode"
+                weight="semibold"
+                style={Theme.AboutInjiScreenStyle.injiVersionTitle}
+                color={Theme.Colors.aboutVersion}>
+                {t('versionCode') + ' : '}
+              </Text>
+              <Text
+                weight="semibold"
+                style={Theme.AboutInjiScreenStyle.injiVersionText}
+                color={Theme.Colors.aboutVersion}>
+                {__InjiVersionCode.getValue()}
               </Text>
             </Row>
             <View style={Theme.AboutInjiScreenStyle.horizontalLineStyle} />
