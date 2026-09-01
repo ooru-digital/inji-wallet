@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import {Spacing, Theme} from '../styleUtils';
-import {COPILOT_HEIGHT, isIOS, isAndroid} from '../../../shared/constants';
+import {COPILOT_HEIGHT, isIOS} from '../../../shared/constants';
 import Constants from 'expo-constants';
 import HomeScreenLogo from '../../../assets/InjiHomeLogo.svg';
 import InjiLogoSmall from '../../../assets/InjiLogo.svg';
@@ -34,7 +34,7 @@ const Colors = {
   DimGray: '#737373',
   DarkGray: '#A5A5A5',
   platinumGrey: '#EDEDED',
-  Secondary: '#951F6F',
+  Secondary: '#2A2DA4',
   OrangeBrown: '#D9822B',
   Blue: '#0000FF',
   LightGrey: '#F8F8F8',
@@ -51,19 +51,19 @@ const Colors = {
   dorColor: '#CBCBCB',
   plainText: '#FFFFFF',
   walletbindingLabel: '#000000',
-  LightOrange: '#FDF1E6',
-  GradientColors: ['#FF5300', '#5B03AD'],
-  GradientColorsLight: ['#FF5300' + 14, '#5B03AD' + 14],
+  LightOrange: '#F7EDF3',
+  GradientColors: ['#2A2DA4', '#2A2DA4'],
+  GradientColorsLight: ['#2A2DA4' + 14, '#2A2DA4' + 14],
   DisabledColors: ['#C7C7C7', '#C7C7C7'],
   TimeoutHintBoxColor: '#FFF7E5',
   TimeoutHintBoxBorder: '#FFF2D6',
   TimeoutHintText: '#8B6105',
   resendCodeTimer: '#555555',
   uncheckedIcon: '#DBDBDB',
-  startColor: '#ff5300',
-  endColor: '#5b03ad',
+  startColor: '#2A2DA4',
+  endColor: '#2A2DA4',
   stroke: '#ee8123',
-  iconBg: '#ffa85a',
+  iconBg: '#2A2DA4',
   warningLogoBg: '#FFF7E5',
   toolTip: '#B7B7B7',
   toolTipContent: '#4B4B4B',
@@ -124,7 +124,7 @@ export const DefaultTheme = {
     DefaultToggle: Colors.LightOrange,
     GrayText: Colors.GrayText,
     errorGrayText: Colors.mediumDarkGrey,
-    gradientBtn: ['#FF5300', '#5B03AD'],
+    gradientBtn: ['#2A2DA4', '#2A2DA4'],
     dotColor: Colors.dorColor,
     plainText: Colors.plainText,
     IconBackground: Colors.LightOrange,
@@ -251,11 +251,6 @@ export const DefaultTheme = {
     homeScreenContainer: {
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 10,
-      backgroundColor: '#fff',
-      shadowColor: '#000',
-      shadowOpacity: 0.4,
-      elevation: 5,
       padding: 10,
     },
     vertloadingContainer: {
@@ -421,13 +416,11 @@ export const DefaultTheme = {
       height: 100,
     },
     injiLogo: {
-      width: 191.58,
-      height: 84,
+      width: 40,
+      height: 40,
     },
     injiHomeLogo: {
-      marginLeft: -30,
-      marginTop: -12,
-      marginBottom: isAndroid() ? -30 : 0,
+      marginLeft: 0,
     },
     logo: {
       height: 35,
@@ -437,7 +430,7 @@ export const DefaultTheme = {
       resizeMode: 'contain',
       aspectRatio: 1,
       height: 35,
-      marginRight: 10
+      marginRight: 10,
     },
     vcDetailsLogo: {
       height: 65,
@@ -536,9 +529,10 @@ export const DefaultTheme = {
     },
     detailedViewImage: {
       width: 80,
-      height: 106,
+      height: 80,
       borderRadius: 5,
       marginTop: 10,
+      resizeMode: 'contain',
     },
     openCardProfileIconContainer: {
       alignSelf: 'center',
@@ -637,7 +631,7 @@ export const DefaultTheme = {
       borderRadius: 200,
       position: 'absolute',
       bottom: Dimensions.get('window').width * 0.1,
-      right: Dimensions.get('window').width * 0.1,
+      right: Dimensions.get('window').width * 0.05,
     },
     downloadFabIconContainer: {
       height: 70,
@@ -1083,7 +1077,6 @@ export const DefaultTheme = {
     vcSearchBarContainer: {
       alignItems: 'center',
       borderBottomWidth: 0.5,
-      borderTopWidth: 0.5,
       borderColor: Colors.DimGray,
       width: Dimensions.get('window').width,
       backgroundColor: Colors.White,
@@ -1774,12 +1767,13 @@ export const DefaultTheme = {
       paddingTop: 7,
     },
     rowStyle: {
-      justifyContent: 'space-between',
+      justifyContent: 'center',
       alignItems: 'center',
       display: 'flex',
     },
     iconStyle: {
-      paddingRight: 5,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     labelStyle: {
       fontWeight: 'bold',

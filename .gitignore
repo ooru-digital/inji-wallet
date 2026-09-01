@@ -136,3 +136,5 @@ injitest/target/
 
 ## runtime bundles / assets
 android/app/src/main/assets/faceModel.tflite
+android/app/keystore.properties
+

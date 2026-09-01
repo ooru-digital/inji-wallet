@@ -194,7 +194,11 @@ export const storeMachine =
             ],
 
             ERROR: {
-              actions: log('Generating encryption key failed'),
+              target: 'failedReadingKey',
+              actions: [
+                log('Generating encryption key failed'),
+                sendParent('ERROR'),
+              ],
             },
           },
         },

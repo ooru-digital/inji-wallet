@@ -139,6 +139,13 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
     UPDATE_NAME: (name: string) =>
       settingsService.send(SettingsEvents.UPDATE_NAME(name)),
 
+    // New email update function:
+    UPDATE_EMAIL: (email: string) => {
+      // Optionally, combine with key management explored event if desired:
+      settingsService.send(SettingsEvents.UPDATE_EMAIL(email));
+      settingsService.send(SettingsEvents.SET_KEY_MANAGEMENT_EXPLORED());
+    },
+
     TOGGLE_SETTINGS: () => setIsVisible(!isVisible),
 
     UPDATE_VC_LABEL: (label: string) =>
@@ -185,6 +192,11 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
     SET_KEY_MANAGEMENT_TOUR_GUIDE_EXPLORED: () => {
       settingsService.send(
         SettingsEvents.SET_KEY_MANAGEMENT_TOUR_GUIDE_EXPLORED(),
+      );
+    },
+    SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED: () => {
+      settingsService.send(
+        SettingsEvents.SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED(),
       );
     },
     INJI_TOUR_GUIDE: () => {

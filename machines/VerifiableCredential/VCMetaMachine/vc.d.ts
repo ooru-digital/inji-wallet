@@ -60,6 +60,9 @@ export type Credential =
         type: 'RsaSignature2018' | string;
         verificationMethod: string;
       };
+      holder: {
+        id: string;
+      };
       type: string[];
     }
   | string;

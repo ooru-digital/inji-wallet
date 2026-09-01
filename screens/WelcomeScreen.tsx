@@ -5,10 +5,12 @@ import {Theme} from '../components/ui/styleUtils';
 import {RootRouteProps} from '../routes';
 import {useWelcomeScreen} from './WelcomeScreenController';
 import {SvgImage} from '../components/ui/svg';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 export const WelcomeScreen: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('WelcomeScreen');
   const controller = useWelcomeScreen(props);
+  const insets = useSafeAreaInsets();
   return (
     <Column
       fill
@@ -19,7 +21,7 @@ export const WelcomeScreen: React.FC<RootRouteProps> = props => {
       </HorizontallyCentered>
       <Button
         testID="unlockApplication"
-        margin="0 0 32"
+        margin={`0 0 ${32 + insets.bottom}`}
         type="gradient"
         title={t('unlockApplication')}
         onPress={controller.unlockPage}

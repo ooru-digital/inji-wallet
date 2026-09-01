@@ -16,7 +16,7 @@ import {
 } from './machines/app';
 import {DualMessageOverlay} from './components/DualMessageOverlay';
 import {useApp} from './screens/AppController';
-import {Alert, AppState} from 'react-native';
+import {Alert, AppState, Platform,PermissionsAndroid} from 'react-native';
 import {
   configureTelemetry,
   getErrorEventData,
@@ -31,6 +31,12 @@ import {CopilotProvider} from 'react-native-copilot';
 import {CopilotTooltip} from './components/CopilotTooltip';
 import {Theme} from './components/ui/styleUtils';
 import {selectAppSetupComplete} from './machines/auth';
+import messaging from '@react-native-firebase/messaging';
+import {
+  requestPermission,
+  useForegroundNotification,
+  useBackgroundNotification,
+} from './screens/Notification/NotificationScreen';
 
 const {RNSecureKeystoreModule} = NativeModules;
 // kludge: this is a bad practice but has been done temporarily to surface
@@ -140,6 +146,18 @@ const AppLoadingWrapper: React.FC = () => {
   );
 };
 
+const checkApplicationPermission =async () =>
+{
+  if(Platform.OS === 'android')
+  {
+    try{
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      )
+    }catch(error) {}
+  }
+};
+
 const AppInitialization: React.FC = () => {
   const {appService} = useContext(GlobalContext);
   const hasFontsLoaded = useFont();
@@ -153,7 +171,15 @@ const AppInitialization: React.FC = () => {
         t('biometricPopup.description'),
       );
     }
+
+    // Request Notification Permissions & Get FCM Token
+    requestPermission();
   }, [i18n.language]);
+
+  //  Register Foreground & Background Notification Hooks
+  useForegroundNotification();
+  useBackgroundNotification();
+  checkApplicationPermission();
 
   return isReady && hasFontsLoaded ? (
     <AppLayoutWrapper />

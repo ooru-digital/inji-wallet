@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {Icon} from 'react-native-elements';
-import {Column} from '../../components/ui';
+import {Column, Row} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {HomeRouteProps} from '../../routes/routeTypes';
 import {MyVcsTab} from './MyVcsTab';
@@ -11,7 +11,7 @@ import {TabRef} from './HomeScreenMachine';
 import {ActorRefFrom} from 'xstate';
 import LinearGradient from 'react-native-linear-gradient';
 import {ErrorMessageOverlay} from '../../components/MessageOverlay';
-import {Pressable} from 'react-native';
+import {Pressable, Text} from 'react-native';
 import testIDProps from '../../shared/commonUtil';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
@@ -46,6 +46,7 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
         color={Theme.Colors.whiteText}
       />
     );
+
     return (
       <LinearGradient
         colors={Theme.Colors.gradientBtn}
@@ -74,19 +75,52 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
       <BannerNotificationContainer />
       <Column fill backgroundColor={Theme.Colors.lightGreyBackgroundColor}>
         {controller.haveTabsLoaded && (
-          <Column fill>
-            <MyVcsTab
-              isVisible={controller.activeTab === 0}
-              service={controller.tabRefs.myVcs}
-              vcItemActor={controller.selectedVc}
-              isViewingVc={controller.isViewingVc}
-            />
-            <ReceivedVcsTab
-              isVisible={controller.activeTab === 1}
-              service={controller.tabRefs.receivedVcs}
-              vcItemActor={controller.selectedVc}
-            />
-          </Column>
+          <>
+            <Column fill>
+              <MyVcsTab
+                isVisible={controller.activeTab === 0}
+                service={controller.tabRefs.myVcs}
+                vcItemActor={controller.selectedVc}
+                isViewingVc={controller.isViewingVc}
+              />
+              <ReceivedVcsTab
+                isVisible={controller.activeTab === 1}
+                service={controller.tabRefs.receivedVcs}
+                vcItemActor={controller.selectedVc}
+              />
+            </Column>
+            <Row
+              crossAlign="flex-start"
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 12,
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                paddingRight: 90,
+                borderRadius: 12,
+                backgroundColor: '#EEF0FB',
+              }}>
+              <Icon
+                name="information-outline"
+                type="material-community"
+                size={16}
+                color={Theme.Colors.Icon}
+                style={{marginTop: 1, marginRight: 8}}
+              />
+              <Text
+                style={{
+                  flex: 1,
+                  color: Theme.Colors.GrayText,
+                  fontSize: 13,
+                  lineHeight: 18,
+                }}>
+                {t(
+                  'home:refreshNote',
+                  'Please refresh if you don’t see your credential downloaded upon notification.',
+                )}
+              </Text>
+            </Row>
+          </>
         )}
       </Column>
 

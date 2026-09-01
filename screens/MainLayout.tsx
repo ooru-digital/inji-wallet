@@ -14,7 +14,7 @@ import testIDProps from '../shared/commonUtil';
 import {SvgImage} from '../components/ui/svg';
 import {isIOS} from '../shared/constants';
 import {CopilotProvider} from 'react-native-copilot';
-import {View} from 'react-native';
+import {StatusBar, View} from 'react-native';
 import {CopilotTooltip} from '../components/CopilotTooltip';
 import {Copilot} from '../components/ui/Copilot';
 import LinearGradient from 'react-native-linear-gradient';
@@ -22,6 +22,7 @@ import {useNavigation} from '@react-navigation/native';
 import {useSelector} from '@xstate/react';
 import {selectAuthorizationRequest, selectIsLinkCode} from '../machines/app';
 import {BOTTOM_TAB_ROUTES} from '../routes/routesConstants';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const {Navigator, Screen} = createBottomTabNavigator();
 
@@ -30,11 +31,17 @@ export const MainLayout: React.FC = () => {
 
   const {appService} = useContext(GlobalContext);
   const scanService = appService.children.get('scan');
+  const insets = useSafeAreaInsets();
 
   const options: BottomTabNavigationOptions = {
     tabBarShowLabel: true,
     tabBarActiveTintColor: Theme.Colors.IconBg,
     ...Theme.BottomTabBarStyle,
+    tabBarStyle: {
+      ...Theme.BottomTabBarStyle.tabBarStyle,
+      height: Theme.BottomTabBarStyle.tabBarStyle.height + insets.bottom,
+      paddingBottom: insets.bottom,
+    },
   };
   const navigation = useNavigation<ScanLayoutNavigation>();
 
@@ -55,6 +62,7 @@ export const MainLayout: React.FC = () => {
     <CopilotProvider
       stopOnOutsideClick
       androidStatusBarVisible
+      verticalOffset={-(StatusBar.currentHeight || 0)}
       tooltipComponent={CopilotTooltip}
       tooltipStyle={Theme.Styles.copilotStyle}
       stepNumberComponent={() => null}

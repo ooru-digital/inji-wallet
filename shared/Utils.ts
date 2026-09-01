@@ -8,6 +8,8 @@ import {utf8ToBytes} from '@noble/hashes/utils';
 import {Buffer} from 'buffer';
 import base64url from 'base64url';
 import jsonld from 'jsonld';
+import {Platform, ToastAndroid, Alert} from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 export const getVCsOrderedByPinStatus = (vcMetadatas: VCMetadata[]) => {
   const [pinned, unpinned] = groupBy(
@@ -151,3 +153,13 @@ export const enum VerificationStatus {
   PENDING = 'PENDING',
   EXPIRED = 'EXPIRED',
 }
+
+export const copyToClipboard = (text: string, message?: string) => {
+  Clipboard.setString(text);
+  const displayMessage = message || 'Copied to clipboard!';
+  if (Platform.OS === 'android') {
+    ToastAndroid.show(displayMessage, ToastAndroid.SHORT);
+  } else {
+    Alert.alert('Copied!', displayMessage);
+  }
+};

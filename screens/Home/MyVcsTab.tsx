@@ -28,6 +28,10 @@ import {Icon} from 'react-native-elements';
 import {VCMetadata} from '../../shared/VCMetadata';
 import {useCopilot} from 'react-native-copilot';
 import {isTranslationKeyFound} from '../../shared/commonUtil';
+import {notificationMachine} from '../../machines/Notifications/NotificationMachine';
+import {useRef} from 'react';
+import {useInterpret, useSelector} from '@xstate/react';
+
 
 export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
   const {t} = useTranslation('MyVcsTab');
@@ -35,6 +39,9 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
   const vcMetadataOrderedByPinStatus = getVCsOrderedByPinStatus(
     controller.vcMetadatas,
   );
+  const service = useInterpret(notificationMachine); // Interpret the notification machine
+  const isIdle = useSelector(service, (state) => state.matches('idle'));
+
   const [clearSearchIcon, setClearSearchIcon] = useState(false);
   const [search, setSearch] = useState('');
   const [filteredSearchData, setFilteredSearchData] = useState<
@@ -225,9 +232,20 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
 
   const cardsAvailableText =
     numberOfCardsAvailable > 1
-      ? numberOfCardsAvailable + ' ' + t('common:cards')
-      : numberOfCardsAvailable + ' ' + t('common:card');
+    ? numberOfCardsAvailable + ' ' + t('common:cards')
+    : numberOfCardsAvailable + ' ' + t('common:card');
+   
 
+      useEffect(() => {
+    if (!isIdle) return; // Only refresh when machine is idle
+
+    const autoRefreshInterval = setInterval(() => {
+      controller.REFRESH(); // Trigger the refresh
+    }, 3000);
+
+    return () => clearInterval(autoRefreshInterval);
+  }, [isIdle, controller]);
+  
   return (
     <React.Fragment>
       <Column fill style={{display: props.isVisible ? 'flex' : 'none'}}>
@@ -253,7 +271,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                 backgroundColor={Theme.Colors.lightGreyBackgroundColor}
                 refreshControl={
                   <RefreshControl
-                    refreshing={controller.isRefreshingVcs}
+                    refreshing={false}
                     onRefresh={controller.REFRESH}
                   />
                 }>
@@ -310,7 +328,6 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                       <VcItemContainer
                         key={vcKey}
                         vcMetadata={vcMetadata}
-                        margin="0 2 8 2"
                         onPress={controller.VIEW_VC}
                         isDownloading={controller.inProgressVcDownloads?.has(
                           vcKey,
@@ -387,7 +404,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                 style={Theme.Styles.homeScreenContainer}
                 refreshControl={
                   <RefreshControl
-                    refreshing={controller.isRefreshingVcs}
+                    refreshing={false}
                     onRefresh={controller.REFRESH}
                   />
                 }>

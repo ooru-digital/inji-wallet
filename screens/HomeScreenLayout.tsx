@@ -9,15 +9,18 @@ import {RootRouteProps} from '../routes';
 import {HomeScreen} from './Home/HomeScreen';
 import {IssuersScreen} from './Issuers/IssuersScreen';
 import {SvgImage} from '../components/ui/svg';
-import {HelpScreen} from '../components/HelpScreen';
+import {NotificationScreen} from '../components/NotificationLandingScreen';
 import {I18nManager, View} from 'react-native';
 import {isIOS} from '../shared/constants';
 import {Copilot} from '../components/ui/Copilot';
 import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('IssuersScreen');
   const {Navigator, Screen} = createNativeStackNavigator();
+  const insets = useSafeAreaInsets();
 
   React.useLayoutEffect(() => {
     const routeName = getFocusedRouteNameFromRoute(props.route);
@@ -32,8 +35,9 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
           fontFamily: 'Montserrat_600SemiBold',
         },
         tabBarStyle: {
-          height: 75,
+          height: 75 + insets.bottom,
           paddingHorizontal: 10,
+          paddingBottom: insets.bottom,
         },
         tabBarItemStyle: {
           height: 83,
@@ -41,10 +45,10 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
         },
       });
     }
-  }, [props.navigation, props.route]);
+  }, [props.navigation, props.route, insets.bottom]);
 
   const screenOptions = (
-    <HelpScreen
+    <NotificationScreen
       source={'Inji'}
       triggerComponent={
         <Copilot
@@ -58,14 +62,15 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
             end={Theme.LinearGradientDirection.end}>
             <View style={Theme.HelpScreenStyle.viewStyle}>
               <Row crossAlign="center" style={Theme.HelpScreenStyle.rowStyle}>
-                <View testID="helpIcon" style={Theme.HelpScreenStyle.iconStyle}>
-                  {SvgImage.coloredInfo()}
+                <View
+                  testID="notificationIcon"
+                  style={Theme.HelpScreenStyle.iconStyle}>
+                  <Icon
+                    name="notifications"
+                    size={24}
+                    color={Theme.Colors.IconBg}
+                  />
                 </View>
-                <Text
-                  testID="helpText"
-                  style={Theme.HelpScreenStyle.labelStyle}>
-                  {t('help')}
-                </Text>
               </Row>
             </View>
           </LinearGradient>
@@ -77,24 +82,32 @@ export const HomeScreenLayout: React.FC<RootRouteProps> = props => {
   const [isRTL] = useState(I18nManager.isRTL);
 
   const HomeScreenOptions = {
-    headerLeft: () =>
-      isIOS() || !isRTL ? (
+    headerLeft: () => (
+      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        {isIOS() || !isRTL ? (
         <View style={Theme.Styles.injiHomeLogo}>
           {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
         </View>
       ) : (
         screenOptions
-      ),
-    headerTitle: '',
-    headerRight: () =>
-      isIOS() || !isRTL ? (
-        screenOptions
-      ) : (
-        <View style={Theme.Styles.injiHomeLogo}>
-          {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
-        </View>
-      ),
-  };
+      )}
+      <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: 'bold', color: '#2A2DA4' }}>
+        CREDISSUER WALLET
+      </Text>
+    </View>
+  ),
+  headerTitle: '',
+  headerRight: () =>
+    isIOS() || !isRTL ? (
+      screenOptions
+    ) : (
+      <View style={Theme.Styles.injiHomeLogo}>
+        {SvgImage.InjiLogo(Theme.Styles.injiLogo)}
+      </View>
+    ),
+};
+
+  
 
   return (
     <Navigator>

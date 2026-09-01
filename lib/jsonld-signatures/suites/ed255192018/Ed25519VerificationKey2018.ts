@@ -1,7 +1,7 @@
 /*!
  * Copyright (c) 2018-2020 Digital Bazaar, Inc. All rights reserved.
  */
-import * as bs58 from 'base58-universal/main';
+import * as bs58 from 'base58-universal';
 import * as util from './util';
 import ed25519 from './ed25519';
 import { LDKeyPair } from 'crypto-ld';

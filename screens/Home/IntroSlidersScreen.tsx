@@ -13,9 +13,8 @@ import {useTranslation} from 'react-i18next';
 import {RootRouteProps} from '../../routes';
 import {useWelcomeScreen} from '../WelcomeScreenController';
 import LinearGradient from 'react-native-linear-gradient';
-import {SvgImage} from '../../components/ui/svg';
 import testIDProps from '../../shared/commonUtil';
-import {INTRO_SLIDER_LOGO_MARGIN} from '../../shared/constants';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {StaticAuthScreen} from '../IntroSliders/biometricIntro';
 import {StaticScanScreen} from '../IntroSliders/quickAccessIntro';
 import StaticBackupAndRestoreScreen from '../IntroSliders/backupRestoreIntro';
@@ -27,6 +26,7 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
 
   const {t} = useTranslation('OnboardingOverlay');
   const controller = useWelcomeScreen(props);
+  const insets = useSafeAreaInsets();
 
   // Define slides with React components
   const slides = [
@@ -68,11 +68,7 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
     return (
       <ImageBackground source={require('./IntroBg.png')}>
         <Centered>
-          <Row align="space-between" style={Theme.Styles.introSliderHeader}>
-            <Column style={{marginLeft: INTRO_SLIDER_LOGO_MARGIN}}>
-              {SvgImage.InjiSmallLogo()}
-            </Column>
-
+          <Row align="flex-end" style={Theme.Styles.introSliderHeader}>
             {item.key !== 'five' && (
               <Button
                 testID={
@@ -130,7 +126,9 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
 
   const renderNextButton = () => {
     return (
-      <View {...testIDProps('nextButton')}>
+      <View
+        {...testIDProps('nextButton')}
+        style={{paddingBottom: insets.bottom}}>
         <LinearGradient
           colors={Theme.Colors.gradientBtn}
           start={Theme.LinearGradientDirection.start}
@@ -155,7 +153,7 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
     const testId = isPasscodeSet ? 'goBack' : 'getStarted';
     const buttonText = isPasscodeSet ? t('goBack') : t('getStarted');
     return (
-      <View {...testIDProps(testId)}>
+      <View {...testIDProps(testId)} style={{paddingBottom: insets.bottom}}>
         <LinearGradient
           colors={Theme.Colors.gradientBtn}
           style={Theme.Styles.introSliderButton}

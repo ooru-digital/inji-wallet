@@ -28,7 +28,7 @@ module.exports = function (api) {
       {
         alias: {
           'isomorphic-webcrypto': 'isomorphic-webcrypto/src/react-native',
-          'fast-text-encoding': 'fast-text-encoding/text',
+          'fast-text-encoding': 'fast-text-encoding/text.min',
           jsonld: '@digitalcredentials/jsonld',
           'jsonld-signatures': '@digitalcredentials/jsonld-signatures',
         },
@@ -73,7 +73,7 @@ module.exports = function (api) {
         {
           alias: {
             'isomorphic-webcrypto': 'isomorphic-webcrypto/src/react-native',
-            'fast-text-encoding': 'fast-text-encoding/text',
+            'fast-text-encoding': 'fast-text-encoding/text.min',
             jsonld: '@digitalcredentials/jsonld',
             'jsonld-signatures': '@digitalcredentials/jsonld-signatures',
           },

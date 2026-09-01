@@ -37,6 +37,8 @@ const model = createModel(
     isAccountSelectionConfirmationShown: false,
     credentialRegistryResponse: '' as string,
     isBiometricToggled: false,
+    isEmailManagementTourGuideExplored: false as boolean,
+
   },
   {
     events: {
@@ -71,6 +73,7 @@ const model = createModel(
       SHOWN_ACCOUNT_SELECTION_CONFIRMATION: () => ({}),
       DISMISS: () => ({}),
       BIOMETRIC_CANCELLED: (requester?: string) => ({requester}),
+      SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED: () => ({}),
     },
   },
 );
@@ -151,6 +154,9 @@ export const settingsMachine = model.createMachine(
           },
           SET_KEY_MANAGEMENT_TOUR_GUIDE_EXPLORED: {
             actions: ['setKeyManagementTourGuideExplored'],
+          },
+          SET_EMAIL_MANAGEMENT_TOUR_GUIDE_EXPLORED: {
+            actions: ['setEmailManagementTourGuideExplored'],
           },
           UPDATE_HOST: {
             actions: [
@@ -283,6 +289,9 @@ export const settingsMachine = model.createMachine(
       }),
       setKeyManagementTourGuideExplored: model.assign({
         isKeyManagementTourGuideExplored: true,
+      }),
+      setEmailManagementTourGuideExplored: model.assign({
+        isEmailManagementTourGuideExplored: true,
       }),
       updateEsignetHostUrl: model.assign({
         esignetHostUrl: (_, event) => event.esignetHostUrl,
@@ -431,4 +440,8 @@ export function selectIsKeyOrderSet(state: State) {
 
 export function selectIsKeymanagementTourGuideExplored(state: State) {
   return state.context.isKeyManagementTourGuideExplored;
+}
+
+export function selectIsEmailmanagementTourGuideExplored(state: State) {
+  return state.context.isEmailManagementTourGuideExplored;
 }

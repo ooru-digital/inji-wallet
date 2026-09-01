@@ -1,5 +1,5 @@
 import React from 'react';
-import {Platform, Pressable} from 'react-native';
+import {Platform, Pressable,View} from 'react-native';
 import {Icon, ListItem, Switch} from 'react-native-elements';
 import {Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
@@ -18,6 +18,7 @@ import {SvgImage} from '../../components/ui/svg';
 import {DataBackupAndRestore} from './DataBackupAndRestore';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {SettingsKeyManagementScreen} from './SettingsKeyManagement';
+import {SettingsEmailManagementScreen} from './SettingsEmailManagement';
 
 const LanguageSetting: React.FC = () => {
   const {t} = useTranslation('SettingScreen');
@@ -26,24 +27,26 @@ const LanguageSetting: React.FC = () => {
     <LanguageSelector
       triggerComponent={
         <ListItem {...testIDProps('language')}>
-          {SvgImage.settingsLanguageIcon(24)}
-          <ListItem.Content>
-            <ListItem.Title
-              {...testIDProps('languageTitle')}
-              style={{paddingTop: 3}}>
-              <Text weight="semibold" color={Theme.Colors.settingsLabel}>
-                {t('language')}
-              </Text>
-            </ListItem.Title>
-          </ListItem.Content>
-          <Icon
-            {...testIDProps('chevronRightIcon')}
-            name="chevron-right"
-            size={21}
-            color={Theme.Colors.chevronRightColor}
-            style={{marginRight: 15}}
-          />
-        </ListItem>
+  {SvgImage.settingsLanguageIcon(24)}
+  <ListItem.Content>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <ListItem.Title
+        {...testIDProps('languageTitle')}
+        style={{ paddingTop: 3 }}>
+        <Text weight="semibold" color={Theme.Colors.settingsLabel}>
+          {t('language')}
+        </Text>
+      </ListItem.Title>
+    </View>
+  </ListItem.Content>
+  <Icon
+    {...testIDProps('chevronRightIcon')}
+    name="chevron-right"
+    size={21}
+    color={Theme.Colors.chevronRightColor}
+    style={{ marginRight: 15 }}
+  />
+</ListItem>
       }
     />
   );
@@ -82,15 +85,15 @@ export const SettingScreen: React.FC<
         <Column
           style={{display: Platform.OS !== 'ios' ? 'flex' : 'none'}}
           backgroundColor={Theme.Colors.lightGreyBackgroundColor}>
-          <Text
+          {/*<Text
             style={{paddingTop: 3}}
             testID="injiAsVerifierApp"
             weight="semibold"
             margin="10"
             color={Theme.Colors.aboutVersion}>
             {t('injiAsVerifierApp')}
-          </Text>
-          <Row
+          </Text>*/}
+          {/* <Row
             align="space-evenly"
             backgroundColor={Theme.Colors.whiteBackgroundColor}>
             <Pressable
@@ -109,15 +112,15 @@ export const SettingScreen: React.FC<
             </Pressable>
 
             <ReceivedCards />
-          </Row>
+          </Row>*/}
 
-          <Text
+          {/*<Text
             weight="semibold"
             style={{paddingTop: 3}}
             margin="10"
             color={Theme.Colors.aboutVersion}>
             {t('basicSettings')}
-          </Text>
+          </Text>*/}
         </Column>
         <Column fill>
           <MessageOverlay
@@ -127,8 +130,9 @@ export const SettingScreen: React.FC<
           />
 
           <LanguageSetting />
+          <SettingsEmailManagementScreen controller={controller} />
 
-          <ListItem topDivider disabled={!controller.canUseBiometrics}>
+          {/*  <ListItem topDivider disabled={!controller.canUseBiometrics}>
             {SvgImage.fingerprintIcon(24)}
             <ListItem.Content>
               <ListItem.Title
@@ -152,7 +156,7 @@ export const SettingScreen: React.FC<
               }}
               color={Theme.Colors.switchHead}
             />
-          </ListItem>
+          </ListItem>*/}
 
           <AboutInji appId={controller.appId} />
 
@@ -186,7 +190,7 @@ export const SettingScreen: React.FC<
             />
           )}
 
-          <ListItem
+          {/*<ListItem
             topDivider
             bottomDivider
             onPress={() => controller.INJI_TOUR_GUIDE()}>
@@ -200,9 +204,11 @@ export const SettingScreen: React.FC<
                 </Text>
               </ListItem.Title>
             </ListItem.Content>
-          </ListItem>
-
-          <ListItem onPress={controller.LOGOUT}>
+          </ListItem>*/}
+            <ListItem
+            topDivider
+            bottomDivider
+            onPress={() => controller.LOGOUT()}>
             {SvgImage.logOutIcon()}
             <ListItem.Content>
               <ListItem.Title
