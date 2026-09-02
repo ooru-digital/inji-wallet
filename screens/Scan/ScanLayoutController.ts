@@ -15,7 +15,6 @@ import {
   selectIsLocationDenied,
   selectIsLocationDisabled,
   selectIsQrLoginDone,
-  selectIsScanning,
   selectIsSendingVc,
   selectIsSendingVcTimeout,
   selectIsSent,
@@ -45,9 +44,8 @@ import {
   selectIsVerifyingIdentity,
 } from '../../machines/bleShare/commonSelectors';
 import {ScanEvents} from '../../machines/bleShare/scan/scanMachine';
-import {BOTTOM_TAB_ROUTES, SCAN_ROUTES} from '../../routes/routesConstants';
+import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
 import {ScanStackParamList} from '../../routes/routesConstants';
-import {VCShareFlowType} from '../../shared/Utils';
 import {Theme} from '../../components/ui/styleUtils';
 import {
   APP_EVENTS,
@@ -292,7 +290,6 @@ export function useScanLayout() {
 
   const isDone = useSelector(scanService, selectIsDone);
   const isReviewing = useSelector(scanService, selectIsReviewing);
-  const isScanning = useSelector(scanService, selectIsScanning);
   const isQrLoginDone = useSelector(scanService, selectIsQrLoginDone);
   const isQrLoginDoneViaDeeplink = useSelector(
     scanService,
@@ -308,7 +305,38 @@ export function useScanLayout() {
 
   const isOVPViaDeepLink = useSelector(scanService, selectIsOVPViaDeepLink);
 
+  // Deferred a tick (setTimeout(..., 1)), same as GOTO_HOME/RETRY_VERIFICATION above — prior,
+  // independent evidence in this same file that navigate() dispatched in the same synchronous
+  // tick as the scanService/appService.send() calls above it can race react-navigation's own
+  // state updates. This one is safe to keep deferred, since home/history are routes the *tab*
+  // navigator owns directly — same-navigator navigate, no cross-navigator resolution involved.
+  //
+  // The three targets that used to live in this same effect — SendVcScreen, SendVPScreen,
+  // ScanScreen — are not: those are ScanStack's own screens, and useNavigation() here resolves to
+  // the *tab* navigator (this hook runs from ScanLayout, which sits above ScanStack.Navigator in
+  // the tree). Reaching a nested navigator's screen from outside it depends on that navigator's
+  // routeNames having already been committed into the shared navigation-state tree — a commit
+  // react-navigation schedules separately (useScheduleUpdate, in @react-navigation/core) from
+  // this effect's own firing, and no fixed delay reliably outlasted it: even the setTimeout defer
+  // this file already used elsewhere left "NAVIGATE ... was not handled by any navigator" firing
+  // for those three. They're now driven by useScanStackScreenSwitcher (screens/Scan/
+  // useScanStackScreenSwitcher.ts), called from ScanScreen — a screen *of* ScanStack — where
+  // useNavigation() resolves to that stack directly and a same-navigator navigate needs no such
+  // commit to wait on.
+  //
+  // The pending timeout is cancelled on cleanup so a burst of scan-state transitions inside one
+  // tick (routine here — see e.g. this file's own SCREEN_FOCUS -> ... -> STORE_RESPONSE chain)
+  // can't leave more than one navigate() queued: without this, an earlier decision's deferred
+  // call could still fire after a later re-run of this same effect already superseded it,
+  // landing the user back on a screen this effect had already moved past.
   useEffect(() => {
+    let navigateTimeoutId: ReturnType<typeof setTimeout> | undefined;
+    const deferNavigate = (
+      routeName: keyof (ScanStackParamList & MainBottomTabParamList),
+    ) => {
+      navigateTimeoutId = setTimeout(() => navigation.navigate(routeName), 1);
+    };
+
     if (linkCode != '') {
       scanService.send(ScanEvents.QRLOGIN_VIA_DEEP_LINK(linkCode));
       appService.send(APP_EVENTS.RESET_LINKCODE());
@@ -319,36 +347,24 @@ export function useScanLayout() {
       }
     } else if (isQrLoginDoneViaDeeplink) {
       changeTabBarVisible('flex');
-      navigation.navigate(BOTTOM_TAB_ROUTES.home);
+      deferNavigate(BOTTOM_TAB_ROUTES.home);
     } else if (isDone) {
       changeTabBarVisible('flex');
-      navigation.navigate(BOTTOM_TAB_ROUTES.home);
-    } else if (
-      isReviewing &&
-      flowType === VCShareFlowType.SIMPLE_SHARE &&
-      !isAccepted
-    ) {
-      changeTabBarVisible('none');
-      navigation.navigate(SCAN_ROUTES.SendVcScreen);
-    } else if (openID4VPFlowType === VCShareFlowType.OPENID4VP) {
-      changeTabBarVisible('none');
-      navigation.navigate(SCAN_ROUTES.SendVPScreen);
-    } else if (isScanning) {
-      changeTabBarVisible('flex');
-      navigation.navigate(SCAN_ROUTES.ScanScreen);
+      deferNavigate(BOTTOM_TAB_ROUTES.home);
     } else if (isQrLoginDone) {
       changeTabBarVisible('flex');
-      navigation.navigate(BOTTOM_TAB_ROUTES.history);
+      deferNavigate(BOTTOM_TAB_ROUTES.history);
     }
+
+    return () => {
+      if (navigateTimeoutId) {
+        clearTimeout(navigateTimeoutId);
+      }
+    };
   }, [
     isDone,
-    isReviewing,
-    isScanning,
     isQrLoginDone,
     isBleError,
-    flowType,
-    openID4VPFlowType,
-    isAccepted,
     linkCode,
     isQrLoginDoneViaDeeplink,
     authorizationRequest,

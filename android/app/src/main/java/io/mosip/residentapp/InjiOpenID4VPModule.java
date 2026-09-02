@@ -141,7 +141,13 @@ public class InjiOpenID4VPModule extends ReactContextBaseJavaModule {
         }
     }
 
-    @ReactMethod
+    // Deliberately NOT @ReactMethod: this is a private helper the other methods call, never
+    // something JS invokes. The annotation was harmless under the old bridge, which resolved
+    // methods lazily, but the new architecture's TurboModuleInteropUtils eagerly parses a JNI
+    // signature for every @ReactMethod on the module — and java.lang.Exception is not a bridgeable
+    // parameter type. That single unparseable signature failed the whole module, so
+    // NativeModules.InjiOpenID4VP threw on property access ("Exception in HostObject::get for prop
+    // 'InjiOpenID4VP'") and every call into this module, initSdk included, was unreachable.
     private void rejectWithOpenID4VPExceptions(Exception e, Promise promise) {
         if (e instanceof OpenID4VPExceptions exception) {
             WritableMap errorMap = Arguments.createMap();
@@ -151,6 +157,13 @@ public class InjiOpenID4VPModule extends ReactContextBaseJavaModule {
 
             promise.reject(exception.getErrorCode(), exception.getMessage(), exception, errorMap);
         } else {
+            // This branch (whatever the openID4VP SDK itself throws that isn't one of its own
+            // typed OpenID4VPExceptions) has never logged the actual exception — only the
+            // generic "ERR_UNKNOWN" code reaches JS, and observed practice shows even that can
+            // arrive there as undefined. This is the one choke point every @ReactMethod in this
+            // file already routes failures through, so logging here covers all of them, not
+            // just authenticateVerifier.
+            Log.e(TAG, "Non-OpenID4VPExceptions failure, rejecting as ERR_UNKNOWN", e);
             promise.reject("ERR_UNKNOWN", e.getMessage(), e);
         }
     }
