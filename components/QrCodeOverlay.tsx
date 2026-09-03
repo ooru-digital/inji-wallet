@@ -94,11 +94,7 @@ function logOutgoingInformationRequested(
   }));
   console.log(
     '[DEBUG] Outgoing information requested to verifier:\n' +
-      JSON.stringify(
-        {disclosedCount: disclosed.length, disclosed},
-        null,
-        2,
-      ),
+      JSON.stringify({disclosedCount: disclosed.length, disclosed}, null, 2),
   );
 }
 
@@ -306,6 +302,10 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
 
   const [isQrOverlayVisible, setIsQrOverlayVisible] = useState(false);
   const overlayVisible = props.forceVisible ?? isQrOverlayVisible;
+  // mDoc's QR is a live BLE engagement tied to a proximity/consent flow, so it keeps
+  // the dedicated full-page Modal below. Every other format (w3c VC, SD-JWT, ...) is
+  // just a static, scannable QR value — it opens as a small popup dialog instead.
+  const isMdoc = props.meta?.format === VCFormat.mso_mdoc;
 
   useEffect(() => {
     if (
@@ -395,10 +395,7 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
       setConsentResult('failure');
       denyIso18013PresentmentConsent().catch(e => {
         if (__DEV__) {
-          console.warn(
-            '[QrCodeOverlay] deny after consent timeout failed:',
-            e,
-          );
+          console.warn('[QrCodeOverlay] deny after consent timeout failed:', e);
         }
       });
     }, CONSENT_RESPONSE_TIMEOUT_MS);
@@ -649,38 +646,85 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
             )}
           </View>
 
-          {/* Full page rather than a floating modal card — also doubles as the "before
-              scan" / "retry" state of the mDoc proximity flow: once a verifier's
-              DeviceRequest arrives (consentRequest != null) this hides and
-              MdocProximityConsentOverlay's own full-screen Modal takes over, and once
-              that's resolved (consentResult != null) the result page takes over instead
-              — so none of the three ever stack on top of each other. */}
-          <Modal
-            visible={
-              overlayVisible && consentRequest == null && consentResult == null
-            }
-            animationType="slide"
-            presentationStyle="fullScreen"
-            onRequestClose={toggleQrOverlay}>
-            <Column fill backgroundColor={Theme.Colors.whiteBackgroundColor}>
-              <Header
-                goBack={toggleQrOverlay}
-                title={t('qrCodeHeader')}
-                testID="qrCodeHeader"
-              />
-              <Centered fill style={qrPageStyles.content}>
-                <Text
-                  testID="qrCodeInstruction"
-                  size="mediumSmall"
-                  align="center"
-                  color={Theme.Colors.GrayIcon}
-                  style={qrPageStyles.instruction}>
-                  {t('qrCodeInstruction')}
-                </Text>
-                <View style={qrPageStyles.qrCard}>
+          {isMdoc ? (
+            // Full page rather than a floating modal card — also doubles as the "before
+            // scan" / "retry" state of the mDoc proximity flow: once a verifier's
+            // DeviceRequest arrives (consentRequest != null) this hides and
+            // MdocProximityConsentOverlay's own full-screen Modal takes over, and once
+            // that's resolved (consentResult != null) the result page takes over
+            // instead — so none of the three ever stack on top of each other.
+            <Modal
+              visible={
+                overlayVisible &&
+                consentRequest == null &&
+                consentResult == null
+              }
+              animationType="slide"
+              presentationStyle="fullScreen"
+              onRequestClose={toggleQrOverlay}>
+              <Column fill backgroundColor={Theme.Colors.whiteBackgroundColor}>
+                <Header
+                  goBack={toggleQrOverlay}
+                  title={t('qrCodeHeader')}
+                  testID="qrCodeHeader"
+                />
+                <Centered fill style={qrPageStyles.content}>
+                  <Text
+                    testID="qrCodeInstruction"
+                    size="mediumSmall"
+                    align="center"
+                    color={Theme.Colors.GrayIcon}
+                    style={qrPageStyles.instruction}>
+                    {t('qrCodeInstruction')}
+                  </Text>
+                  <View style={qrPageStyles.qrCard}>
+                    <QRCode
+                      {...testIDProps('qrCodeExpandedView')}
+                      size={240}
+                      value={qrString}
+                      backgroundColor={Theme.Colors.QRCodeBackgroundColor}
+                      ecl={DEFAULT_ECL}
+                      quietZone={10}
+                      onError={onQRError}
+                      getRef={data => (qrRef.current = data)}
+                    />
+                  </View>
+                </Centered>
+                <View style={{paddingBottom: Math.max(insets.bottom, 16)}} />
+              </Column>
+            </Modal>
+          ) : (
+            // Non-mDoc: a small popup dialog over the current page — not a page
+            // navigation, and not laid out inline (which fights the surrounding field
+            // list for width). Backdrop tap or the close button dismiss it; tapping the
+            // card itself doesn't, since that inner Pressable claims the touch first.
+            <Modal
+              visible={overlayVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={toggleQrOverlay}>
+              <Pressable
+                {...testIDProps('qrDialogBackdrop')}
+                style={qrPageStyles.backdrop}
+                onPress={toggleQrOverlay}>
+                <Pressable
+                  style={qrPageStyles.dialogCard}
+                  onPress={() => {}}
+                  accessible={false}>
+                  <Pressable
+                    {...testIDProps('closeQrDialog')}
+                    style={qrPageStyles.dialogCloseButton}
+                    onPress={toggleQrOverlay}>
+                    <Icon
+                      name="close"
+                      type="material"
+                      size={28}
+                      color={Theme.Colors.GrayIcon}
+                    />
+                  </Pressable>
                   <QRCode
                     {...testIDProps('qrCodeExpandedView')}
-                    size={240}
+                    size={280}
                     value={qrString}
                     backgroundColor={Theme.Colors.QRCodeBackgroundColor}
                     ecl={DEFAULT_ECL}
@@ -688,11 +732,10 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
                     onError={onQRError}
                     getRef={data => (qrRef.current = data)}
                   />
-                </View>
-              </Centered>
-              <View style={{paddingBottom: Math.max(insets.bottom, 16)}} />
-            </Column>
-          </Modal>
+                </Pressable>
+              </Pressable>
+            </Modal>
+          )}
         </React.Fragment>
       )}
       <MdocProximityConsentOverlay
@@ -707,7 +750,10 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
         onDeny={handleConsentDeny}
         isBusy={consentBusy}
       />
-      <MdocPresentmentResultOverlay result={consentResult} onGoHome={handleGoHome} />
+      <MdocPresentmentResultOverlay
+        result={consentResult}
+        onGoHome={handleGoHome}
+      />
     </>
   );
 };
@@ -731,6 +777,31 @@ const qrPageStyles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+  },
+  // Non-mDoc popup dialog: semi-transparent backdrop behind a small centered card,
+  // as opposed to mDoc's full-page Modal above.
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  dialogCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: Theme.Colors.whiteBackgroundColor,
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 28,
+    alignItems: 'center',
+  },
+  dialogCloseButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 10,
   },
 });
 
