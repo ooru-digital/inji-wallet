@@ -1,18 +1,10 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {
-  Dimensions,
-  Linking,
-  Pressable,
-  TouchableOpacity,
-  I18nManager,
-  View,
-} from 'react-native';
+import {Dimensions, Pressable, I18nManager, View} from 'react-native';
 import {Modal} from '../../components/ui/Modal';
 import {Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {ListItem} from 'react-native-elements';
-import getAllConfigurations from '../../shared/api';
 import {CopyButton} from '../../components/CopyButton';
 import testIDProps from '../../shared/commonUtil';
 import {__InjiVersion} from '../../shared/GlobalVariables';
@@ -24,13 +16,6 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
   const {t} = useTranslation('AboutInji');
 
   const [showAboutInji, setShowAboutInji] = useState(false);
-  const [aboutInjiUrl, setAboutInjiUrl] = useState('');
-
-  useEffect(() => {
-    getAllConfigurations().then(response => {
-      setAboutInjiUrl(response.aboutInjiUrl);
-    });
-  }, []);
 
   return (
     <React.Fragment>
@@ -93,27 +78,6 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
               style={Theme.AboutInjiScreenStyle.aboutDetailstextStyle}>
               {t('aboutDetails')}
             </Text>
-            <Row
-              align="space-between"
-              crossAlign="center"
-              style={Theme.AboutInjiScreenStyle.innerContainerStyle}>
-              <Text style={Theme.AboutInjiScreenStyle.moreDetailstextStyle}>
-                {t('forMoreDetails')}
-              </Text>
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={() => {
-                  aboutInjiUrl && Linking.openURL(aboutInjiUrl);
-                }}>
-                <Text
-                  testID="clickHere"
-                  color={Theme.Colors.AddIdBtnBg}
-                  style={Theme.AboutInjiScreenStyle.clickHereTextStyle}
-                  weight="bold">
-                  {t('clickHere')}
-                </Text>
-              </TouchableOpacity>
-            </Row>
           </Column>
 
           <Column
@@ -152,13 +116,6 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
                   {t('poweredBy')}
                 </Text>
               </Row>
-
-              <Text
-                weight="semibold"
-                style={Theme.AboutInjiScreenStyle.infoTextStyle}
-                color={Theme.Colors.GrayText}>
-                {t('copyright')}
-              </Text>
             </Column>
           </Column>
         </Column>

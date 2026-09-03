@@ -58,7 +58,7 @@ import CopyIcon from '../../assets/file_copy.svg';
 import StarIcon from '../../assets/credentialRegestryStar.svg';
 import SelectedCheckBox from '../../assets/Selected_Check_Box.svg';
 import ReverifyIcon from '../../assets/Reverify.svg';
-import Logomark from '../../assets/Logomark.svg';
+import Logomark from '../../assets/Ooru-icon.svg';
 import StatusValidIcon from '../../assets/Status_Valid_Icon.svg';
 import StatusPendingIcon from '../../assets/Status_Pending_Icon.svg';
 import StatusExpiredIcon from '../../assets/Status_Expired_Icon.svg';

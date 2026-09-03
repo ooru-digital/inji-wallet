@@ -25,7 +25,7 @@ export default {
     supportsTablet: true,
   },
   android: {
-    package: 'io.mosip.residentapp',
+    package: 'io.ooru.credissuerwallet',
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: adaptiveImage,
