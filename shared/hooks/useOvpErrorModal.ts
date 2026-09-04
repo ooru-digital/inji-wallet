@@ -17,7 +17,19 @@ interface UseOvpErrorModalProps {
   t: (key: string, options?: any) => string;
 }
 export function useOvpErrorModal({
-  error,
+  // Every branch below reads `error` as a string (.includes/.startsWith, or `error !== ''`),
+  // with no branch guarding against it being missing. It normally is the openID4VPMachine
+  // context's `error` field, which defaults to `''` — but selectIsError just forwards
+  // context.error verbatim, and the field can end up `undefined` if a native module rejects a
+  // promise without a well-formed `code` (setAuthenticationError assigns event.data.code
+  // straight through). When that happened, `error.includes(...)` on the very first branch threw
+  // "Cannot read property 'includes' of undefined" — crashing the whole ScanScreen the moment an
+  // openID4VP error fired, in place of the error modal this hook exists to show.
+  // Defaulting here (destructuring only substitutes when the value is exactly `undefined`, which
+  // is the only case this needs to catch — `null` was never a value this ever received) fixes
+  // that unconditionally: whatever upstream produced a non-string error, this hook now falls
+  // through to its own `else` branch (hide the modal) instead of throwing.
+  error = '',
   noCredentialsMatchingVPRequest,
   requestedClaimsByVerifier,
   getAdditionalMessage,

@@ -47,10 +47,10 @@ export function getVcVerificationDetails(
   statusType,
   vcMetadata: VCMetadata,
 ): vcVerificationBannerDetails {
-  const credentialType = vcMetadata.credentialType
+  const credentialType = vcMetadata.credentialType;
   return {
     statusType: statusType,
-    isRevoked:vcMetadata.isRevoked,
+    isRevoked: vcMetadata.isRevoked,
     isExpired: vcMetadata.isExpired,
     vcType: credentialType,
   };
@@ -74,21 +74,23 @@ export const updateCredentialInformation = async (
       credential,
       context.selectedCredentialType.format,
     );
-  }
-  if( context.selectedCredentialType.format === VCFormat.vc_sd_jwt || context.selectedCredentialType.format === VCFormat.dc_sd_jwt) {
+  } else if (
+    context.selectedCredentialType.format === VCFormat.vc_sd_jwt ||
+    context.selectedCredentialType.format === VCFormat.dc_sd_jwt
+  ) {
     processedCredential = await VCProcessor.processForRendering(
       credential,
       context.selectedCredentialType.format,
-    )
+    );
   }
   let verifiableCredential;
   try {
     verifiableCredential = {
       ...credential,
       credentialConfigurationId: context.selectedCredentialType.id,
-      issuerLogo: getDisplayObjectForCurrentLanguage(
-        context.selectedIssuer.display,
-      )?.logo ?? "",
+      issuerLogo:
+        getDisplayObjectForCurrentLanguage(context.selectedIssuer.display)
+          ?.logo ?? '',
       processedCredential,
     };
   } catch (e) {
@@ -160,31 +162,40 @@ export const getCredentialIssuersWellKnownConfig = async (
       } else {
         if (format === VCFormat.mso_mdoc) {
           fields = [];
-          Object.keys(matchingWellknownDetails.claims).forEach(namespace => {
-            Object.keys(matchingWellknownDetails.claims[namespace]).forEach(
-              claim => {
-                fields.concat(`${namespace}~${claim}`);
-              },
-            );
-          });
+          const claims = matchingWellknownDetails?.claims;
+          if (claims && typeof claims === 'object') {
+            Object.keys(claims).forEach(namespace => {
+              const namespaceClaims = claims[namespace];
+              if (namespaceClaims && typeof namespaceClaims === 'object') {
+                Object.keys(namespaceClaims).forEach(claim => {
+                  fields.push(`${namespace}~${claim}`);
+                });
+              }
+            });
+          }
         } else if (format === VCFormat.ldp_vc) {
-          const ldpFields = Object.keys(
-            matchingWellknownDetails.credential_definition.credentialSubject,
-          );
+          const credSubject =
+            matchingWellknownDetails?.credential_definition?.credentialSubject;
+          const ldpFields =
+            credSubject && typeof credSubject === 'object'
+              ? Object.keys(credSubject)
+              : [];
           if (ldpFields.length > 0) {
             fields = ldpFields;
             wellknownFieldsFlag = true;
           }
-        }
-        else if( format === VCFormat.vc_sd_jwt || format === VCFormat.dc_sd_jwt) {
-          const sdJwtFields = flattenClaimPaths(matchingWellknownDetails.claims);
+        } else if (
+          format === VCFormat.vc_sd_jwt ||
+          format === VCFormat.dc_sd_jwt
+        ) {
+          const sdClaims = matchingWellknownDetails?.claims;
+          const sdJwtFields = sdClaims ? flattenClaimPaths(sdClaims) : [];
 
           if (sdJwtFields.length > 0) {
             fields = sdJwtFields;
-            wellknownFieldsFlag = true
+            wellknownFieldsFlag = true;
           }
-        }
-        else {
+        } else {
           console.error(`Unsupported credential format - ${format} found`);
           throw new UnsupportedVcFormat(format);
         }
@@ -231,7 +242,6 @@ const flattenClaimPaths = (
   });
 };
 
-
 export const getDetailedViewFields = async (
   issuerCacheKey: string,
   credentialConfigurationId: string,
@@ -249,7 +259,7 @@ export const getDetailedViewFields = async (
 
   let updatedFieldsList = response.fields.concat(DETAIL_VIEW_ADD_ON_FIELDS);
 
-  updatedFieldsList = removeBottomSectionFields(updatedFieldsList,format);
+  updatedFieldsList = removeBottomSectionFields(updatedFieldsList, format);
   return {
     matchingCredentialIssuerMetadata: response.matchingCredentialIssuerMetadata,
     fields: updatedFieldsList,
@@ -317,6 +327,16 @@ export async function constructProofJWT(
   cNonce?: string,
 ): Promise<string> {
   const jwk = await getJWK(publicKey, keyType);
+  if (keyType === KeyTypes.ES256 && jwk) {
+    console.log(
+      `Wallet key source for issuance: alias=${keyType}, keyId=${keyType}, source=${
+        isAndroid() ? 'android-keystore' : 'ios-secure-storage'
+      }`,
+    );
+    console.log(
+      `Wallet issuance device key: kty=${jwk.kty}, crv=${jwk.crv}, x=${jwk.x}, y=${jwk.y}`,
+    );
+  }
   const nonce = cNonce;
   const alg =
     keyType === KeyTypes.ED25519
@@ -488,7 +508,7 @@ function resolveEd25519Alg(proofSigningAlgosSupported: string[]) {
     : ED25519_PROOF_SIGNING_ALGO;
 }
 
-export function formattedDate(time: number|string): React.ReactNode {
+export function formattedDate(time: number | string): React.ReactNode {
   const date = new Date(time);
   const day = date.getDate();
   const month = date.toLocaleString('default', {month: 'long'});

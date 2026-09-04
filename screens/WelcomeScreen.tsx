@@ -4,7 +4,10 @@ import {Button, HorizontallyCentered, Column} from '../components/ui';
 import {Theme} from '../components/ui/styleUtils';
 import {RootRouteProps} from '../routes';
 import {useWelcomeScreen} from './WelcomeScreenController';
-import {SvgImage} from '../components/ui/svg';
+// Rendered directly (rather than via SvgImage.InjiLogo/Theme.HomeScreenLogo) because that
+// theme key now points at the horizontal icon+wordmark lockup used in the Home header, while
+// this unlock screen keeps the icon-only mark.
+import InjiHomeLogo from '../assets/InjiHomeLogo.svg';
 
 export const WelcomeScreen: React.FC<RootRouteProps> = props => {
   const {t} = useTranslation('WelcomeScreen');
@@ -15,7 +18,7 @@ export const WelcomeScreen: React.FC<RootRouteProps> = props => {
       padding="32 32 0"
       backgroundColor={Theme.Colors.whiteBackgroundColor}>
       <HorizontallyCentered fill>
-        {SvgImage.InjiLogo(Theme.Styles.welcomeLogo)}
+        <InjiHomeLogo {...Theme.Styles.welcomeLogo} />
       </HorizontallyCentered>
       <Button
         testID="unlockApplication"

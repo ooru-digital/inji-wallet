@@ -9,15 +9,54 @@ apply plugin: 'kotlin-android'
 
 
 configurations.all {
-    resolutionStrategy.force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
+    resolutionStrategy {
+        force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
+        // SnapKYC face-liveness SDK needs CameraX 1.4.1; expo-camera pins 1.4.0-beta02 and 1.3.x
+        // causes NoSuchFieldError: ProcessCameraProvider$Companion at runtime. Only these six
+        // artifacts are forced — camera-mlkit-vision (expo-camera) has no 1.4.1 release.
+        force 'androidx.camera:camera-core:1.4.1'
+        force 'androidx.camera:camera-camera2:1.4.1'
+        force 'androidx.camera:camera-lifecycle:1.4.1'
+        force 'androidx.camera:camera-video:1.4.1'
+        force 'androidx.camera:camera-view:1.4.1'
+        force 'androidx.camera:camera-extensions:1.4.1'
+        force 'org.apache.commons:commons-text:1.10.0'
+        // Deliberately no force on play-services-location/base: react-native-location only
+        // `compileOnly`s the GMS API (never bundles a runtime jar), so whichever version wins
+        // the normal highest-wins resolution is what it runs against, and GMS keeps old API
+        // surface across 18.x/21.x. Forcing an old floor here previously stripped
+        // OptionalModuleApi that play-services-mlkit-barcode-scanning (expo-camera's QR
+        // scanner) needs -> NoClassDefFoundError on camera open. Let it resolve naturally.
+        // Multipaz → ktor-client-core 3.x; Iris biometric SDK still pulls ktor-client-okhttp 2.x.
+        // Gradle then upgrades only core → 3.x; OkHttpEngine (2.x) still references
+        // io.ktor.client.plugins.HttpTimeout removed/relocated → crash on BiometricSdkFactory.initialize.
+        eachDependency { details ->
+            if (details.requested.group == "io.ktor") {
+                details.useVersion("3.3.3")
+            }
+            // Ktor 3's okhttp client pulls okhttp 5.x; RN / Fresco still request 4.x helpers. If only
+            // okhttp-core is 5.x but okhttp-urlconnection stays 4.x, JavaNetCookieJar references
+            // okhttp3.internal.Util removed in 5 → crash on React Native networking (OkHttp Dispatcher).
+            if (details.requested.group == "com.squareup.okhttp3") {
+                details.useVersion("5.2.1")
+            }
+        }
+    }
     all*.exclude module: 'bcprov-jdk15to18'
     all*.exclude module: 'bcutil-jdk18on'
     all*.exclude module: 'bcprov-jdk15on'
     all*.exclude module: 'bcutil-jdk15on'
     all*.exclude module: 'titanium-json-ld'
+    // SnapKYC SDK brings spring-jcl; drop commons-logging to avoid duplicate classes
+    all*.exclude group: 'commons-logging', module: 'commons-logging'
 }
 
 react {
+    // React Native 0.75+ replacement for the old
+    // `applyNativeModulesAppBuildGradle(project)` call that used to sit at the
+    // bottom of this file. Pairs with the settings plugin in settings.gradle.
+    autolinkLibrariesWithApp()
+
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '..'
     // root = file("../")
@@ -111,12 +150,18 @@ android {
 
     namespace 'io.mosip.residentapp'
 
+    sourceSets {
+        main {
+            assets.srcDirs += ["$projectDir/../../shared/jsonld/contexts"]
+        }
+    }
+
     defaultConfig {
-        applicationId 'io.mosip.residentapp'
+        applicationId 'io.ooru.credissuerwallet'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionName "0.22.1"
-        versionCode 1
+        versionName "1.0.0"
+        versionCode 6
         manifestPlaceholders = [
                 APP_NAME             : APP_NAME,
                 appAuthRedirectScheme: 'io.mosip.residentapp.inji'
@@ -205,7 +250,7 @@ android {
         residentapp {
             versionName defaultConfig.versionName
             dimension "inji"
-            resValue "string", "app_name", "Inji"
+            resValue "string", "app_name", "CredIssuer Wallet"
         }
         inji {
             applicationId "io.mosip.inji.wallet"
@@ -256,18 +301,32 @@ android {
         pickFirst 'lib/armeabi-v7a/liblog.so'
         pickFirst 'lib/x86/liblog.so'
         pickFirst 'lib/x86_64/liblog.so'
+        // OkHttp 5.x ships the same OSGi stub in okhttp / okhttp-urlconnection / okhttp-brotli / cookiejar;
+        // mergeResidentappDebugJavaResource fails without pickFirst.
+        pickFirst 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
         resources {
             excludes += "META-INF/*"
             excludes += "META-INF/spring/aot.factories"
+            pickFirsts += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
 }
 
+// Multipaz is built with Kotlin 2.2; app uses Kotlin 1.9.
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += "-Xskip-metadata-version-check"
+    }
+}
+
 dependencies {
+    def multipazVer = project.findProperty('multipazVersion') ?: '0.100.0-pre.4.2739bc10'
+    implementation("org.multipaz:multipaz-android:$multipazVer")
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("io.mosip:injivcrenderer-aar:0.1.0")
+    implementation("com.apicatalog:titanium-json-ld-jre8:1.3.1")
     implementation("io.inji:inji-openid4vp-aar:0.7.0"){
         changing = true
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
@@ -294,6 +353,36 @@ dependencies {
     implementation("io.mosip:vcverifier-aar:1.6.0") {
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
     }
+
+    // SnapKYC native face-liveness SDK (io.ooru.face.liveness.frontend.BioChqFaceLivenessMainActivity).
+    // Transitive androidx.camera / GMS / commons are excluded and pinned explicitly below.
+    implementation("io.ooru.biometrics:faceliveness-sdk:1.0.1-SNAPSHOT") {
+        changing = true
+        exclude group: 'androidx.camera'
+        exclude group: 'com.google.android.gms'
+        exclude group: 'org.apache.commons'
+    }
+    implementation("io.ooru.biometrics:faceliveness-frontend:1.0.1-SNAPSHOT") {
+        changing = true
+        exclude group: 'androidx.camera'
+        exclude group: 'com.google.android.gms'
+        exclude group: 'org.apache.commons'
+    }
+    // CameraX 1.4.1 required by the SnapKYC SDK (also forced in resolutionStrategy above)
+    implementation 'androidx.camera:camera-core:1.4.1'
+    implementation 'androidx.camera:camera-camera2:1.4.1'
+    implementation 'androidx.camera:camera-lifecycle:1.4.1'
+    implementation 'androidx.camera:camera-video:1.4.1'
+    implementation 'androidx.camera:camera-view:1.4.1'
+    implementation 'androidx.camera:camera-extensions:1.4.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    // Backfills GMS location/base classes for SnapKYC (its own `com.google.android.gms` group is
+    // excluded above). play-services-base is pinned to what the rest of the graph naturally
+    // resolves to (play-services-mlkit-barcode-scanning, expo-camera's QR scanner, needs
+    // base >= 18.1.0 for OptionalModuleApi); play-services-location has no 18.1.0 release
+    // (18.0.0 -> 19.0.0), so it stays on its own last-known-good version — independent artifact.
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
+    implementation 'com.google.android.gms:play-services-base:18.1.0'
 
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
@@ -350,8 +439,6 @@ task CaptureLibraryVersion {
         }
     }
 }
-
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
 
 // https://github.com/oblador/react-native-vector-icons?tab=readme-ov-file#android-setup
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

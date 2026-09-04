@@ -61,7 +61,9 @@
     "imageCaptureGuide": "Hold the phone steady, keep your face focused in the centre and click on Capture.",
     "capture": "Capture",
     "cancel": "Cancel",
-    "flipCamera": "Flip Camera"
+    "flipCamera": "Flip Camera",
+    "missingPermissionText": "Camera access is needed to verify your identity. Please allow it in Settings.",
+    "allowCameraButton": "Open Settings"
   },
   "OIDcAuth": {
     "title": "OIDC Authentication",
@@ -95,6 +97,7 @@
     "idType": "ID Type",
     "id": "ID",
     "qrCodeHeader": "QR Code",
+    "qrCodeInstruction": "Show this code to the verifier to share your credential.",
     "nationalCard": "National ID",
     "identityCard": "Identity Card",
     "insuranceCard": "Insurance Card",
@@ -126,7 +129,33 @@
     "disclosureNoteTitle": "Please note",
     "disclosedFieldsDescription": "Your card includes the following selectively shareable details listed below.",
     "disclosedFieldsTitle": "Information you choose to share",
-    "disclosureInfoNote": "Fields next to this icon indicate that the information can be shared selectively."
+    "disclosureInfoNote": "Fields next to this icon indicate that the information can be shared selectively.",
+    "mdocConsent": {
+      "title": "Share Information",
+      "message": "{{verifier}} wants to verify your identity.",
+      "unknownVerifier": "A verifier",
+      "purposeLabel": "Purpose",
+      "defaultPurpose": "Data verification",
+      "requestingMdl": "Requesting Driving License",
+      "requestedData": "Information requested",
+      "onlyListedShared": "Only the information listed above will be shared.",
+      "confirmButton": "Share",
+      "cancelButton": "Cancel",
+      "retain": "May retain",
+      "retentionSummary": "{{retained}} of {{total}} fields may be retained by {{verifier}} after this share.",
+      "requiredPurposeHint": "Purposes marked with * are required to share this credential.",
+      "shareSuccessTitle": "Verification Successful",
+      "shareSuccessMessage": "Your credential was shared and verified successfully.",
+      "shareFailureTitle": "Verification Unsuccessful",
+      "shareFailureMessage": "We couldn't complete the verification. Kindly try again.",
+      "goToHome": "Go to Home"
+    },
+    "mdocCannotSatisfy": {
+      "title": "Credential not available",
+      "message": "The verifier requested {{requested}}, but this card is {{wallet}}. Sharing was cancelled.",
+      "messageGeneric": "This card cannot satisfy the verifier's request. Sharing was cancelled.",
+      "ok": "OK"
+    }
   },
   "HomeScreenKebabPopUp": {
     "title": "More Options",
@@ -184,22 +213,22 @@
   },
   "SettingScreen": {
     "header": "Settings",
-    "injiAsVerifierApp": "Inji as verifier app",
+    "injiAsVerifierApp": "CredIssuer Wallet",
     "receiveCard": "Receive Card",
     "basicSettings": "Basic settings",
     "bioUnlock": "Unlock with Biometric",
     "language": "Language",
-    "aboutInji": "About Inji",
+    "aboutInji": "About CredIssuer Wallet",
     "credentialRegistry": "Credential Registry",
     "esignethosturl": "Esignet Host",
     "errorMessage": "Incorrect URL entered. Please enter a valid URL to proceed.",
-    "injiTourGuide": "Inji Tour Guide",
+    "injiTourGuide": "CredIssuer Tour Guide",
     "logout": "Logout",
-    "resetInjiProps": "Resetting Inji Props..."
+    "resetInjiProps": "Resetting CredIssuer Props..."
   },
   "BannerNotification": {
-    "alternatePasscodeSuccess": "Success! You can now use passcode to unlock Inji app.",
-    "alternateBiometricSuccess": "Success! You can now use biometrics to unlock Inji app.",
+    "alternatePasscodeSuccess": "Success! You can now use passcode to unlock CredIssuer app.",
+    "alternateBiometricSuccess": "Success! You can now use biometrics to unlock CredIssuer app.",
     "activated": "Credentials are enabled for online authentication.",
     "keyPreferenceSuccess": "Your key preferences have been saved successfully!",
     "keyPreferenceError": "Sorry! Error setting your key preferences",
@@ -214,15 +243,15 @@
     }
   },
   "AboutInji": {
-    "aboutInji": "About Inji Wallet",
-    "header": "About Inji Wallet",
+    "aboutInji": "About CredIssuer Wallet",
+    "header": "About CredIssuer Wallet",
     "appID": "App ID",
-    "aboutDetails": "Inji Wallet makes data trustworthy and portable, featuring two main interfaces that cater to diverse user needs, with Inji Mobile being one of them. As a mobile-based wallet app, Inji Mobile is a secure, decentralized solution that allows users to download, manage, share, and verify verifiable credentials directly from their smartphones, providing a seamless and trustworthy way to handle credentials on the go.",
+    "aboutDetails": "CredIssuer Wallet is a mobile app that can be used by anyone to store certificates issued by CredIssuer.",
     "forMoreDetails": "For more details",
     "clickHere": "Click here",
     "version": "Version",
-    "poweredBy": "A MOSIP Product",
-    "copyright": "© 2022 MOSIP. All rights reserved."
+    "poweredBy": "A OORU Product",
+    "copyright": "© 2022 OORU. All rights reserved."
   },
   "IssuersScreen": {
     "selectCard": "Select Card",
@@ -326,7 +355,7 @@
         "five": "Should I always give the same email ID?",
         "six": "How can I restore the backup which I have taken?",
         "seven": "Why do I get an error \"no backup file found\"?",
-        "eight": "What happens when I Clear Storage of INJI app from device settings?"
+        "eight": "What happens when I Clear Storage of CredIssuer app from device settings?"
       },
       "KeyManagement": {
         "one": "What are the different types of keys I can choose from?",
@@ -347,18 +376,18 @@
         "four": "A digital credential is the digital version of your physical Identity card",
         "five": "You can avail various Government and private services using your digital credentials.",
         "six": "A Verifiable Credential is a digitally signed piece of information that represents a statement made by the issuer about a subject and typically includes demographic details. VCs are secure and trustworthy in various online interactions.",
-        "seven": "IDs can be downloaded to INJI Mobile Wallet as Verifiable Credentials. To know how to download VCs with various IDs please read",
+        "seven": "IDs can be downloaded to CredIssuer Mobile Wallet as Verifiable Credentials. To know how to download VCs with various IDs please read",
         "eight": "Yes, you can add multiple cards to the wallet by clicking on '+' button on the Home page.",
         "nine": "Once VC is downloaded to your wallet, it is not yet bound with the user’s identity which is why your VC says Activation Pending. Binding your VC to your wallet (with your passcode or biometrics) is crucial to ensure the highest level of security. To activate your VC, please follow the steps",
         "ten-a": "1. Once the VC is successfully binded with the wallet, you can see that it is Activated for Online login which means this VC can now be used for the QR login process. To know more about QR code login, please read",
-        "ten-b": "2. The Q&A should be readable and understandable even when the user changes the language in the INJI app.",
+        "ten-b": "2. The Q&A should be readable and understandable even when the user changes the language in the CredIssuer app.",
         "eleven": "After successfully adding a card to the wallet, click on 'Activation pending for Online login' on the card. On clicking on 'Activate', the card will be ready to be used for online login.",
         "twelve": "Click on 'Share' button and scan the QR code from the requesting party. Once the connection is established, the card will be shared.",
         "thirteen-a": "You can click on ...(meatballs menu) on a card in the Home page and choose Remove from Wallet option to remove a card from the wallet. To know more, please read",
         "thirteen-b": " Please note that, the same card can be downloaded again.",
         "fourteen": "On the Home page, click on 'History' to view the details of the user's activitie.",
         "fifteen": "The Android keystore holds important information like private keys for identity proofs. When you change your biometrics, old keys are no longer safe. To keep things secure, we remove identity proofs signed by those old keys. You can simply download your identity proofs again, and they will be signed with the latest, safer keys.",
-        "sixteen": "Sharing a credential refers to the process of securely transferring a verifiable credential by the holder from the INJI wallet to the relying party. This enables individuals to prove their identity verification in a digital way, facilitating efficient and trusted interactions in various contexts.",
+        "sixteen": "Sharing a credential refers to the process of securely transferring a verifiable credential by the holder from the CredIssuer wallet to the relying party. This enables individuals to prove their identity verification in a digital way, facilitating efficient and trusted interactions in various contexts.",
         "seventeen": "Sharing a VC with selfie involves an additional layer of security in the credential-sharing process. In addition to transmitting the verifiable credential, the user is required to provide a selfie (a photograph of themselves) for facial verification. This enhances the security and integrity of the credential transfer by ensuring that the individual presenting the credential is the legitimate owner. It helps prevent impersonation and unauthorized use of the credential, thereby increasing trust and reliability in digital transactions."
       },
       "backup": {
@@ -514,7 +543,7 @@
   },
   "OnboardingOverlay": {
     "stepOneTitle": "Welcome!",
-    "stepOneText": "Keep your digital credential with you at all times. Inji helps you manage and use them effectively. To get started, add cards to your profile.",
+    "stepOneText": "Never lose track of your credentials again! With CredIssuer, managing your verifiable credentials is effortless. Get started by adding your certificates to your profile today!",
     "stepTwoTitle": "Secure Sharing",
     "stepTwoText": "Share your cards securely in a hassle free way and avail various services.",
     "stepThreeTitle": "Trusted Digital Wallet",
@@ -736,8 +765,8 @@
   "ScanScreen": {
     "shareWithSelfie": "Share with Selfie",
     "shareWithSelfieQrLogin": "QR Code Login",
-    "shareWithSelfieMessage": "To share your Verifiable Credentials, we’ll securely verify your identity using face authentication. By continuing, you consent to Inji using your camera for this purpose. Your facial data will only be used for verification and will not be shared with any third parties.",
-    "shareWithSelfieMessageQrLogin": "In order to access the portal, you’ll need to share your Verifiable Credentials and verify your identity securely using face verification. By continuing, you consent to Inji using your camera for this purpose. \n\n Your facial data will only be used for verification and will not be shared. After successful verification, you can choose which details to share.",
+    "shareWithSelfieMessage": "To share your Verifiable Credentials, we’ll securely verify your identity using face authentication. By continuing, you consent to CredIssuer using your camera for this purpose. Your facial data will only be used for verification and will not be shared with any third parties.",
+    "shareWithSelfieMessageQrLogin": "In order to access the portal, you’ll need to share your Verifiable Credentials and verify your identity securely using face verification. By continuing, you consent to CredIssuer using your camera for this purpose. \n\n Your facial data will only be used for verification and will not be shared. After successful verification, you can choose which details to share.",
     "ConfirmButton": "I Understand",
     "doNotAskMessage": "Don't ask me again",
     "noShareableVcs": "No cards are available for sharing.",
@@ -921,7 +950,7 @@
     "selectAll": "Select All",
     "consentDialog": {
       "title": "Consent Required",
-      "message": "We require your consent to share your verifiable credentials with {{verifierName}}. This will enable us to verify your identity and fulfil your service requests. Choose \"Yes, Proceed\" to consent or \"Decline\" if you do not wish to share your credentials with {{verifierName}}.",
+      "message": "We require your consent to share your verifiable credentials with {{verifierName}}. This will enable us to verify your identity and fulfill your service requests. Choose \"Yes, Proceed\" to consent or \"Decline\" if you do not wish to share your credentials with {{verifierName}}.",
       "confirmButton": "Yes, Proceed",
       "cancelButton": "Decline"
     },
@@ -1054,7 +1083,7 @@
   },
   "AccountSelection": {
     "backupProcessInfo": "You’re just a few steps away from backing up your data",
-    "cloudInfo": "To initiate the data backup, please tap on the “Proceed” button to link your {{driveName}} with Inji.",
+    "cloudInfo": "To initiate the data backup, please tap on the \"Proceed\" button to link your {{driveName}} with CredIssuer.",
     "googleDriveTitle": "Google Drive",
     "loadingSubtitle": "Loading...",
     "proceed": "Proceed",
@@ -1066,7 +1095,7 @@
     "backupProgressState": "Backup in progress...",
     "lastBackupDetails": "Last Backup Details",
     "backupInProgress": "You can still use the application while data backup is in progress. Closing the app will terminate the data backup process.",
-    "noBackup": "Backup your Data to {{driveName}}. You can restore them when you reinstall INJI.",
+    "noBackup": "Backup your Data to {{driveName}}. You can restore them when you reinstall CredIssuer.",
     "storage": "The backup will be stored in the {{driveName}} associated to your chosen {{accountType}} account.",
     "backup": "Backup",
     "size": "Size: ",

@@ -183,21 +183,21 @@
   },
   "SettingScreen": {
     "header": "Mga setting",
-    "injiAsVerifierApp": "Inji bilang Verifier App",
+    "injiAsVerifierApp": "CredIssuer bilang Verifier App",
     "receiveCard": "Tumanggap ng Card",
     "basicSettings": "Mga Pangunahing Setting",
     "bioUnlock": "I-unlock gamit ang Biometrics",
     "language": "Wika",
-    "aboutInji": "About Inji",
+    "aboutInji": "About CredIssuer",
     "credentialRegistry": "Credential Registry",
     "errorMessage": "Maling URL ang inilagay. Mangyaring maglagay ng wastong URL upang magpatuloy.",
-    "injiTourGuide": "Inji Tour Guide",
+    "injiTourGuide": "CredIssuer Tour Guide",
     "logout": "Mag-logout",
-    "resetInjiProps": "Nire-reset ang Inji Props..."
+    "resetInjiProps": "Nire-reset ang CredIssuer Props..."
   },
   "BannerNotification": {
-    "alternatePasscodeSuccess": "Tagumpay! Magagamit mo na ngayon ang passcode upang i-unlock ang Inji app.",
-    "alternateBiometricSuccess": "Tagumpay! Maaari ka na ngayong gumamit ng biometrics upang i-unlock ang Inji app.",
+    "alternatePasscodeSuccess": "Tagumpay! Magagamit mo na ngayon ang passcode upang i-unlock ang CredIssuer app.",
+    "alternateBiometricSuccess": "Tagumpay! Maaari ka na ngayong gumamit ng biometrics upang i-unlock ang CredIssuer app.",
     "activated": "Ang mga kredensyal ay pinagana para sa online na pagpapatunay.",
     "keyPreferenceSuccess": "Ang iyong mga kagustuhan sa key ay matagumpay na na-save!",
     "keyPreferenceError": "Paumanhin! May error sa pagsasaayos ng iyong mga kagustuhan sa key",
@@ -212,15 +212,15 @@
     }
   },
   "AboutInji": {
-    "aboutInji": "Tungkol kay Inji Wallet",
-    "header": "Tungkol Sa Inji Wallet",
+    "aboutInji": "Tungkol kay CredIssuer Wallet",
+    "header": "Tungkol Sa CredIssuer Wallet",
     "appID": "App ID",
-    "aboutDetails": "Ginagawa ng Inji Wallet na mapagkakatiwalaan at portable ang data, na nagtatampok ng dalawang pangunahing interface na tumutugon sa magkakaibang pangangailangan ng user, kung saan ang Inji Mobile ang isa sa mga ito. Bilang isang mobile-based na wallet app, ang Inji Mobile ay isang secure, desentralisadong solusyon na nagbibigay-daan sa mga user na mag-download, mamahala, magbahagi, at mag-verify ng mga nabe-verify na kredensyal nang direkta mula sa kanilang mga smartphone, na nagbibigay ng maayos at mapagkakatiwalaang paraan upang mahawakan ang mga kredensyal on the go.",
+    "aboutDetails": "Ginagawa ng CredIssuer Wallet na mapagkakatiwalaan at portable ang data, na nagtatampok ng dalawang pangunahing interface na tumutugon sa magkakaibang pangangailangan ng user, kung saan ang CredIssuer ang isa sa mga ito. Bilang isang mobile-based na wallet app, ang CredIssuer ay isang secure, desentralisadong solusyon na nagbibigay-daan sa mga user na mag-download, mamahala, magbahagi, at mag-verify ng mga nabe-verify na kredensyal nang direkta mula sa kanilang mga smartphone, na nagbibigay ng maayos at mapagkakatiwalaang paraan upang mahawakan ang mga kredensyal on the go.",
     "forMoreDetails": "Para sa karagdagang detalye",
     "clickHere": "Pindutin dito",
     "version": "Bersyon",
-    "poweredBy": "Isang Produktong MOSIP",
-    "copyright": "© 2022 MOSIP. Lahat ng karapatan ay nakalaan."
+    "poweredBy": "Isang Produktong OORU",
+    "copyright": "© 2022 OORU. Lahat ng karapatan ay nakalaan."
   },
   "IssuersScreen": {
     "selectCard": "Pumili ng Card",
@@ -324,7 +324,7 @@
         "five": "Dapat ko bang palaging ibigay ang parehong email ID?",
         "six": "Paano ko maibabalik ang backup na kinuha ko?",
         "seven": "Bakit ako nakakakuha ng error na \"no backup file found\"?",
-        "eight": "Ano ang mangyayari kapag I-clear ko ang Storage ng INJI app mula sa mga setting ng device?"
+        "eight": "Ano ang mangyayari kapag I-clear ko ang Storage ng CredIssuer app mula sa mga setting ng device?"
       },
       "KeyManagement": {
         "one": "Ano ang iba't ibang uri ng mga susi na maaari kong piliin?",
@@ -345,7 +345,7 @@
         "four": "Ang digital na kredensyal ay ang digital na bersyon ng iyong pisikal na Identity card",
         "five": "Maaari kang makakuha ng iba't ibang serbisyo ng Pamahalaan at pribadong gamit ang iyong mga digital na kredensyal.",
         "six": "Ang Nabe-verify na Kredensyal ay isang digitally signed na piraso ng impormasyon na kumakatawan sa isang pahayag na ginawa ng issuer tungkol sa isang paksa at karaniwang may kasamang mga detalye ng demograpiko. ",
-        "seven": "Maaaring ma-download ang mga ID sa INJI Mobile Wallet bilang Mga Nabe-verify na Kredensyal. ",
+        "seven": "Maaaring ma-download ang mga ID sa CredIssuer Mobile Wallet bilang Mga Nabe-verify na Kredensyal. ",
         "eight": "Oo, maaari kang magdagdag ng maramihang mga card sa wallet sa pamamagitan ng pag-click sa pindutang ' ' sa Home page.",
         "nine": "Kapag na-download na ang VC sa iyong wallet, hindi pa ito nakatali sa pagkakakilanlan ng user kung kaya't sinasabi ng iyong VC na Nakabinbin ang Aktibidad. ",
         "ten-a": "1. Kapag matagumpay na na-binded ang VC sa wallet, makikita mo na ito ay Activated for Online login which means itong VC ay magagamit na para sa QR login process. ",
@@ -356,7 +356,7 @@
         "thirteen-b": " Pakitandaan na, maaaring i-download muli ang parehong card.",
         "fourteen": "Sa Home page, mag-click sa 'Kasaysayan' upang tingnan ang mga detalye ng aktibidad ng user.",
         "fifteen": "Ang Android keystore ay nagtataglay ng mahalagang impormasyon tulad ng mga pribadong key para sa mga patunay ng pagkakakilanlan. ",
-        "sixteen": "Ang pagbabahagi ng kredensyal ay tumutukoy sa proseso ng ligtas na paglilipat ng isang nabe-verify na kredensyal ng may hawak mula sa INJI wallet patungo sa umaasa na partido. Nagbibigay-daan ito sa mga indibidwal na patunayan ang kanilang pag-verify ng pagkakakilanlan sa digital na paraan, na pinapadali ang mahusay at pinagkakatiwalaang mga pakikipag-ugnayan sa iba't ibang konteksto.",
+        "sixteen": "Ang pagbabahagi ng kredensyal ay tumutukoy sa proseso ng ligtas na paglilipat ng isang nabe-verify na kredensyal ng may hawak mula sa CredIssuer wallet patungo sa umaasa na partido. Nagbibigay-daan ito sa mga indibidwal na patunayan ang kanilang pag-verify ng pagkakakilanlan sa digital na paraan, na pinapadali ang mahusay at pinagkakatiwalaang mga pakikipag-ugnayan sa iba't ibang konteksto.",
         "seventeen": "Ang pagbabahagi ng VC na may selfie ay nagsasangkot ng karagdagang layer ng seguridad sa proseso ng pagbabahagi ng kredensyal. Bilang karagdagan sa pagpapadala ng nabe-verify na kredensyal, ang user ay kinakailangang magbigay ng selfie (isang larawan ng kanilang sarili) para sa facial verification. Pinapahusay nito ang seguridad at integridad ng paglilipat ng kredensyal sa pamamagitan ng pagtiyak na ang indibidwal na nagpapakita ng kredensyal ay ang lehitimong may-ari. Nakakatulong itong maiwasan ang pagpapanggap at hindi awtorisadong paggamit ng kredensyal, at sa gayon ay madaragdagan ang tiwala at pagiging maaasahan sa mga digital na transaksyon."
       },
       "backup": {
@@ -512,7 +512,7 @@
   },
   "OnboardingOverlay": {
     "stepOneTitle": "Maligayang pagdating!",
-    "stepOneText": "Panatilihin ang iyong digital na kredensyal sa iyo sa lahat ng oras. Tinutulungan ka ng Inji na pamahalaan at gamitin ang mga ito nang epektibo. Upang makapagsimula, magdagdag ng mga card sa iyong profile.",
+    "stepOneText": "Panatilihin ang iyong digital na kredensyal sa iyo sa lahat ng oras. Tinutulungan ka ng CredIssuer na pamahalaan at gamitin ang mga ito nang epektibo. Upang makapagsimula, magdagdag ng mga card sa iyong profile.",
     "stepTwoTitle": "Ligtas na Pagbabahagi",
     "stepTwoText": "Ibahagi ang iyong mga card nang ligtas sa isang walang problemang paraan at mag-avail ng iba't ibang serbisyo.",
     "stepThreeTitle": "Pinagkakatiwalaang Digital Wallet",
@@ -730,8 +730,8 @@
   "ScanScreen": {
     "shareWithSelfie": "Ibahagi sa Selfie",
     "shareWithSelfieQrLogin": "Pag-login sa QR Code",
-    "shareWithSelfieMessage": "Upang maibahagi ang iyong Verifiable Credentials, ligtas naming ibe-verify ang iyong pagkakakilanlan gamit ang face authentication. Sa pagpapatuloy, pumapayag kang gamitin ng Inji ang iyong camera para sa layuning ito. Ang iyong facial data ay gagamitin lamang para sa pag-verify at hindi ibabahagi sa anumang third party.",
-    "shareWithSelfieMessageQrLogin": "Upang ma-access ang portal, kakailanganin mong ibahagi ang iyong Mga Na-verify na Kredensyal at secure na i-verify ang iyong pagkakakilanlan gamit ang pag-verify sa mukha. Sa pagpapatuloy, pumapayag ka sa Inji na gamitin ang iyong camera para sa layuning ito. \n\n Gagamitin lang ang iyong facial data para sa pag-verify at hindi ibabahagi. Pagkatapos ng matagumpay na pag-verify, maaari mong piliin kung aling mga detalye ang ibabahagi.",
+    "shareWithSelfieMessage": "Upang maibahagi ang iyong Verifiable Credentials, ligtas naming ibe-verify ang iyong pagkakakilanlan gamit ang face authentication. Sa pagpapatuloy, pumapayag kang gamitin ng CredIssuer ang iyong camera para sa layuning ito. Ang iyong facial data ay gagamitin lamang para sa pag-verify at hindi ibabahagi sa anumang third party.",
+    "shareWithSelfieMessageQrLogin": "Upang ma-access ang portal, kakailanganin mong ibahagi ang iyong Mga Na-verify na Kredensyal at secure na i-verify ang iyong pagkakakilanlan gamit ang pag-verify sa mukha. Sa pagpapatuloy, pumapayag ka sa CredIssuer na gamitin ang iyong camera para sa layuning ito. \n\n Gagamitin lang ang iyong facial data para sa pag-verify at hindi ibabahagi. Pagkatapos ng matagumpay na pag-verify, maaari mong piliin kung aling mga detalye ang ibabahagi.",
     "ConfirmButton": "Naiintindihan ko",
     "doNotAskMessage": "Huwag mo na akong tanungin",
     "noShareableVcs": "Walang available na card para sa pagbabahagi.",
@@ -1044,7 +1044,7 @@
   },
   "AccountSelection": {
     "backupProcessInfo": "Ilang hakbang ka na lang mula sa pag-back up ng iyong data",
-    "cloudInfo": "Upang simulan ang pag-backup ng data, mangyaring mag-tap sa button na `Magpatuloy` upang i-link ang iyong {{driveName}} sa Inji.",
+    "cloudInfo": "Upang simulan ang pag-backup ng data, mangyaring mag-tap sa button na `Magpatuloy` upang i-link ang iyong {{driveName}} sa CredIssuer.",
     "googleDriveTitle": "Google Drive",
     "loadingSubtitle": "Naglo-load...",
     "proceed": "Magpatuloy",
@@ -1056,7 +1056,7 @@
     "backupProgressState": "Isinasagawa ang pag-backup...",
     "lastBackupDetails": "Mga Detalye ng Huling Backup",
     "backupInProgress": "Maaari mo pa ring gamitin ang application habang isinasagawa ang pag-backup ng data. Ang pagsasara ng app ay magwawakas sa proseso ng pag-backup ng data.",
-    "noBackup": "I-backup ang iyong Data sa {{driveName}}. Maaari mong ibalik ang mga ito kapag na-install mong muli ang INJI.",
+    "noBackup": "I-backup ang iyong Data sa {{driveName}}. Maaari mong ibalik ang mga ito kapag na-install mong muli ang CredIssuer.",
     "storage": "Ang backup ay maiimbak sa {{driveName}} na nauugnay sa iyong napiling {{accountType}} account.",
     "backup": "Backup",
     "size": "Size: ",

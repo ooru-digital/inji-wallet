@@ -64,7 +64,7 @@ export default new FileStorage();
 
 /**
  * iOS: /var/mobile/Containers/Data/Application/196A05AD-6B11-403D-BA2D-6DC1F30075E1/Documents/inji/VC/<filename>
- * android: /data/user/0/io.mosip.residentapp/files/inji/VC/<filename>
+ * android: /data/user/0/io.ooru.credissuerwallet/files/inji/VC/<filename>
  * These paths are coming from DocumentDirectoryPath in react-native-fs.
  */
 

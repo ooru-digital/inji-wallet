@@ -35,6 +35,22 @@ public class MainActivity extends ReactActivity {
 
   private static final int REQUEST_CODE_REQUIRED_PERMISSIONS = 1;
 
+  private static String[] allRequiredPermissions() {
+    if (Build.VERSION.SDK_INT >= 31) {
+      java.util.ArrayList<String> list = new java.util.ArrayList<>();
+      java.util.Collections.addAll(list, REQUIRED_PERMISSIONS);
+      list.add(Manifest.permission.BLUETOOTH_CONNECT);
+      list.add(Manifest.permission.BLUETOOTH_ADVERTISE);
+      // Dual-row / central-client DeviceEngagement needs scan so the wallet can find the reader.
+      list.add(Manifest.permission.BLUETOOTH_SCAN);
+      if (Build.VERSION.SDK_INT >= 33) {
+        list.add(Manifest.permission.POST_NOTIFICATIONS);
+      }
+      return list.toArray(new String[0]);
+    }
+    return REQUIRED_PERMISSIONS;
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     // Set the theme to AppTheme BEFORE onCreate to support
@@ -88,8 +104,8 @@ public class MainActivity extends ReactActivity {
     super.onStart();
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      if (!hasPermissions(this, REQUIRED_PERMISSIONS)) {
-        this.requestPermissions(REQUIRED_PERMISSIONS, REQUEST_CODE_REQUIRED_PERMISSIONS);
+      if (!hasPermissions(this, allRequiredPermissions())) {
+        this.requestPermissions(allRequiredPermissions(), REQUEST_CODE_REQUIRED_PERMISSIONS);
       }
     }
     // TODO Commenting this only for now if permission is not working for other Android 11 manifacturer/devices

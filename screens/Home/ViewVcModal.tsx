@@ -55,12 +55,19 @@ export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
 
   useEffect(() => {
     async function processVC() {
-      if (controller.credential) {
+      if (!controller.credential) {
+        return;
+      }
+      try {
         const vcData = await VCProcessor.processForRendering(
           controller.credential,
           controller.verifiableCredentialData.format,
         );
         setVerifiableCredential(vcData);
+      } catch (e) {
+        console.error('[ViewVcModal] processForRendering failed', e);
+        const fallback = controller.credential.processedCredential ?? null;
+        setVerifiableCredential(fallback);
       }
     }
 
@@ -215,6 +222,7 @@ export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
           svgTemplate={svgTemplate}
           svgRendererError={svgRendererError}
           loadingSvg={loadingSvg}
+          onCloseDetails={handleModalDismiss}
         />
       )}
 

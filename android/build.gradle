@@ -1,14 +1,47 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+// SnapKYC face-liveness AARs live on a private Artifactory. Credentials come from an untracked
+// android/artifactory.local.properties, falling back to ARTIFACTORY_USERNAME/PASSWORD for CI.
+def artifactoryProps = new Properties()
+def artifactoryFile = rootProject.file("artifactory.local.properties")
+if (artifactoryFile.exists()) artifactoryProps.load(new FileInputStream(artifactoryFile))
+artifactoryProps.each { key, value -> rootProject.ext.set(key, value) }
+
+def snapKycArtifactoryUsername = {
+    artifactoryProps.getProperty("artifactoryUsername")
+        ?: System.getenv("ARTIFACTORY_USERNAME")
+        ?: ""
+}
+def snapKycArtifactoryPassword = {
+    artifactoryProps.getProperty("artifactoryPassword")
+        ?: System.getenv("ARTIFACTORY_PASSWORD")
+        ?: ""
+}
+def biochqUseLocalMaven =
+    (artifactoryProps.getProperty("biochqUseLocalMaven") ?: "false").toBoolean()
+// Defaults point at the public Nexus, which needs no VPN. The old internal host
+// (http://biometrics.credissuer.com:8081) resolved to an RFC1918 address and so
+// only built from inside the corporate network; it still works if set explicitly.
+def artifactorySnapshotUrl =
+    artifactoryProps.getProperty("artifactorySnapshotUrl")
+        ?: "https://nexus-biochq.credissuer.com/repository/maven-snapshots/"
+def artifactoryReleaseUrl =
+    artifactoryProps.getProperty("artifactoryReleaseUrl")
+        ?: "https://nexus-biochq.credissuer.com/repository/maven-releases/"
+def biochqLocalMavenPath =
+    artifactoryProps.getProperty("biochqLocalMavenPath")
+        ?: "${rootProject.projectDir}/local-maven"
+
 buildscript {
     ext {
-        buildToolsVersion = "35.0.0"
-        minSdkVersion = 24
-        compileSdkVersion = 35
-        targetSdkVersion = 35
-        // We use NDK 23 which has both M1 support and is the side-by-side NDK version from AGP.
-        ndkVersion = "21.4.7075529"
-        kotlinVersion = "1.9.22"
+        buildToolsVersion = "36.0.0"
+        minSdkVersion = 26
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        ndkVersion = "29.0.14206865"
+        // Kotlin 2.x is required by Expo 53: expo-modules-core applies
+        // `org.jetbrains.kotlin.plugin.compose`, which only exists for Kotlin 2.0+.
+        kotlinVersion = "2.0.21"
     }
     repositories {
         google()
@@ -16,7 +49,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.4.0")
+        // compileSdk 36 requires AGP 8.9+; React Native 0.79 also needs 8.7 or newer.
+        classpath("com.android.tools.build:gradle:8.9.2")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.3")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
@@ -27,15 +61,53 @@ buildscript {
 // @generated begin expo-camera-import - expo prebuild (DO NOT MODIFY) sync-f244f4f3d8bf7229102e8f992b525b8602c74770
 def expoCameraMavenPath = new File(["node", "--print", "require.resolve('expo-camera/package.json')"].execute(null, rootDir).text.trim(), "../android/maven")
 allprojects { repositories {
+    mavenLocal()
     maven{url("https://central.sonatype.com/repository/maven-snapshots/")}
     maven { url(expoCameraMavenPath) }
     mavenCentral()
     maven {url("https://repo.danubetech.com/repository/maven-public/")}
+    if (biochqUseLocalMaven) {
+        maven {
+            url uri(biochqLocalMavenPath)
+            content { includeGroup "io.ooru.biometrics" }
+        }
+    } else {
+        // SnapKYC deps are -SNAPSHOT, so both repos are declared. `includeGroup` keeps every other
+        // dependency off this credentialed host. Cleartext is permitted only when the configured
+        // URL is actually plain http, so the default https Nexus is never downgraded.
+        maven {
+            allowInsecureProtocol = artifactorySnapshotUrl.startsWith("http://")
+            url artifactorySnapshotUrl
+            credentials {
+                username = snapKycArtifactoryUsername()
+                password = snapKycArtifactoryPassword()
+            }
+            content {
+                includeGroup "io.ooru.biometrics"
+            }
+        }
+        maven {
+            allowInsecureProtocol = artifactoryReleaseUrl.startsWith("http://")
+            url artifactoryReleaseUrl
+            credentials {
+                username = snapKycArtifactoryUsername()
+                password = snapKycArtifactoryPassword()
+            }
+            content {
+                includeGroup "io.ooru.biometrics"
+            }
+        }
+    }
     configurations.all {
         resolutionStrategy {
-            // use 0.9.0 to fix crash on Android 11
             cacheChangingModulesFor 0, 'seconds'
-            force "com.facebook.soloader:soloader:0.9.0+"
+            // Was forced to 0.9.0 to fix a crash on Android 11, from the RN 0.74 era. RN 0.79.6's
+            // own version catalog wants 0.12.1 (react-native/gradle/libs.versions.toml) — merged-SO
+            // support (ExternalSoMapping/OpenSourceMergedSoMapping, needed since new architecture's
+            // Android-autolinking.cmake sets REACTNATIVE_MERGED_SO=true) doesn't exist before
+            // ~0.10.5, so keeping the old pin here breaks MainApplication's SoLoader.init at
+            // compile time. Matching RN's own required version instead of an arbitrary bump.
+            force "com.facebook.soloader:soloader:0.12.1"
             force "com.apicatalog:titanium-json-ld:1.3.1"
 
         }
@@ -43,3 +115,23 @@ allprojects { repositories {
     }
 }
 // @generated end expo-camera-import
+
+// React Native's Gradle plugin hardcodes `https://www.jitpack.io` and injects it into every
+// subproject (see @react-native/gradle-plugin DependencyUtils.kt:49 `mavenRepoFromUrl(...)`).
+// That host currently accepts the TCP connection and completes the TLS handshake but never
+// answers, so any artifact that has to come from JitPack — e.g.
+// com.github.multiformats:java-multibase, pulled in transitively — fails the build with
+// "Read timed out". The canonical host without the `www.` prefix serves the same artifacts
+// immediately.
+//
+// `repositories.all` is a live hook, so this also rewrites repositories added later by the
+// React Native plugin, and it survives `npm install` (unlike patching node_modules).
+// Remove once React Native ships a fixed URL upstream, or JitPack restores the `www.` host.
+allprojects {
+    repositories.all { repo ->
+        if (repo instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository
+                && repo.url.toString().startsWith("https://www.jitpack.io")) {
+            repo.url = uri("https://jitpack.io")
+        }
+    }
+}

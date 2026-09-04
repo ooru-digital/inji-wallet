@@ -184,11 +184,27 @@ export const openID4VPActions = (model: any) => {
 
     setAuthenticationError: model.assign({
       error: (_, event) => {
+        // Logs the error itself, not just event.data.userInfo. userInfo/code are only populated
+        // when the rejection comes from the native module's own Promise.reject — anything thrown
+        // on the JS side of OpenID4VP.authenticateVerifier (the InjiOpenID4VP native module being
+        // absent, initSdk/getWalletMetadata throwing, or JSON.parse failing on the SDK's response)
+        // is an ordinary Error with neither field, which is how this reported a bare "undefined"
+        // and discarded the real cause. Returning undefined from here also put undefined into
+        // context.error, which is what useOvpErrorModal's error.includes(...) then crashed on.
+        const data: any = event.data;
         console.error(
-          'Error occurred during the authenticateVerifier call :',
-          event.data.userInfo,
+          'Error occurred during the authenticateVerifier call:',
+          '\n  name:', data?.name,
+          '\n  message:', data?.message,
+          '\n  code:', data?.code,
+          '\n  userInfo:', data?.userInfo,
+          '\n  stack:', data?.stack,
         );
-        return event.data.code;
+        return (
+          data?.code ??
+          data?.message ??
+          (data != null ? String(data) : 'authenticateVerifier failed')
+        );
       },
     }),
 
