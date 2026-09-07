@@ -31,6 +31,7 @@ import {CopilotProvider} from 'react-native-copilot';
 import {CopilotTooltip} from './components/CopilotTooltip';
 import {Theme} from './components/ui/styleUtils';
 import {selectAppSetupComplete} from './machines/auth';
+import {COPILOT_ANDROID_STATUS_BAR_VISIBLE} from './shared/constants';
 import {roundedSvgMaskPath} from './shared/copilotMask';
 
 const {RNSecureKeystoreModule} = NativeModules;
@@ -169,7 +170,9 @@ export default function App() {
     <GlobalContextProvider>
       <CopilotProvider
         stopOnOutsideClick
-        androidStatusBarVisible
+        // Version-dependent — see COPILOT_ANDROID_STATUS_BAR_VISIBLE. Keep in sync with
+        // MainLayout's provider.
+        androidStatusBarVisible={COPILOT_ANDROID_STATUS_BAR_VISIBLE}
         tooltipComponent={CopilotTooltip}
         tooltipStyle={Theme.Styles.copilotStyle}
         stepNumberComponent={() => null}

@@ -188,7 +188,31 @@ export const INTRO_SLIDER_LOGO_MARGIN = Dimensions.get('screen').width * 0.45;
 export const COPILOT_PRE_FINAL_STEP = 5;
 export const COPILOT_FINAL_STEP = 6;
 export const COPILOT_HEIGHT = 0.22;
+
 export const KEY_MANAGEMENT_STEP = 7;
+
+/**
+ * Value for CopilotProvider's `androidStatusBarVisible`, which decides whether the tour
+ * overlay subtracts the status bar height from a measured step (`true` = don't subtract).
+ *
+ * The right answer depends on the OS version, which is why the highlight was landing
+ * correctly on some phones and a status bar's height too low on others:
+ *
+ * - Steps are located with measure(), whose pageY is relative to the React root view.
+ * - The overlay is drawn in an RN <Modal> — an Android Dialog window that always starts
+ *   *below* the status bar (the library never sets statusBarTranslucent on it).
+ * - Android 15 (API 35) enforces edge-to-edge for apps targeting SDK 35+, and we target 36.
+ *   So from API 35 the activity draws *under* the status bar and pageY includes it, while
+ *   the Dialog still doesn't — the two origins disagree by exactly the status bar height,
+ *   and the subtraction is needed. Below API 35 there's no enforcement, both start below
+ *   the status bar, and subtracting would push every highlight that much too high.
+ *
+ * Deliberately derived from the platform rather than a measured pixel offset, so it stays
+ * correct on any device and for any status bar height. Non-Android is unaffected: the
+ * library only applies this branch on Android.
+ */
+export const COPILOT_ANDROID_STATUS_BAR_VISIBLE =
+  Platform.OS !== 'android' || (Platform.Version as number) < 35;
 export const copilotTestID = {
   '1': 'help',
   '2': 'download',

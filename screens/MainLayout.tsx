@@ -12,7 +12,7 @@ import {GlobalContext} from '../shared/GlobalContext';
 import {ScanEvents} from '../machines/bleShare/scan/scanMachine';
 import testIDProps from '../shared/commonUtil';
 import {SvgImage} from '../components/ui/svg';
-import {isIOS} from '../shared/constants';
+import {COPILOT_ANDROID_STATUS_BAR_VISIBLE, isIOS} from '../shared/constants';
 import {CopilotProvider} from 'react-native-copilot';
 import {View} from 'react-native';
 import {CopilotTooltip} from '../components/CopilotTooltip';
@@ -55,7 +55,10 @@ export const MainLayout: React.FC = () => {
   return (
     <CopilotProvider
       stopOnOutsideClick
-      androidStatusBarVisible
+      // Whether the status bar correction is needed depends on the Android version —
+      // see COPILOT_ANDROID_STATUS_BAR_VISIBLE. Not a fixed true/false: either constant
+      // is wrong on half the devices.
+      androidStatusBarVisible={COPILOT_ANDROID_STATUS_BAR_VISIBLE}
       tooltipComponent={CopilotTooltip}
       tooltipStyle={Theme.Styles.copilotStyle}
       stepNumberComponent={() => null}
