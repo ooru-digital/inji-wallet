@@ -22,6 +22,16 @@ class OpenID4VP {
 
   private static async getInstance(): Promise<OpenID4VP> {
     if (!OpenID4VP.instance) {
+      // Checked explicitly so an absent native module reports itself, rather than surfacing as
+      // "Cannot read property 'initSdk' of undefined" from the constructor below — an error with
+      // no .code/.userInfo, which is exactly the shape that reached setAuthenticationError as a
+      // bare "undefined" with nothing in logcat (the module's own Log.d never runs either).
+      if (NativeModules.InjiOpenID4VP == null) {
+        throw new Error(
+          'InjiOpenID4VP native module is not available. Registered native modules: ' +
+            Object.keys(NativeModules).sort().join(', '),
+        );
+      }
       const walletMetadataConfig =
         (await getWalletMetadata()) || walletMetadata;
       OpenID4VP.instance = new OpenID4VP(walletMetadataConfig);
@@ -33,16 +43,37 @@ class OpenID4VP {
     urlEncodedAuthorizationRequest: string,
     trustedVerifiersList: any,
   ) {
-    const shouldValidateClient = await isClientValidationRequired();
-    const openID4VP = await OpenID4VP.getInstance();
+    // Each step is attributed, because a throw anywhere in here previously arrived at
+    // setAuthenticationError as an indistinguishable "undefined". getInstance() in particular
+    // runs getAllConfigurations() + JSON.parse(config.walletMetadata) and calls the fire-and-forget
+    // initSdk, none of which is otherwise visible from the failure.
+    let step = 'isClientValidationRequired';
+    try {
+      const shouldValidateClient = await isClientValidationRequired();
 
-    const authenticationResponse =
-      await openID4VP.InjiOpenID4VP.authenticateVerifier(
-        urlEncodedAuthorizationRequest,
-        trustedVerifiersList,
-        shouldValidateClient,
+      step = 'getInstance (walletMetadata / initSdk)';
+      const openID4VP = await OpenID4VP.getInstance();
+
+      step = 'InjiOpenID4VP.authenticateVerifier (native)';
+      const authenticationResponse =
+        await openID4VP.InjiOpenID4VP.authenticateVerifier(
+          urlEncodedAuthorizationRequest,
+          trustedVerifiersList,
+          shouldValidateClient,
+        );
+
+      step = 'JSON.parse of native response';
+      return JSON.parse(authenticationResponse);
+    } catch (e: any) {
+      console.error(
+        `[OpenID4VP] authenticateVerifier failed at step: ${step}`,
+        '\n  name:', e?.name,
+        '\n  message:', e?.message,
+        '\n  code:', e?.code,
+        '\n  stack:', e?.stack,
       );
-    return JSON.parse(authenticationResponse);
+      throw e;
+    }
   }
 
   static async prepareCredentialsForVPSharing(

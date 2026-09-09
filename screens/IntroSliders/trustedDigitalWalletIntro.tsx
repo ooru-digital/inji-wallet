@@ -60,7 +60,7 @@ export const StaticHomeScreen: React.FC = () => {
           borderBottomWidth: 1,
           borderBottomColor: Theme.Colors.lightGreyBackgroundColor,
         }}>
-        {SvgImage.InjiLogo({height: 60, width: 120})}
+        {SvgImage.InjiLogo({height: 44, width: 44})}
         <HelpScreen
           isDisabled={true}
           source={'Inji'}

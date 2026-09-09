@@ -1,0 +1,6 @@
+<resources>
+  <!-- The SnapKYC faceliveness AAR ships a localized app_name ("BioChq ...") for this locale,
+       which would otherwise override the app_name resValue (that only covers the default
+       locale) and rename the launcher icon. Pin the brand name here. -->
+  <string name="app_name" translatable="false">CredIssuer Wallet</string>
+</resources>

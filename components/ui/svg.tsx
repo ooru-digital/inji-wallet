@@ -1,5 +1,6 @@
-import React from 'react';
-import Svg, {Image} from 'react-native-svg';
+import React, {useState} from 'react';
+import {Image as RNImage} from 'react-native';
+import {SvgUri} from 'react-native-svg';
 import {Theme} from './styleUtils';
 import Home from '../../assets/Home_tab_icon.svg';
 import History from '../../assets/History_tab_icon.svg';
@@ -57,7 +58,7 @@ import CopyIcon from '../../assets/file_copy.svg';
 import StarIcon from '../../assets/credentialRegestryStar.svg';
 import SelectedCheckBox from '../../assets/Selected_Check_Box.svg';
 import ReverifyIcon from '../../assets/Reverify.svg';
-import Logomark from '../../assets/Logomark.svg';
+import Logomark from '../../assets/Ooru-icon.svg';
 import StatusValidIcon from '../../assets/Status_Valid_Icon.svg';
 import StatusPendingIcon from '../../assets/Status_Pending_Icon.svg';
 import StatusExpiredIcon from '../../assets/Status_Expired_Icon.svg';
@@ -66,8 +67,8 @@ import WalletActivatedIcon from '../../assets/Wallet_Activated_Icon.svg';
 import WalletUnActivatedIcon from '../../assets/Wallet_UnActivated_Icon.svg';
 import WalletActivatedLargeIcon from '../../assets/Wallet_Activated_Large_Icon.svg';
 import WalletUnActivatedLargeIcon from '../../assets/Wallet_UnActivated_Large_Icon.svg';
-import DoneIcon from "../../assets/done-icon.svg"
-import CircleArrowRight from "../../assets/arrow-circle-broken-right.svg"
+import DoneIcon from '../../assets/done-icon.svg';
+import CircleArrowRight from '../../assets/arrow-circle-broken-right.svg';
 
 export class SvgImage {
   static selectedCheckBox() {
@@ -108,6 +109,12 @@ export class SvgImage {
   }
 
   static defaultIssuerLogo(defaultLogo: any) {
+    // Real issuers/credential types with no logo in their display data pass
+    // no defaultLogo — rendering `<undefined />` here would throw and take
+    // the whole list item down, so just show nothing instead.
+    if (!defaultLogo) {
+      return null;
+    }
     const DefaultLogo = defaultLogo;
     return <DefaultLogo />;
   }
@@ -310,7 +317,12 @@ export class SvgImage {
 
   static InjiSmallLogo() {
     const InjiLogoSmall = Theme.InjiLogoSmall;
-    return <InjiLogoSmall {...testIDProps('injiSmallLogo')} />;
+    // Theme.InjiLogoSmall's own viewBox is 1599x1599 (unlike the old flag mark it replaced,
+    // which was already a compact 64x55), so it needs an explicit size here or it renders
+    // at native scale and fills the header.
+    return (
+      <InjiLogoSmall width={48} height={48} {...testIDProps('injiSmallLogo')} />
+    );
   }
 
   static ProgressIcon() {
@@ -377,20 +389,8 @@ export class SvgImage {
   }
 
   static IssuerIcon(issuer: IssuerProps) {
-    return (
-      <Svg
-        width="40"
-        height="40"
-        {...testIDProps(`issuerIcon-${issuer.testID}`)}>
-        <Image
-          href={getIssuerLogo(issuer.displayDetails)}
-          x="0"
-          y="0"
-          height="40"
-          width="40"
-        />
-      </Svg>
-    );
+    const {uri} = getIssuerLogo(issuer.displayDetails);
+    return <IssuerLogo uri={uri} testID={`issuerIcon-${issuer.testID}`} />;
   }
 
   static WarningLogo() {
@@ -656,7 +656,12 @@ export class SvgImage {
     );
   }
 
-  static doneIcon(color = Theme.Colors.disabled, height = 16, width = 16, testID = 'doneIcon') {
+  static doneIcon(
+    color = Theme.Colors.disabled,
+    height = 16,
+    width = 16,
+    testID = 'doneIcon',
+  ) {
     return (
       <DoneIcon
         color={color}
@@ -664,10 +669,15 @@ export class SvgImage {
         height={height}
         width={width}
       />
-    )
+    );
   }
 
-  static circleArrowRight(color = Theme.Colors.disabled, height = 16, width = 16, testID = 'circleArrowRightIcon') {
+  static circleArrowRight(
+    color = Theme.Colors.disabled,
+    height = 16,
+    width = 16,
+    testID = 'circleArrowRightIcon',
+  ) {
     return (
       <CircleArrowRight
         width={width}
@@ -675,12 +685,63 @@ export class SvgImage {
         color={color}
         {...testIDProps(testID)}
       />
-    )
+    );
   }
 }
 
 function getIssuerLogo(props: displayType) {
   return {uri: props.logo.url || props.logo.uri};
+}
+
+function isSvgLogoUrl(uri: string): boolean {
+  if (!uri) return false;
+  // Strip query params (e.g. presigned S3 URLs) before checking the extension.
+  const path = uri.split('?')[0].split('#')[0];
+  return path.toLowerCase().endsWith('.svg');
+}
+
+interface IssuerLogoProps {
+  uri: string;
+  testID: string;
+}
+
+// Renders whatever logo the server sent for an issuer/credential type — there's
+// no fixed set to hardcode against, this just has to cope with any URL, in any
+// format, for however many issuers/credential types came back.
+function IssuerLogo({uri, testID}: IssuerLogoProps) {
+  const [failedToLoad, setFailedToLoad] = useState(false);
+
+  if (!uri || failedToLoad) {
+    return null;
+  }
+
+  // Logos may be served as a raster image (png/jpg) or as a vector .svg file.
+  // `Image` inside an `Svg` can only rasterize the former — a remote .svg
+  // href silently draws nothing — so true SVG URLs are routed through
+  // `SvgUri`, which fetches and parses the markup instead. Both branches wire
+  // up onError so a broken/unreachable logo degrades to no icon instead of
+  // an image tag that's permanently, silently blank with no way to tell why.
+  if (isSvgLogoUrl(uri)) {
+    return (
+      <SvgUri
+        width="40"
+        height="40"
+        uri={uri}
+        onError={() => setFailedToLoad(true)}
+        {...testIDProps(testID)}
+      />
+    );
+  }
+
+  return (
+    <RNImage
+      source={{uri}}
+      style={{width: 40, height: 40}}
+      resizeMode="contain"
+      onError={() => setFailedToLoad(true)}
+      {...testIDProps(testID)}
+    />
+  );
 }
 
 interface LogoProps {

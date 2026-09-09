@@ -1,0 +1,27 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "id": "@id",
+    "schema": "https://schema.org/",
+    "NationalIdentityCredential": {
+      "@id": "iri:3425",
+      "@context": {
+        "@version": 1.1,
+        "id": "@id",
+        "dob": "schema:Text",
+        "doi": "schema:Text",
+        "sex": "schema:Text",
+        "email": "schema:Text",
+        "photo": "schema:Text",
+        "surName": "schema:Text",
+        "idNumber": "schema:Text",
+        "mrz_line_1": "schema:Text",
+        "mrz_line_2": "schema:Text",
+        "otherNames": "schema:Text",
+        "nationality": "schema:Text",
+        "dateOfExpiry": "schema:Text"
+      }
+    }
+  }
+}

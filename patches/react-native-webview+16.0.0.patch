@@ -1,0 +1,40 @@
+diff --git a/node_modules/react-native-webview/src/RNCWebViewNativeComponent.ts b/node_modules/react-native-webview/src/RNCWebViewNativeComponent.ts
+index 8d44e74..3c243db 100644
+--- a/node_modules/react-native-webview/src/RNCWebViewNativeComponent.ts
++++ b/node_modules/react-native-webview/src/RNCWebViewNativeComponent.ts
+@@ -73,7 +73,16 @@ export type WebViewNavigationEvent = Readonly<{
+   canGoBack: boolean;
+   canGoForward: boolean;
+   lockIdentifier: Double;
+-  navigationType: 'click' | 'formsubmit' | 'backforward' | 'reload' | 'formresubmit' | 'other';
++  // Widened from a string union to plain `string`, deliberately. RN's codegen event-emitter
++  // generator (GenerateEventEmitterCpp.js) has no case for StringEnumTypeAnnotation inside an
++  // event payload — only inside props, where it's the normal/common case and works fine — so
++  // codegen throws "Received invalid event property type StringEnumTypeAnnotation" the moment it
++  // reaches this field. Confirmed as an RN 0.78+ codegen regression (PR #48343), not something
++  // wrong with react-native-webview itself: facebook/react-native#49566,
++  // react-native-webview/react-native-webview#3767. The native side still emits one of
++  // 'click' | 'formsubmit' | 'backforward' | 'reload' | 'formresubmit' | 'other' — only the
++  // compile-time type codegen sees is widened, so nothing about the actual value changes.
++  navigationType: string;
+   mainDocumentURL?: string;
+ }>;
+ 
+@@ -84,7 +93,16 @@ export type ShouldStartLoadRequestEvent = Readonly<{
+   canGoBack: boolean;
+   canGoForward: boolean;
+   lockIdentifier: Double;
+-  navigationType: 'click' | 'formsubmit' | 'backforward' | 'reload' | 'formresubmit' | 'other';
++  // Widened from a string union to plain `string`, deliberately. RN's codegen event-emitter
++  // generator (GenerateEventEmitterCpp.js) has no case for StringEnumTypeAnnotation inside an
++  // event payload — only inside props, where it's the normal/common case and works fine — so
++  // codegen throws "Received invalid event property type StringEnumTypeAnnotation" the moment it
++  // reaches this field. Confirmed as an RN 0.78+ codegen regression (PR #48343), not something
++  // wrong with react-native-webview itself: facebook/react-native#49566,
++  // react-native-webview/react-native-webview#3767. The native side still emits one of
++  // 'click' | 'formsubmit' | 'backforward' | 'reload' | 'formresubmit' | 'other' — only the
++  // compile-time type codegen sees is widened, so nothing about the actual value changes.
++  navigationType: string;
+   mainDocumentURL?: string;
+   isTopFrame: boolean;
+ }>;

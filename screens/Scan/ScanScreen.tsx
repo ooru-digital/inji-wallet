@@ -26,9 +26,15 @@ import {VCShareFlowType} from '../../shared/Utils';
 import {APP_EVENTS} from '../../machines/app';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {useOvpErrorModal} from '../../shared/hooks/useOvpErrorModal';
+import {useScanStackScreenSwitcher} from './useScanStackScreenSwitcher';
 
 export const ScanScreen: React.FC = () => {
   const {t} = useTranslation('ScanScreen');
+  // Drives ScanStack's own navigate() between ScanScreen/SendVcScreen/SendVPScreen — has to be
+  // called from a screen *of* ScanStack (this one) rather than from ScanLayoutController (called
+  // from ScanLayout, above ScanStack.Navigator) for useNavigation() to resolve to this stack
+  // directly. See useScanStackScreenSwitcher.ts for the full reasoning.
+  useScanStackScreenSwitcher();
   const scanScreenController = useScanScreen();
   const sendVcScreenController = useSendVcScreen();
   const sendVPScreenController = useSendVPScreen();

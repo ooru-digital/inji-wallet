@@ -15,7 +15,12 @@ import {getItem} from './machines/store';
 import {LocalizedField} from './machines/VerifiableCredential/VCMetaMachine/vc';
 
 const resources = {en, fil, ar, hi, kn, ta};
-const locale = Localization.locale;
+// Localization.locale (a single BCP-47 string) was removed in expo-localization's SDK 53 API in
+// favor of getLocales(), which returns the device's ranked locale list. getLocales() can in
+// principle return [] (documented edge case, not just a type nicety), so this falls back to
+// 'en-US' to preserve the old API's guarantee of always returning a non-empty string —
+// getLanguageCode() below has no undefined-handling of its own.
+const locale = Localization.getLocales()[0]?.languageTag ?? 'en-US';
 const languageCodeMap = {} as {[key: string]: string};
 
 export const SUPPORTED_LANGUAGES = {
@@ -37,15 +42,24 @@ i18next
     supportedLngs: Object.keys(SUPPORTED_LANGUAGES),
   })
   .then(async () => {
+    // languageCodeMap is a plain lookup built from the fixed SUPPORTED_LANGUAGES list, so it has
+    // no dependency on changeLanguage. Previously it was only populated as a side effect of one of
+    // the two changeLanguage calls below, leaving it empty ({}) whenever neither fired — and then
+    // getValueForCurrentLanguage/getClientNameForCurrentLanguage always missed and fell back to
+    // the default value instead of the current language's.
+    populateLanguageCodeMap();
+
     const language = await getItem('language', null, '');
 
-    if (language !== i18next.language) {
+    // On a fresh install nothing is stored yet and getItem's default (null) comes back, so
+    // `language !== i18next.language` was always true and this fired `changeLanguage(null)` —
+    // a meaningless language change, since there is no preference to apply yet. Only apply a
+    // *stored* preference.
+    if (language && language !== i18next.language) {
       i18next.changeLanguage(language);
-      populateLanguageCodeMap();
     }
     if (!Object.keys(SUPPORTED_LANGUAGES).includes(i18next.language)) {
       i18next.changeLanguage('en');
-      populateLanguageCodeMap();
     }
   });
 

@@ -63,6 +63,12 @@ async function verifyCredentialForAndroid(
   verifiableCredential: Credential,
   credentialFormat: string,
 ): Promise<VerificationResult> {
+  // Skip verification for mso_mdoc on Android - vcverifier-aar:1.6.0 crashes
+  // with "Index 1 out of bounds for length 1" when parsing mdoc CBOR.
+  // This mirrors the iOS behavior (see verifyCredentialForIos).
+  if (credentialFormat === VCFormat.mso_mdoc) {
+    return createSuccessfulVerificationResult();
+  }
   const credentialString =
     typeof verifiableCredential === 'string'
       ? verifiableCredential

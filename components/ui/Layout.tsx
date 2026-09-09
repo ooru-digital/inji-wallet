@@ -8,6 +8,7 @@ import {
   ScrollView,
   RefreshControlProps,
   SafeAreaView,
+  ViewProps,
 } from 'react-native';
 import {Theme, ElevationLevel, Spacing} from './styleUtils';
 import testIDProps from '../../shared/commonUtil';
@@ -51,11 +52,15 @@ function createLayout(
         <ScrollView
           {...testIDProps(props.testID)}
           contentContainerStyle={styles}
+          onLayout={props.onLayout}
           refreshControl={props.refreshControl}>
           {props.children}
         </ScrollView>
     ) : (
-      <ViewType {...testIDProps(props.testID)} style={styles}>
+      <ViewType
+        {...testIDProps(props.testID)}
+        style={styles}
+        onLayout={props.onLayout}>
         {props.children}
       </ViewType>
     );
@@ -93,5 +98,12 @@ interface LayoutProps {
   pY?: number | string | undefined;
   pX?: number | string | undefined;
   safe?: boolean;
+  /**
+   * Forwarded to the underlying View/ScrollView. Only listed props reach it — this
+   * component never spreads the rest — so anything not declared here is silently
+   * dropped rather than rejected. onLayout in particular used to fail that way: passing
+   * it looked correct and simply never fired.
+   */
+  onLayout?: ViewProps['onLayout'];
   children: React.ReactNode;
 }

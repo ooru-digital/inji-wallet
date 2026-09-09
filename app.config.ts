@@ -2,10 +2,10 @@ import {APPLICATION_THEME} from 'react-native-dotenv';
 
 const adaptiveImage =
   APPLICATION_THEME?.toLowerCase() === 'purple'
-    ?  ('./assets/images/png/purpleSplashScreen.png')
-      : ('./assets/images/png/SplashScreen.png');
+    ? './assets/images/png/purpleSplashScreen.png'
+    : './assets/images/png/SplashScreen.png';
 export default {
-  name: 'Inji',
+  name: 'CredIssuer Wallet',
   slug: 'inji',
   version: '1.0.0',
   orientation: 'portrait',
@@ -25,7 +25,7 @@ export default {
     supportsTablet: true,
   },
   android: {
-    package: 'io.mosip.residentapp',
+    package: 'io.ooru.credissuerwallet',
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: adaptiveImage,
