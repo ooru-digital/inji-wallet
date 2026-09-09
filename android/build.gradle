@@ -72,9 +72,11 @@ allprojects { repositories {
             content { includeGroup "io.ooru.biometrics" }
         }
     } else {
-        // SnapKYC deps are -SNAPSHOT, so both repos are declared. `includeGroup` keeps every other
-        // dependency off this credentialed host. Cleartext is permitted only when the configured
-        // URL is actually plain http, so the default https Nexus is never downgraded.
+        // The SnapKYC deps resolve from maven-releases now that they are fixed versions; the
+        // snapshot repo is kept declared only so an older -SNAPSHOT build still resolves if one is
+        // ever pinned again. `includeGroup` keeps every other dependency off this credentialed
+        // host. Cleartext is permitted only when the configured URL is actually plain http, so the
+        // default https Nexus is never downgraded.
         maven {
             allowInsecureProtocol = artifactorySnapshotUrl.startsWith("http://")
             url artifactorySnapshotUrl
@@ -100,6 +102,14 @@ allprojects { repositories {
     }
     configurations.all {
         resolutionStrategy {
+            // Governs changing modules only — versions ending in -SNAPSHOT, and dependencies
+            // declared with `changing = true`. There are none of either any more (the SnapKYC AARs
+            // moved to fixed 1.0.1 releases), so this currently applies to nothing and no build
+            // contacts the Nexus.
+            //
+            // It matters again the moment a -SNAPSHOT or `changing = true` dependency is added:
+            // every build would then re-check that artifact and fail outright if its repository
+            // were unreachable. Prefer fixed versions over relaxing this.
             cacheChangingModulesFor 0, 'seconds'
             // Was forced to 0.9.0 to fix a crash on Android 11, from the RN 0.74 era. RN 0.79.6's
             // own version catalog wants 0.12.1 (react-native/gradle/libs.versions.toml) — merged-SO

@@ -327,8 +327,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("io.mosip:injivcrenderer-aar:0.1.0")
     implementation("com.apicatalog:titanium-json-ld-jre8:1.3.1")
+    // No `changing = true`: 0.7.0 is a fixed version, and that flag told Gradle to treat it as
+    // mutable — re-fetching its metadata on every build and letting a re-published 0.7.0 silently
+    // change the app.
     implementation("io.inji:inji-openid4vp-aar:0.7.0"){
-        changing = true
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
         exclude group: 'io.mosip', module: 'vcverifier-jar'
@@ -341,7 +343,6 @@ dependencies {
     implementation("io.mosip:secure-keystore:0.3.0")
     implementation("io.mosip:tuvali:0.5.2")
     implementation("io.inji:inji-vci-client-aar:0.7.0"){
-        changing = true
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
         exclude group: 'io.mosip', module: 'vcverifier-jar'
@@ -356,14 +357,21 @@ dependencies {
 
     // SnapKYC native face-liveness SDK (io.ooru.face.liveness.frontend.BioChqFaceLivenessMainActivity).
     // Transitive androidx.camera / GMS / commons are excluded and pinned explicitly below.
-    implementation("io.ooru.biometrics:faceliveness-sdk:1.0.1-SNAPSHOT") {
-        changing = true
+    //
+    // Fixed release versions, not -SNAPSHOT: a snapshot is mutable, so Gradle re-checks it against
+    // the Nexus on every build and the artifact can be replaced in place without the version
+    // changing. 1.0.1 is byte-identical (SHA-256 verified) to the snapshot build this app was
+    // tested against. Do NOT add `changing = true` here — that flag forces the same per-build
+    // re-check even on a fixed version, which is what it was wrongly doing before.
+    //
+    // Note 1.0.2 exists and is NOT a drop-in: it is a newer build that adds moiré-pattern
+    // spoof detection, so it needs the liveness flow re-tested before adopting.
+    implementation("io.ooru.biometrics:faceliveness-sdk:1.0.1") {
         exclude group: 'androidx.camera'
         exclude group: 'com.google.android.gms'
         exclude group: 'org.apache.commons'
     }
-    implementation("io.ooru.biometrics:faceliveness-frontend:1.0.1-SNAPSHOT") {
-        changing = true
+    implementation("io.ooru.biometrics:faceliveness-frontend:1.0.1") {
         exclude group: 'androidx.camera'
         exclude group: 'com.google.android.gms'
         exclude group: 'org.apache.commons'
