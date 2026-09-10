@@ -863,13 +863,13 @@ export const IssuersMachine = model.createMachine(
               'setVerificationResult',
               'resetCredentialOfferFlowType',
             ],
-            target: 'storing',
+            target: 'checkingForDuplicateCredential',
           },
           onError: [
             {
               cond: 'isVerificationPendingBecauseOfNetworkIssue',
               actions: ['resetLoadingReason', 'resetVerificationResult'],
-              target: 'storing',
+              target: 'checkingForDuplicateCredential',
             },
             {
               actions: [
@@ -888,6 +888,60 @@ export const IssuersMachine = model.createMachine(
           RESET_VERIFY_ERROR: {
             actions: ['resetVerificationErrorMessage'],
             target: 'selectingIssuer',
+          },
+        },
+      },
+
+      checkingForDuplicateCredential: {
+        description:
+          'checks whether the wallet already holds a W3C credential of the same specific type. ' +
+          'Sits here rather than earlier because the credential has to be downloaded before its ' +
+          'type is known. mdoc/mDL passes straight through.',
+        entry: ['setDuplicateCredential'],
+        always: [
+          {
+            cond: 'hasCredentialOfSameType',
+            actions: ['resetLoadingReason'],
+            target: 'credentialAlreadyExists',
+          },
+          {
+            target: 'storing',
+          },
+        ],
+      },
+
+      credentialAlreadyExists: {
+        description:
+          'asks the user what to do about a credential of a type they already hold: keep both, or ' +
+          'replace the existing one. Nothing is written to storage until they choose.',
+        on: {
+          KEEP_BOTH: {
+            actions: ['resetDuplicateCredential'],
+            target: 'storing',
+          },
+          REPLACE_EXISTING: {
+            target: 'replacingExistingCredential',
+          },
+        },
+      },
+
+      replacingExistingCredential: {
+        description:
+          'deletes the existing credential of this type, then stores the new one. Waits for the ' +
+          'store to acknowledge the removal before storing, so the two writes to the myVCs list ' +
+          'cannot interleave and clobber each other.',
+        entry: [
+          'removeDuplicateVcFromStorage',
+          'removeDuplicateVcFromVcMetaContext',
+        ],
+        on: {
+          STORE_RESPONSE: {
+            actions: ['resetDuplicateCredential'],
+            target: 'storing',
+          },
+          STORE_ERROR: {
+            actions: ['setError', 'resetLoadingReason'],
+            target: '#issuersMachine.error',
           },
         },
       },

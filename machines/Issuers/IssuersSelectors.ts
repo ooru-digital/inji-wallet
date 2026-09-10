@@ -94,6 +94,10 @@ export function selectVerificationErrorMessage(state: State) {
   return state.context.verificationErrorMessage;
 }
 
+export function selectIsCredentialAlreadyExists(state: State) {
+  return state.matches('credentialAlreadyExists');
+}
+
 export function selectSelectingCredentialType(state: State) {
   return state.matches('selectingCredentialType');
 }
