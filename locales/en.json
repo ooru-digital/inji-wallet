@@ -218,6 +218,8 @@
     "basicSettings": "Basic settings",
     "bioUnlock": "Unlock with Biometric",
     "language": "Language",
+    "holderAccount": "Account",
+    "changeEmail": "Change",
     "aboutInji": "About CredIssuer Wallet",
     "credentialRegistry": "Credential Registry",
     "esignethosturl": "Esignet Host",
@@ -225,6 +227,16 @@
     "injiTourGuide": "CredIssuer Tour Guide",
     "logout": "Logout",
     "resetInjiProps": "Resetting CredIssuer Props..."
+  },
+  "HolderLogin": {
+    "title": "Sign in",
+    "emailSubtitle": "Enter your holder email to receive a one-time password and enable credential notifications.",
+    "otpSubtitle": "Enter the 6-digit code sent to {{email}}",
+    "emailPlaceholder": "Email address",
+    "sendOtp": "Send OTP",
+    "verify": "Verify",
+    "changeEmail": "Change email",
+    "resendOtp": "Resend OTP"
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "Success! You can now use passcode to unlock CredIssuer app.",

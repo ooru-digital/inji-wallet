@@ -27,14 +27,29 @@ import {
   sendEndEvent,
 } from '../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
+import {useHolderAuthService} from '../components/HolderAuthProvider';
+import {
+  selectIsCheckingHolderSession,
+  selectIsHolderAuthenticated,
+} from '../machines/holderAuth';
+import {navigateAfterDeviceAuth} from '../shared/credissuer/navigateAfterDeviceAuth';
 
 export function useAuthScreen(props: RootRouteProps) {
   const {appService} = useContext(GlobalContext);
   const authService = appService.children.get('auth');
   const settingsService = appService.children.get('settings');
+  const holderAuthService = useHolderAuthService();
 
   const isSettingUp = useSelector(authService, selectSettingUp);
   const isAuthorized = useSelector(authService, selectAuthorized);
+  const isHolderAuthenticated = useSelector(
+    holderAuthService,
+    selectIsHolderAuthenticated,
+  );
+  const isCheckingHolderSession = useSelector(
+    holderAuthService,
+    selectIsCheckingHolderSession,
+  );
 
   const [alertMsg, setHasAlertMsg] = useState('');
   const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
@@ -61,17 +76,14 @@ export function useAuthScreen(props: RootRouteProps) {
   fetchIsAvailable();
 
   useEffect(() => {
-    if (isAuthorized) {
+    if (isAuthorized && !isCheckingHolderSession) {
       sendEndEvent(
         getEndEventData(
           TelemetryConstants.FlowType.appOnboarding,
           TelemetryConstants.EndEventStatus.success,
         ),
       );
-      props.navigation.reset({
-        index: 0,
-        routes: [{name: 'Main'}],
-      });
+      navigateAfterDeviceAuth(props.navigation, isHolderAuthenticated);
       sendImpressionEvent(
         getImpressionEventData(
           TelemetryConstants.FlowType.appOnboarding,
@@ -117,7 +129,15 @@ export function useAuthScreen(props: RootRouteProps) {
       );
       navigateToPasscode();
     }
-  }, [isSuccessBio, isUnavailableBio, errorMsgBio, unEnrolledNoticeBio]);
+  }, [
+    isSuccessBio,
+    isUnavailableBio,
+    errorMsgBio,
+    unEnrolledNoticeBio,
+    isAuthorized,
+    isHolderAuthenticated,
+    isCheckingHolderSession,
+  ]);
 
   const useBiometrics = async () => {
     const isBiometricsEnrolled = await LocalAuthentication.isEnrolledAsync();

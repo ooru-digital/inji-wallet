@@ -194,7 +194,9 @@
     "errorMessage": "தவறான URL உள்ளிடப்பட்டது. தொடர சரியான URL ஐ உள்ளிடவும்.",
     "injiTourGuide": "CredIssuer சுற்றுலா வழிகாட்டி",
     "logout": "வெளியேறு",
-    "resetInjiProps": "CredIssuer ப்ராப்ஸை மீட்டமைக்கிறது..."
+    "resetInjiProps": "CredIssuer ப்ராப்ஸை மீட்டமைக்கிறது...",
+    "holderAccount": "Account",
+    "changeEmail": "Change"
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "வெற்றி! இன்ஜி பயன்பாட்டைத் திறக்க நீங்கள் இப்போது கடவுக்குறியீட்டைப் பயன்படுத்தலாம்.",
@@ -1198,5 +1200,15 @@
     "description": "இந்த வெளியீட்டாளரை நீங்கள் அறிந்திருக்கிறீர்களா அல்லது நம்புகிறீர்களா என்பதை உறுதி செய்யுங்கள். ஒருமுறை நம்பினால்:",
     "title": "விரைவு சரிபார்ப்பு",
     "subTitle": "தொடர்வதற்கு முன், இந்த வெளியீட்டாளரை நீங்கள் அறிந்திருக்கிறீர்களா என்பதை உறுதிப்படுத்தவும்"
+  },
+  "HolderLogin": {
+    "title": "Sign in",
+    "emailSubtitle": "Enter your holder email to receive a one-time password and enable credential notifications.",
+    "otpSubtitle": "Enter the 6-digit code sent to {{email}}",
+    "emailPlaceholder": "Email address",
+    "sendOtp": "Send OTP",
+    "verify": "Verify",
+    "changeEmail": "Change email",
+    "resendOtp": "Resend OTP"
   }
 }
