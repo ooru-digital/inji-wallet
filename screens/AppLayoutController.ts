@@ -1,19 +1,28 @@
-import { useSelector } from '@xstate/react';
-import { useContext } from 'react';
+import {useSelector} from '@xstate/react';
+import {useContext} from 'react';
 import {
   selectAuthorized,
   selectLanguagesetup,
   selectUnauthorized,
 } from '../machines/auth';
-import { GlobalContext } from '../shared/GlobalContext';
+import {selectIsHolderAuthenticated} from '../machines/holderAuth';
+import {GlobalContext} from '../shared/GlobalContext';
+import {useHolderAuthService} from '../components/HolderAuthProvider';
 
 export function useAppLayout() {
-  const { appService } = useContext(GlobalContext);
+  const {appService} = useContext(GlobalContext);
   const authService = appService.children.get('auth');
-  const isLanguagesetup = useSelector(authService, selectLanguagesetup);
+  const holderAuthService = useHolderAuthService();
+  const isAuthorized = useSelector(authService, selectAuthorized);
+  const isHolderAuthenticated = useSelector(
+    holderAuthService,
+    selectIsHolderAuthenticated,
+  );
+
   return {
-    isAuthorized: useSelector(authService, selectAuthorized),
+    isAuthorized,
     isUnAuthorized: useSelector(authService, selectUnauthorized),
-    isLanguagesetup,
+    isLanguagesetup: useSelector(authService, selectLanguagesetup),
+    canEnterMain: isAuthorized && isHolderAuthenticated,
   };
 }

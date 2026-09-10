@@ -193,7 +193,9 @@
     "errorMessage": "Maling URL ang inilagay. Mangyaring maglagay ng wastong URL upang magpatuloy.",
     "injiTourGuide": "CredIssuer Tour Guide",
     "logout": "Mag-logout",
-    "resetInjiProps": "Nire-reset ang CredIssuer Props..."
+    "resetInjiProps": "Nire-reset ang CredIssuer Props...",
+    "holderAccount": "Account",
+    "changeEmail": "Change"
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "Tagumpay! Magagamit mo na ngayon ang passcode upang i-unlock ang CredIssuer app.",
@@ -1196,5 +1198,15 @@
     "description": "Tiyaking kilala mo o pinagkakatiwalaan ang issuer na ito. Kapag pinagkatiwalaan na:",
     "title": "Mabilis na Pagsusuri",
     "subTitle": "Bago magpatuloy, kumpirmahin na kilala mo ang issuer na ito"
+  },
+  "HolderLogin": {
+    "title": "Sign in",
+    "emailSubtitle": "Enter your holder email to receive a one-time password and enable credential notifications.",
+    "otpSubtitle": "Enter the 6-digit code sent to {{email}}",
+    "emailPlaceholder": "Email address",
+    "sendOtp": "Send OTP",
+    "verify": "Verify",
+    "changeEmail": "Change email",
+    "resendOtp": "Resend OTP"
   }
 }

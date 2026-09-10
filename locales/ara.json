@@ -194,7 +194,9 @@
     "errorMessage": "تم إدخال عنوان URL غير صحيح. الرجاء إدخال عنوان URL صالح للمتابعة.",
     "injiTourGuide": "مرشد CredIssuer السياحي",
     "logout": "تسجيل خروج",
-    "resetInjiProps": "إعادة تعيين دعائم CredIssuer ..."
+    "resetInjiProps": "إعادة تعيين دعائم CredIssuer ...",
+    "holderAccount": "Account",
+    "changeEmail": "Change"
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "تم النجاح! يمكنك الآن استخدام رمز المرور لفتح تطبيق CredIssuer.",
@@ -1198,5 +1200,15 @@
     "description": "تأكد من أنك تعرف هذه الجهة المُصدِرة أو تثق بها. عند الوثوق بها مرة واحدة:",
     "title": "تحقق سريع",
     "subTitle": "قبل المتابعة، تأكد من أنك تتعرف على هذه الجهة المُصدِرة"
+  },
+  "HolderLogin": {
+    "title": "Sign in",
+    "emailSubtitle": "Enter your holder email to receive a one-time password and enable credential notifications.",
+    "otpSubtitle": "Enter the 6-digit code sent to {{email}}",
+    "emailPlaceholder": "Email address",
+    "sendOtp": "Send OTP",
+    "verify": "Verify",
+    "changeEmail": "Change email",
+    "resendOtp": "Resend OTP"
   }
 }

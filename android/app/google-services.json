@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "430002036830",
+    "project_id": "credissuer-wallet-d346c",
+    "storage_bucket": "credissuer-wallet-d346c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:430002036830:android:61f14b5c7387e2817cd4cf",
+        "android_client_info": {
+          "package_name": "io.ooru.credissuerwallet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB55RwJRSMfehQteGbG0KC9IjqpV_M88V0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

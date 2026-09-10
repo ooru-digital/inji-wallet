@@ -194,7 +194,9 @@
     "errorMessage": "ತಪ್ಪಾದ URL ನಮೂದಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಮುಂದುವರೆಯಲು ಮಾನ್ಯ URL ಅನ್ನು ನಮೂದಿಸಿ.",
     "injiTourGuide": "CredIssuer ಪ್ರವಾಸ ಮಾರ್ಗದರ್ಶಿ",
     "logout": "ಲಾಗ್ ಔಟ್",
-    "resetInjiProps": "CredIssuer ಪ್ರಾಪ್ಸ್ ಅನ್ನು ಮರುಹೊಂದಿಸಲಾಗುತ್ತಿದೆ..."
+    "resetInjiProps": "CredIssuer ಪ್ರಾಪ್ಸ್ ಅನ್ನು ಮರುಹೊಂದಿಸಲಾಗುತ್ತಿದೆ...",
+    "holderAccount": "Account",
+    "changeEmail": "Change"
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "ಯಶಸ್ವಿ! ನೀವು ಈಗ ಇಂಜಿ ಅಪ್ಲಿಕೇಶನ್ ಅನ್‌ಲಾಕ್ ಮಾಡಲು ಪಾಸ್ಕೋಡ್ ಅನ್ನು ಬಳಸಬಹುದು.",
@@ -1198,5 +1200,15 @@
     "description": "ನೀವು ಈ ಪ್ರಕಾಶಕರನ್ನು ಗುರುತಿಸುತ್ತೀರಾ ಅಥವಾ ನಂಬುತ್ತೀರಾ ಎಂಬುದನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ. ಒಮ್ಮೆ ನಂಬಿದ ನಂತರ:",
     "title": "ತ್ವರಿತ ಪರಿಶೀಲನೆ",
     "subTitle": "ಮುಂದುವರೆಯುವ ಮೊದಲು, ನೀವು ಈ ಪ್ರಕಾಶಕರನ್ನು ಗುರುತಿಸುತ್ತೀರಾ ಎಂಬುದನ್ನು ದೃಢಪಡಿಸಿ"
+  },
+  "HolderLogin": {
+    "title": "Sign in",
+    "emailSubtitle": "Enter your holder email to receive a one-time password and enable credential notifications.",
+    "otpSubtitle": "Enter the 6-digit code sent to {{email}}",
+    "emailPlaceholder": "Email address",
+    "sendOtp": "Send OTP",
+    "verify": "Verify",
+    "changeEmail": "Change email",
+    "resendOtp": "Resend OTP"
   }
 }

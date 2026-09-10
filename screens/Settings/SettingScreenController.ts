@@ -31,11 +31,15 @@ import {GlobalContext} from '../../shared/GlobalContext';
 import {useTranslation} from 'react-i18next';
 import {RequestRouteProps, RootRouteProps} from '../../routes';
 import {BOTTOM_TAB_ROUTES, REQUEST_ROUTES} from '../../routes/routesConstants';
+import {useHolderAuthService} from '../../components/HolderAuthProvider';
+import {selectHolderEmail} from '../../machines/holderAuth';
 
 export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
   const {appService} = useContext(GlobalContext);
   const authService = appService?.children?.get('auth') || {};
   const settingsService = appService?.children?.get('settings') || {};
+  const holderAuthService = useHolderAuthService();
+  const holderEmail = useSelector(holderAuthService, selectHolderEmail);
 
   const [isVisible, setIsVisible] = useState(false);
 
@@ -109,6 +113,7 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
     hideAlert,
     isPasscodeSet,
     isSettingUp,
+    holderEmail,
     appId: useSelector(settingsService || {}, selectAppId),
     name: useSelector(settingsService || {}, selectName),
     vcLabel: useSelector(settingsService || {}, selectVcLabel),
@@ -212,6 +217,17 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
         authService.send(AuthEvents.LOGOUT());
       };
       setTimeout(() => navigate(), 10);
+    },
+
+    CHANGE_HOLDER_EMAIL: () => {
+      setIsVisible(false);
+      holderAuthService.send({type: 'LOGOUT'});
+      setTimeout(() => {
+        props.navigation.reset({
+          index: 0,
+          routes: [{name: 'HolderLogin'}],
+        });
+      }, 10);
     },
 
     CANCEL: () => {

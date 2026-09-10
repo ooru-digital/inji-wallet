@@ -7,6 +7,7 @@ import {
   SNAPKYC_LIVENESS,
   SNAPKYC_RELAYING_PARTY_NAME,
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE,
+  CREDISSUER_APP_HOST,
 } from 'react-native-dotenv';
 import {Argon2iConfig} from './commonUtil';
 import {VcIdType} from '../machines/VerifiableCredential/VCMetaMachine/vc';
@@ -14,6 +15,9 @@ import {KeyTypes} from './cryptoutil/KeyTypes';
 
 export let MIMOTO_BASE_URL = MIMOTO_HOST;
 export let ESIGNET_BASE_URL = ESIGNET_HOST;
+export const CREDISSUER_APP_BASE_URL = (
+  CREDISSUER_APP_HOST || 'https://app.credissuer.com'
+).replace(/\/$/, '');
 export const DEBUG_MODE_ENABLED = DEBUG_MODE === 'true';
 export let CACHE_TTL = 60 * 60 * 1000;
 

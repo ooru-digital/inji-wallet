@@ -195,7 +195,9 @@
     "errorMessage": "गलत यूआरएल दर्ज किया गया। कृपया आगे बढ़ने के लिए एक वैध यूआरएल दर्ज करें।",
     "injiTourGuide": "CredIssuer टूर गाइड",
     "logout": "लॉग आउट",
-    "resetInjiProps": "CredIssuer प्रॉप्स को रीसेट किया जा रहा है..."
+    "resetInjiProps": "CredIssuer प्रॉप्स को रीसेट किया जा रहा है...",
+    "holderAccount": "Account",
+    "changeEmail": "Change"
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "सफलता! अब आप इंजी ऐप को अनलॉक करने के लिए पासकोड का उपयोग कर सकते हैं।",
@@ -1198,5 +1200,15 @@
     "description": "सुनिश्चित करें कि आप इस जारीकर्ता को पहचानते या उस पर भरोसा करते हैं। एक बार भरोसा करने के बाद:",
     "title": "त्वरित जाँच",
     "subTitle": "आगे बढ़ने से पहले, पुष्टि करें कि आप इस जारीकर्ता को पहचानते हैं"
+  },
+  "HolderLogin": {
+    "title": "Sign in",
+    "emailSubtitle": "Enter your holder email to receive a one-time password and enable credential notifications.",
+    "otpSubtitle": "Enter the 6-digit code sent to {{email}}",
+    "emailPlaceholder": "Email address",
+    "sendOtp": "Send OTP",
+    "verify": "Verify",
+    "changeEmail": "Change email",
+    "resendOtp": "Resend OTP"
   }
 }
