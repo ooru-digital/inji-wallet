@@ -35,6 +35,9 @@ export const IssuersModel = createModel(
     publicKey: '',
     privateKey: '',
     vcMetadata: {} as VCMetadata,
+    // The credential already in the wallet with the same specific type as the one being
+    // downloaded, if any. Held so "replace" knows which card to delete.
+    duplicateVcMetadata: null as VCMetadata | null,
     keyType: 'RS256' as string,
     wellknownKeyTypes: [] as string[],
     authEndpointToOpen: false as boolean,

@@ -19,6 +19,7 @@ import {assign, send, spawn} from 'xstate';
 import {StoreEvents} from '../store';
 import {BackupEvents} from '../backupAndRestore/backup/backupMachine';
 import {getVCMetadata, VCMetadata} from '../../shared/VCMetadata';
+import {findCredentialOfSameType} from '../../shared/credentialIdentity';
 import {isHardwareKeystoreExists} from '../../shared/cryptoutil/cryptoUtil';
 import {ActivityLogEvents} from '../activityLog';
 import {
@@ -180,6 +181,59 @@ export const IssuersActions = (model: any) => {
         return getVCMetadata(context, context.keyType);
       },
     }),
+
+    /**
+     * Records the credential already in the wallet that has the same specific type as the one just
+     * downloaded, so the user can be offered "keep both" or "replace".
+     *
+     * `myVcs` is read straight off the vcMeta actor because it already holds every decrypted VC in
+     * memory (VCMetaActions `setMyVcs`), so this costs no extra storage reads.
+     */
+    setDuplicateCredential: assign((context: any) => {
+      try {
+        const storedVcs =
+          context.serviceRefs?.vcMeta?.getSnapshot()?.context?.myVcs ?? {};
+        const existing = findCredentialOfSameType(context, storedVcs);
+
+        return {
+          ...context,
+          duplicateVcMetadata: existing
+            ? VCMetadata.fromVC(existing.vcMetadata)
+            : null,
+        };
+      } catch (error) {
+        // Never block a legitimate download because the check itself broke.
+        console.error('[duplicate-check] failed, allowing download', error);
+        return {...context, duplicateVcMetadata: null};
+      }
+    }),
+
+    resetDuplicateCredential: model.assign({
+      duplicateVcMetadata: null,
+    }),
+
+    // Deletes both the metadata entry and the credential data — the same store event the kebab
+    // menu's "remove from wallet" uses (VCItemActions `removeVcItem`).
+    removeDuplicateVcFromStorage: send(
+      (context: any) =>
+        StoreEvents.REMOVE(
+          MY_VCS_STORE_KEY,
+          context.duplicateVcMetadata.getVcKey(),
+        ),
+      {
+        to: (context: any) => context.serviceRefs.store,
+      },
+    ),
+
+    removeDuplicateVcFromVcMetaContext: send(
+      (context: any) => ({
+        type: 'REMOVE_VC_FROM_CONTEXT',
+        vcMetadata: context.duplicateVcMetadata,
+      }),
+      {
+        to: (context: any) => context.serviceRefs.vcMeta,
+      },
+    ),
 
     storeVerifiableCredentialData: send(
       (context: any) => {
