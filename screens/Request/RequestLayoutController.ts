@@ -28,8 +28,16 @@ import {
 import {VCSharingErrorStatusProps} from '../../components/MessageOverlay';
 import {useTranslation} from 'react-i18next';
 
+/**
+ * `Main` is included because the Receive Card flow lives in the *root* stack, as a
+ * sibling of `Main` — not inside the bottom tabs. Reaching a tab from here therefore
+ * needs the nested form, `navigate('Main', {screen: <tab>})`.
+ */
 type RequestLayoutNavigation = NavigationProp<
-  RequestStackParamList & MainBottomTabParamList
+  RequestStackParamList &
+    MainBottomTabParamList & {
+      Main: {screen: string};
+    }
 >;
 
 export function useRequestLayout() {
@@ -89,7 +97,14 @@ export function useRequestLayout() {
 
   useEffect(() => {
     if (isNavigationToHome) {
-      navigation.navigate(BOTTOM_TAB_ROUTES.home);
+      // Back out to Settings, which is where this flow is entered from
+      // (SettingScreenController's RECEIVE_CARD). The bare `navigate('home')` this
+      // replaced was never handled by any navigator: `home` is a bottom tab inside
+      // `Main`, and navigate only bubbles *up* from the Request stack to the root,
+      // never down into `Main`. The request machine had already left
+      // `waitingForConnection` by then, so the QR unmounted and the user was left on
+      // an empty screen under the Receive Card header.
+      navigation.navigate('Main', {screen: BOTTOM_TAB_ROUTES.settings});
     } else if (isReviewing) {
       navigation.navigate(REQUEST_ROUTES.ReceiveVcScreen);
     } else if (isWaitingForConnection) {
