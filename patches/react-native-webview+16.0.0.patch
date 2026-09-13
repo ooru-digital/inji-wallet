@@ -1,3 +1,68 @@
+diff --git a/node_modules/react-native-webview/apple/RNCWebView.mm b/node_modules/react-native-webview/apple/RNCWebView.mm
+index f352ad9..1f4a2c7 100644
+--- a/node_modules/react-native-webview/apple/RNCWebView.mm
++++ b/node_modules/react-native-webview/apple/RNCWebView.mm
+@@ -10,33 +10,6 @@
+ 
+ using namespace facebook::react;
+ 
+-auto stringToOnShouldStartLoadWithRequestNavigationTypeEnum(std::string value) {
+-    if (value == "click") return RNCWebViewEventEmitter::OnShouldStartLoadWithRequestNavigationType::Click;
+-    if (value == "formsubmit") return RNCWebViewEventEmitter::OnShouldStartLoadWithRequestNavigationType::Formsubmit;
+-    if (value == "backforward") return RNCWebViewEventEmitter::OnShouldStartLoadWithRequestNavigationType::Backforward;
+-    if (value == "reload") return RNCWebViewEventEmitter::OnShouldStartLoadWithRequestNavigationType::Reload;
+-    if (value == "formresubmit") return RNCWebViewEventEmitter::OnShouldStartLoadWithRequestNavigationType::Formresubmit;
+-    return RNCWebViewEventEmitter::OnShouldStartLoadWithRequestNavigationType::Other;
+-}
+-
+-auto stringToOnLoadingStartNavigationTypeEnum(std::string value) {
+-    if (value == "click") return RNCWebViewEventEmitter::OnLoadingStartNavigationType::Click;
+-    if (value == "formsubmit") return RNCWebViewEventEmitter::OnLoadingStartNavigationType::Formsubmit;
+-    if (value == "backforward") return RNCWebViewEventEmitter::OnLoadingStartNavigationType::Backforward;
+-    if (value == "reload") return RNCWebViewEventEmitter::OnLoadingStartNavigationType::Reload;
+-    if (value == "formresubmit") return RNCWebViewEventEmitter::OnLoadingStartNavigationType::Formresubmit;
+-    return RNCWebViewEventEmitter::OnLoadingStartNavigationType::Other;
+-}
+-
+-auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
+-    if (value == "click") return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Click;
+-    if (value == "formsubmit") return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Formsubmit;
+-    if (value == "backforward") return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Backforward;
+-    if (value == "reload") return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Reload;
+-    if (value == "formresubmit") return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Formresubmit;
+-    return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Other;
+-}
+-
+ static inline std::string nullSafeString(id value) {
+     if (![value isKindOfClass:[NSString class]]) {
+         return std::string();
+@@ -97,7 +70,7 @@ static inline std::string nullSafeStringWithLength(id value) {
+                     .url = nullSafeString([dictionary valueForKey:@"url"]),
+                     .lockIdentifier = [[dictionary valueForKey:@"lockIdentifier"] doubleValue],
+                     .title = nullSafeString([dictionary valueForKey:@"title"]),
+-                    .navigationType = stringToOnShouldStartLoadWithRequestNavigationTypeEnum(nullSafeString([dictionary valueForKey:@"navigationType"])),
++                    .navigationType = nullSafeString([dictionary valueForKey:@"navigationType"]),
+                     .canGoBack = static_cast<bool>([[dictionary valueForKey:@"canGoBack"] boolValue]),
+                     .canGoForward = static_cast<bool>([[dictionary valueForKey:@"canGoForward"] boolValue]),
+                     .isTopFrame = static_cast<bool>([[dictionary valueForKey:@"isTopFrame"] boolValue]),
+@@ -114,7 +87,7 @@ static inline std::string nullSafeStringWithLength(id value) {
+                     .url = nullSafeString([dictionary valueForKey:@"url"]),
+                     .lockIdentifier = [[dictionary valueForKey:@"lockIdentifier"] doubleValue],
+                     .title = nullSafeString([dictionary valueForKey:@"title"]),
+-                    .navigationType = stringToOnLoadingStartNavigationTypeEnum(nullSafeString([dictionary valueForKey:@"navigationType"])),
++                    .navigationType = nullSafeString([dictionary valueForKey:@"navigationType"]),
+                     .canGoBack = static_cast<bool>([[dictionary valueForKey:@"canGoBack"] boolValue]),
+                     .canGoForward = static_cast<bool>([[dictionary valueForKey:@"canGoForward"] boolValue]),
+                     .loading = static_cast<bool>([[dictionary valueForKey:@"loading"] boolValue]),
+@@ -162,7 +135,7 @@ static inline std::string nullSafeStringWithLength(id value) {
+                     .url = nullSafeString([dictionary valueForKey:@"url"]),
+                     .lockIdentifier = [[dictionary valueForKey:@"lockIdentifier"] doubleValue],
+                     .title = nullSafeString([dictionary valueForKey:@"title"]),
+-                    .navigationType = stringToOnLoadingFinishNavigationTypeEnum(nullSafeStringWithLength([dictionary valueForKey:@"navigationType"])),
++                    .navigationType = nullSafeStringWithLength([dictionary valueForKey:@"navigationType"]),
+                     .canGoBack = static_cast<bool>([[dictionary valueForKey:@"canGoBack"] boolValue]),
+                     .canGoForward = static_cast<bool>([[dictionary valueForKey:@"canGoForward"] boolValue]),
+                     .loading = static_cast<bool>([[dictionary valueForKey:@"loading"] boolValue]),
 diff --git a/node_modules/react-native-webview/src/RNCWebViewNativeComponent.ts b/node_modules/react-native-webview/src/RNCWebViewNativeComponent.ts
 index 8d44e74..3c243db 100644
 --- a/node_modules/react-native-webview/src/RNCWebViewNativeComponent.ts
