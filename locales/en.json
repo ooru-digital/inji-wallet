@@ -321,6 +321,10 @@
         "ERR_INVALID_VALIDFROM": "Date is invalid or set in the future. Check for a valid date.",
         "ERR_VALID_FROM_IS_FUTURE_DATE": "Date is invalid or set in the future. Check for a valid date.",
         "ERR_INVALID_VALIDUNTIL": "Date is invalid. Check for a valid date."
+      },
+      "credentialAlreadyExists": {
+        "title": "Card already exists",
+        "message": "You already have a card of this type in your wallet. Replace it with the new one, or keep both?"
       }
     }
   },
@@ -1169,7 +1173,9 @@
     "biometricPopup": {
       "title": "Unlock App",
       "description": "Please use fingerprint to unlock the app"
-    }
+    },
+    "replaceExisting": "Replace existing",
+    "keepBoth": "Keep both"
   },
   "copilot": {
     "helpTitle": "Help/FAQs",

@@ -6,6 +6,14 @@ import {AuthorizationType} from '../../shared/constants';
 
 export const IssuersGuards = () => {
   return {
+    /**
+     * True when the wallet already holds a credential of the same specific type. The lookup itself
+     * happens in the `setDuplicateCredential` action, which records the matched card so "replace"
+     * knows what to delete.
+     */
+    hasCredentialOfSameType: (context: any) =>
+      context.duplicateVcMetadata != null,
+
     isVerificationPendingBecauseOfNetworkIssue: (_context, event) =>
       (event.data as Error).message == VerificationErrorType.NETWORK_ERROR,
     isSignedIn: (_: any, event: any) =>

@@ -12,6 +12,7 @@ import {
   selectSelectingCredentialType,
   selectStoring,
   selectVerificationErrorMessage,
+  selectIsCredentialAlreadyExists,
   selectIsQrScanning,
   selectAuthWebViewStatus,
   selectAuthEndPoint,
@@ -88,6 +89,10 @@ export function useIssuerScreenController({route, navigation}) {
       selectVerificationErrorMessage,
     ),
     isError: useSelector(service, selectIsError),
+    isCredentialAlreadyExists: useSelector(
+      service,
+      selectIsCredentialAlreadyExists,
+    ),
 
     CANCEL: () => service.send(IssuerScreenTabEvents.CANCEL()),
     SELECTED_ISSUER: id =>
@@ -112,6 +117,11 @@ export function useIssuerScreenController({route, navigation}) {
         );
       }
     },
+    // Both choices end in the machine's `storing` state, so the existing download-success effect
+    // handles navigation — no manual navigate here, or it would fire twice.
+    KEEP_BOTH: () => service.send(IssuerScreenTabEvents.KEEP_BOTH()),
+    REPLACE_EXISTING: () =>
+      service.send(IssuerScreenTabEvents.REPLACE_EXISTING()),
     QR_CODE_SCANNED: (qrData: string) => {
       service.send(IssuerScreenTabEvents.QR_CODE_SCANNED(qrData));
     },
