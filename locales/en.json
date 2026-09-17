@@ -322,9 +322,14 @@
         "ERR_VALID_FROM_IS_FUTURE_DATE": "Date is invalid or set in the future. Check for a valid date.",
         "ERR_INVALID_VALIDUNTIL": "Date is invalid. Check for a valid date."
       },
+      "replaceCredential": {
+        "title": "Replace card",
+        "description": "Select the card or cards you want to replace with the one you just downloaded.",
+        "confirm": "Replace selected"
+      },
       "credentialAlreadyExists": {
         "title": "Card already exists",
-        "message": "You already have a card of this type in your wallet. Replace it with the new one, or keep both?"
+        "message": "You already have a card of this type in your wallet. Would you like to replace an existing card or add the new card as another card?"
       }
     }
   },
@@ -1175,7 +1180,7 @@
       "description": "Please use fingerprint to unlock the app"
     },
     "replaceExisting": "Replace existing",
-    "keepBoth": "Keep both"
+    "keepBoth": "Add as new"
   },
   "copilot": {
     "helpTitle": "Help/FAQs",

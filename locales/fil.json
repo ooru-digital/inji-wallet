@@ -291,9 +291,14 @@
         "ERR_VALID_FROM_IS_FUTURE_DATE": "Ang petsa ay hindi wasto o nakatakda sa hinaharap. Tingnan kung may wastong petsa.",
         "ERR_INVALID_VALIDUNTIL": "Di-wasto ang petsa. Tingnan kung may wastong petsa."
       },
+      "replaceCredential": {
+        "title": "Replace card",
+        "description": "Select the card or cards you want to replace with the one you just downloaded.",
+        "confirm": "Replace selected"
+      },
       "credentialAlreadyExists": {
         "title": "Umiiral na ang card",
-        "message": "Mayroon ka nang card na ganitong uri sa iyong wallet. Palitan ito ng bago, o itago pareho?"
+        "message": "Mayroon ka nang card na ganitong uri sa iyong wallet. Gusto mo bang palitan ang isang umiiral na card o idagdag ang bagong card bilang isa pang card?"
       }
     }
   },
@@ -1127,8 +1132,8 @@
       "title": "I-unlock ang App",
       "description": "Mangyaring gumamit ng fingerprint upang i-unlock ang app"
     },
-    "replaceExisting": "Palitan",
-    "keepBoth": "Itago pareho"
+    "replaceExisting": "Palitan ang umiiral",
+    "keepBoth": "Idagdag bilang bago"
   },
   "copilot": {
     "helpTitle": "Tulong/Mga FAQ",

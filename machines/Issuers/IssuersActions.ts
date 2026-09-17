@@ -16,10 +16,11 @@ import {
   OVP_ERROR_MESSAGES,
 } from '../../shared/constants';
 import {assign, send, spawn} from 'xstate';
+import {pure} from 'xstate/lib/actions';
 import {StoreEvents} from '../store';
 import {BackupEvents} from '../backupAndRestore/backup/backupMachine';
 import {getVCMetadata, VCMetadata} from '../../shared/VCMetadata';
-import {findCredentialOfSameType} from '../../shared/credentialIdentity';
+import {findCredentialsOfSameType} from '../../shared/credentialIdentity';
 import {isHardwareKeystoreExists} from '../../shared/cryptoutil/cryptoUtil';
 import {ActivityLogEvents} from '../activityLog';
 import {
@@ -189,50 +190,84 @@ export const IssuersActions = (model: any) => {
      * `myVcs` is read straight off the vcMeta actor because it already holds every decrypted VC in
      * memory (VCMetaActions `setMyVcs`), so this costs no extra storage reads.
      */
-    setDuplicateCredential: assign((context: any) => {
+    setDuplicateCredentials: assign((context: any) => {
       try {
         const storedVcs =
           context.serviceRefs?.vcMeta?.getSnapshot()?.context?.myVcs ?? {};
-        const existing = findCredentialOfSameType(context, storedVcs);
+        const existing = findCredentialsOfSameType(context, storedVcs);
 
         return {
           ...context,
-          duplicateVcMetadata: existing
-            ? VCMetadata.fromVC(existing.vcMetadata)
-            : null,
+          duplicateVcMetadatas: existing.map((vc: any) =>
+            VCMetadata.fromVC(vc.vcMetadata),
+          ),
+          // Nothing is pre-ticked: the user picks what to replace, so a stray tap can never
+          // delete a card they never looked at.
+          selectedDuplicateVcKeys: [],
         };
       } catch (error) {
         // Never block a legitimate download because the check itself broke.
         console.error('[duplicate-check] failed, allowing download', error);
-        return {...context, duplicateVcMetadata: null};
+        return {
+          ...context,
+          duplicateVcMetadatas: [],
+          selectedDuplicateVcKeys: [],
+        };
       }
     }),
 
-    resetDuplicateCredential: model.assign({
-      duplicateVcMetadata: null,
+    resetDuplicateCredentials: model.assign({
+      duplicateVcMetadatas: [],
+      selectedDuplicateVcKeys: [],
     }),
 
-    // Deletes both the metadata entry and the credential data — the same store event the kebab
-    // menu's "remove from wallet" uses (VCItemActions `removeVcItem`).
-    removeDuplicateVcFromStorage: send(
+    toggleDuplicateSelection: model.assign({
+      selectedDuplicateVcKeys: (context: any, event: any) =>
+        context.selectedDuplicateVcKeys.includes(event.vcKey)
+          ? context.selectedDuplicateVcKeys.filter(
+              (vcKey: string) => vcKey !== event.vcKey,
+            )
+          : [...context.selectedDuplicateVcKeys, event.vcKey],
+    }),
+
+    checkAllDuplicates: model.assign({
+      selectedDuplicateVcKeys: (context: any) =>
+        context.duplicateVcMetadatas.map((metadata: VCMetadata) =>
+          metadata.getVcKey(),
+        ),
+    }),
+
+    uncheckAllDuplicates: model.assign({
+      selectedDuplicateVcKeys: [],
+    }),
+
+    // Deletes both the metadata entries and the credential data — the same store event the kebab
+    // menu's "remove from wallet" uses (VCItemActions `removeVcItem`). REMOVE_ITEMS batches them,
+    // so several cards are one write and one STORE_RESPONSE rather than a race of many.
+    removeSelectedDuplicatesFromStorage: send(
       (context: any) =>
-        StoreEvents.REMOVE(
+        StoreEvents.REMOVE_ITEMS(
           MY_VCS_STORE_KEY,
-          context.duplicateVcMetadata.getVcKey(),
+          context.selectedDuplicateVcKeys,
         ),
       {
         to: (context: any) => context.serviceRefs.store,
       },
     ),
 
-    removeDuplicateVcFromVcMetaContext: send(
-      (context: any) => ({
-        type: 'REMOVE_VC_FROM_CONTEXT',
-        vcMetadata: context.duplicateVcMetadata,
-      }),
-      {
-        to: (context: any) => context.serviceRefs.vcMeta,
-      },
+    // REMOVE_VC_FROM_CONTEXT carries a single card, so `pure` emits one send per selection —
+    // preferred over adding a plural event to the vcMeta machine for this one caller.
+    removeSelectedDuplicatesFromVcMetaContext: pure((context: any) =>
+      context.duplicateVcMetadatas
+        .filter((metadata: VCMetadata) =>
+          context.selectedDuplicateVcKeys.includes(metadata.getVcKey()),
+        )
+        .map((metadata: VCMetadata) =>
+          send(
+            {type: 'REMOVE_VC_FROM_CONTEXT', vcMetadata: metadata},
+            {to: (ctx: any) => ctx.serviceRefs.vcMeta},
+          ),
+        ),
     ),
 
     storeVerifiableCredentialData: send(

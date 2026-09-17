@@ -1,5 +1,5 @@
 import {
-  findCredentialOfSameType,
+  findCredentialsOfSameType,
   getCredentialType,
   getDownloadedCredentialType,
   getStoredCredentialType,
@@ -71,50 +71,80 @@ describe('credential type identity', () => {
     });
   });
 
-  describe('finding the credential to offer replacing', () => {
+  describe('finding the credentials to offer replacing', () => {
     it('returns the stored card of the same type', () => {
       const stored = {
         a: storedVc(credentialOfType('HealthIDCredential')),
         b: storedVc(credentialOfType('NationalIDCredential')),
       };
 
-      const match = findCredentialOfSameType(
+      const matches = findCredentialsOfSameType(
         downloadOf(credentialOfType('NationalIDCredential')),
         stored,
       );
 
-      expect(match).toBe(stored.b);
+      expect(matches).toEqual([stored.b]);
     });
 
-    it('returns null when no stored card shares the type', () => {
+    it('returns every card of that type, so the user picks which to replace', () => {
+      const stored = {
+        a: storedVc(credentialOfType('NationalIDCredential')),
+        b: storedVc(credentialOfType('HealthIDCredential')),
+        c: storedVc(credentialOfType('NationalIDCredential')),
+      };
+
+      const matches = findCredentialsOfSameType(
+        downloadOf(credentialOfType('NationalIDCredential')),
+        stored,
+      );
+
+      expect(matches).toEqual([stored.a, stored.c]);
+    });
+
+    it('lists only the matching type, never the whole wallet', () => {
+      const stored = {
+        a: storedVc(credentialOfType('HealthIDCredential')),
+        b: storedVc(credentialOfType('HealthIDCredential')),
+        c: storedVc(credentialOfType('NationalIDCredential')),
+      };
+
+      const matches = findCredentialsOfSameType(
+        downloadOf(credentialOfType('HealthIDCredential')),
+        stored,
+      );
+
+      expect(matches).toEqual([stored.a, stored.b]);
+    });
+
+    it('returns nothing when no stored card shares the type', () => {
       const stored = {a: storedVc(credentialOfType('HealthIDCredential'))};
 
       expect(
-        findCredentialOfSameType(
+        findCredentialsOfSameType(
           downloadOf(credentialOfType('NationalIDCredential')),
           stored,
         ),
-      ).toBeNull();
+      ).toEqual([]);
     });
 
-    it('returns null for an empty wallet', () => {
+    it('returns nothing for an empty wallet', () => {
       expect(
-        findCredentialOfSameType(
+        findCredentialsOfSameType(
           downloadOf(credentialOfType('NationalIDCredential')),
           {},
         ),
-      ).toBeNull();
+      ).toEqual([]);
     });
 
     it('does not match a stored credential whose type cannot be read', () => {
       const stored = {a: storedVc({type: ['VerifiableCredential']})};
 
       expect(
-        findCredentialOfSameType(
+        findCredentialsOfSameType(
           downloadOf(credentialOfType('NationalIDCredential')),
           stored,
         ),
-      ).toBeNull();
+      ).toEqual([]);
     });
   });
 
@@ -141,11 +171,11 @@ describe('credential type identity', () => {
       };
 
       expect(
-        findCredentialOfSameType(
+        findCredentialsOfSameType(
           downloadOf(credentialOfType('MobileDL'), VCFormat.mso_mdoc),
           stored,
         ),
-      ).toBeNull();
+      ).toEqual([]);
     });
 
     it('does not match a stored mdoc against an incoming W3C card', () => {
@@ -157,11 +187,11 @@ describe('credential type identity', () => {
       };
 
       expect(
-        findCredentialOfSameType(
+        findCredentialsOfSameType(
           downloadOf(credentialOfType('NationalIDCredential')),
           stored,
         ),
-      ).toBeNull();
+      ).toEqual([]);
     });
   });
 });

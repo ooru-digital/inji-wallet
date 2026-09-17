@@ -292,9 +292,14 @@
         "ERR_VALID_FROM_IS_FUTURE_DATE": "தேதி தவறானது அல்லது எதிர்காலத்தில் அமைக்கப்படும். சரியான தேதியைச் சரிபார்க்கவும்.",
         "ERR_INVALID_VALIDUNTIL": "தேதி தவறானது. சரியான தேதியைச் சரிபார்க்கவும்."
       },
+      "replaceCredential": {
+        "title": "Replace card",
+        "description": "Select the card or cards you want to replace with the one you just downloaded.",
+        "confirm": "Replace selected"
+      },
       "credentialAlreadyExists": {
         "title": "கார்டு ஏற்கனவே உள்ளது",
-        "message": "இந்த வகையான கார்டு ஏற்கனவே உங்கள் வாலட்டில் உள்ளது. அதைப் புதியதைக் கொண்டு மாற்றவா, அல்லது இரண்டையும் வைத்திருக்கவா?"
+        "message": "இந்த வகையான கார்டு ஏற்கனவே உங்கள் வாலெட்டில் உள்ளது. ஏற்கனவே உள்ள கார்டை மாற்ற விரும்புகிறீர்களா அல்லது புதிய கார்டாக சேர்க்க விரும்புகிறீர்களா?"
       }
     }
   },
@@ -1129,8 +1134,8 @@
       "title": "பயன்பாட்டைத் திறக்கவும்",
       "description": "பயன்பாட்டைத் திறக்க கைரேகையைப் பயன்படுத்தவும்"
     },
-    "replaceExisting": "மாற்றவும்",
-    "keepBoth": "இரண்டையும் வைக்கவும்"
+    "replaceExisting": "ஏற்கனவே உள்ளதை மாற்றவும்",
+    "keepBoth": "புதிய கார்டாக சேர்க்கவும்"
   },
   "copilot": {
     "helpTitle": "உதவி/FAQகள்",

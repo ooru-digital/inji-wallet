@@ -98,6 +98,18 @@ export function selectIsCredentialAlreadyExists(state: State) {
   return state.matches('credentialAlreadyExists');
 }
 
+export function selectIsSelectingCredentialsToReplace(state: State) {
+  return state.matches('selectingCredentialsToReplace');
+}
+
+export function selectDuplicateVcMetadatas(state: State) {
+  return state.context.duplicateVcMetadatas;
+}
+
+export function selectSelectedDuplicateVcKeys(state: State) {
+  return state.context.selectedDuplicateVcKeys;
+}
+
 export function selectSelectingCredentialType(state: State) {
   return state.matches('selectingCredentialType');
 }

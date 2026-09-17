@@ -292,9 +292,14 @@
         "ERR_VALID_FROM_IS_FUTURE_DATE": "التاريخ غير صالح أو تم تحديده في المستقبل. تحقق من وجود تاريخ صالح.",
         "ERR_INVALID_VALIDUNTIL": "التاريخ غير صالح. تحقق من وجود تاريخ صالح."
       },
+      "replaceCredential": {
+        "title": "Replace card",
+        "description": "Select the card or cards you want to replace with the one you just downloaded.",
+        "confirm": "Replace selected"
+      },
       "credentialAlreadyExists": {
         "title": "البطاقة موجودة بالفعل",
-        "message": "لديك بالفعل بطاقة من هذا النوع في محفظتك. هل تريد استبدالها بالبطاقة الجديدة أم الاحتفاظ بكلتيهما؟"
+        "message": "لديك بالفعل بطاقة من هذا النوع في محفظتك. هل ترغب في استبدال بطاقة موجودة أو إضافة البطاقة الجديدة كبطاقة أخرى؟"
       }
     }
   },
@@ -1129,8 +1134,8 @@
       "title": "فتح التطبيق",
       "description": "يرجى استخدام بصمة الإصبع لفتح التطبيق"
     },
-    "replaceExisting": "استبدال",
-    "keepBoth": "الاحتفاظ بكلتيهما"
+    "replaceExisting": "استبدال الموجودة",
+    "keepBoth": "إضافة كجديدة"
   },
   "copilot": {
     "helpTitle": "المساعدة/الأسئلة الشائعة",

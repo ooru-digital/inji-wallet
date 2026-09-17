@@ -293,9 +293,14 @@
         "ERR_VALID_FROM_IS_FUTURE_DATE": "दिनांक अमान्य है या भविष्य में सेट है. वैध तिथि की जांच करें.",
         "ERR_INVALID_VALIDUNTIL": "दिनांक अमान्य है. वैध तिथि की जांच करें."
       },
+      "replaceCredential": {
+        "title": "Replace card",
+        "description": "Select the card or cards you want to replace with the one you just downloaded.",
+        "confirm": "Replace selected"
+      },
       "credentialAlreadyExists": {
         "title": "कार्ड पहले से मौजूद है",
-        "message": "आपके वॉलेट में पहले से ही इस प्रकार का एक कार्ड मौजूद है। क्या उसे नए कार्ड से बदलें, या दोनों रखें?"
+        "message": "आपके वॉलेट में इस प्रकार का एक कार्ड पहले से मौजूद है। क्या आप किसी मौजूदा कार्ड को बदलना चाहते हैं या नए कार्ड को नए कार्ड के रूप में जोड़ना चाहते हैं?"
       }
     }
   },
@@ -1129,8 +1134,8 @@
       "title": "ऐप अनलॉक करें",
       "description": "कृपया ऐप को अनलॉक करने के लिए फिंगरप्रिंट का उपयोग करें"
     },
-    "replaceExisting": "बदलें",
-    "keepBoth": "दोनों रखें"
+    "replaceExisting": "मौजूदा को बदलें",
+    "keepBoth": "नए के तौर पर जोड़ें"
   },
   "copilot": {
     "helpTitle": "सहायता/अक्सर पूछे जाने वाले प्रश्न",

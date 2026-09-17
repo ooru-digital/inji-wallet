@@ -29,6 +29,7 @@ import {SvgImage} from '../../components/ui/svg';
 import {Icon} from 'react-native-elements';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {CredentialTypeSelectionScreen} from './CredentialTypeSelectionScreen';
+import {ReplaceCredentialSelectionScreen} from './ReplaceCredentialSelectionScreen';
 import {QrScanner} from '../../components/QrScanner';
 import {AUTH_ROUTES} from '../../routes/routesConstants';
 import {TransactionCodeModal} from './TransactionCodeScreen';
@@ -329,6 +330,9 @@ export const IssuersScreen: React.FC<
         customStyles={{marginTop: '30%'}}
       />
     );
+  }
+  if (controller.isSelectingCredentialsToReplace) {
+    return <ReplaceCredentialSelectionScreen {...props} />;
   }
   if (controller.isConsentRequested) {
     return issuerTrustConsentComponent();

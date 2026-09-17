@@ -64,23 +64,24 @@ export function getDownloadedCredentialType(context: any): string | null {
 }
 
 /**
- * The credential already in the wallet that has the same specific type as the one being
- * downloaded, or null if there isn't one.
+ * Every credential already in the wallet with the same specific type as the one being downloaded.
  *
- * Returns the matched VC rather than a boolean because the caller needs its metadata to offer
- * "replace the existing one".
+ * All matches are returned, not just the first, because the user chooses which ones to replace —
+ * picking one automatically would silently delete whichever happened to come first, and `myVcs` is
+ * built newest-first, so "the first" was the most recent card rather than the oldest.
+ *
+ * Returns the matched VCs rather than a count because the caller needs their metadata both to
+ * render the list and to delete the chosen ones.
  */
-export function findCredentialOfSameType(
+export function findCredentialsOfSameType(
   context: any,
   storedVcs: Record<string, any>,
-): any | null {
+): any[] {
   const downloadedType = getDownloadedCredentialType(context);
   if (!downloadedType) {
-    return null;
+    return [];
   }
-  return (
-    Object.values(storedVcs ?? {}).find(
-      (vc: any) => getStoredCredentialType(vc) === downloadedType,
-    ) ?? null
+  return Object.values(storedVcs ?? {}).filter(
+    (vc: any) => getStoredCredentialType(vc) === downloadedType,
   );
 }

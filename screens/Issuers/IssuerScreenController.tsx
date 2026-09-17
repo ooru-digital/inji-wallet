@@ -28,6 +28,9 @@ import {
   selectIsAuthorizationSuccess,
   selectSelectedCredentialType,
   selectTrustedIssuerConsentStatus,
+  selectIsSelectingCredentialsToReplace,
+  selectDuplicateVcMetadatas,
+  selectSelectedDuplicateVcKeys,
 } from '../../machines/Issuers/IssuersSelectors';
 import {ActorRefFrom} from 'xstate';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
@@ -93,6 +96,15 @@ export function useIssuerScreenController({route, navigation}) {
       service,
       selectIsCredentialAlreadyExists,
     ),
+    isSelectingCredentialsToReplace: useSelector(
+      service,
+      selectIsSelectingCredentialsToReplace,
+    ),
+    duplicateVcMetadatas: useSelector(service, selectDuplicateVcMetadatas),
+    selectedDuplicateVcKeys: useSelector(
+      service,
+      selectSelectedDuplicateVcKeys,
+    ),
 
     CANCEL: () => service.send(IssuerScreenTabEvents.CANCEL()),
     SELECTED_ISSUER: id =>
@@ -120,8 +132,19 @@ export function useIssuerScreenController({route, navigation}) {
     // Both choices end in the machine's `storing` state, so the existing download-success effect
     // handles navigation — no manual navigate here, or it would fire twice.
     KEEP_BOTH: () => service.send(IssuerScreenTabEvents.KEEP_BOTH()),
+    // Opens the picker rather than deleting anything — the machine only removes cards once the
+    // user confirms a selection.
     REPLACE_EXISTING: () =>
       service.send(IssuerScreenTabEvents.REPLACE_EXISTING()),
+    TOGGLE_DUPLICATE_SELECTION: (vcKey: string) =>
+      service.send(IssuerScreenTabEvents.TOGGLE_DUPLICATE_SELECTION(vcKey)),
+    CHECK_ALL_DUPLICATES: () =>
+      service.send(IssuerScreenTabEvents.CHECK_ALL_DUPLICATES()),
+    UNCHECK_ALL_DUPLICATES: () =>
+      service.send(IssuerScreenTabEvents.UNCHECK_ALL_DUPLICATES()),
+    CONFIRM_REPLACE: () =>
+      service.send(IssuerScreenTabEvents.CONFIRM_REPLACE()),
+    CANCEL_REPLACE: () => service.send(IssuerScreenTabEvents.CANCEL_REPLACE()),
     QR_CODE_SCANNED: (qrData: string) => {
       service.send(IssuerScreenTabEvents.QR_CODE_SCANNED(qrData));
     },

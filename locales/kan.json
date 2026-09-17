@@ -292,9 +292,14 @@
         "ERR_VALID_FROM_IS_FUTURE_DATE": "ದಿನಾಂಕ ಅಮಾನ್ಯವಾಗಿದೆ ಅಥವಾ ಭವಿಷ್ಯದಲ್ಲಿ ಹೊಂದಿಸಲಾಗಿದೆ. ಮಾನ್ಯವಾದ ದಿನಾಂಕವನ್ನು ಪರಿಶೀಲಿಸಿ.",
         "ERR_INVALID_VALIDUNTIL": "ದಿನಾಂಕ ಅಮಾನ್ಯವಾಗಿದೆ. ಮಾನ್ಯವಾದ ದಿನಾಂಕವನ್ನು ಪರಿಶೀಲಿಸಿ."
       },
+      "replaceCredential": {
+        "title": "Replace card",
+        "description": "Select the card or cards you want to replace with the one you just downloaded.",
+        "confirm": "Replace selected"
+      },
       "credentialAlreadyExists": {
         "title": "ಕಾರ್ಡ್ ಈಗಾಗಲೇ ಇದೆ",
-        "message": "ಈ ಬಗೆಯ ಕಾರ್ಡ್ ಈಗಾಗಲೇ ನಿಮ್ಮ ವಾಲೆಟ್‌ನಲ್ಲಿದೆ. ಅದನ್ನು ಹೊಸದರೊಂದಿಗೆ ಬದಲಾಯಿಸಬೇಕೇ ಅಥವಾ ಎರಡನ್ನೂ ಇಟ್ಟುಕೊಳ್ಳಬೇಕೇ?"
+        "message": "ಈ ರೀತಿಯ ಕಾರ್ಡ್ ಈಗಾಗಲೇ ನಿಮ್ಮ ವಾಲೆಟ್‌ನಲ್ಲಿ ಇದೆ. ನೀವು ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಕಾರ್ಡ್ ಅನ್ನು ಬದಲಾಯಿಸಲು ಬಯಸುವಿರಾ ಅಥವಾ ಹೊಸ ಕಾರ್ಡ್ ಅನ್ನು ಹೊಸದಾಗಿ ಸೇರಿಸಲು ಬಯಸುವಿರಾ?"
       }
     }
   },
@@ -1129,8 +1134,8 @@
       "title": "ಅಪ್ಲಿಕೇಶನ್ ಅನ್ಲಾಕ್ ಮಾಡಿ",
       "description": "ಅಪ್ಲಿಕೇಶನ್ ಅನ್‌ಲಾಕ್ ಮಾಡಲು ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಬಳಸಿ"
     },
-    "replaceExisting": "ಬದಲಾಯಿಸಿ",
-    "keepBoth": "ಎರಡನ್ನೂ ಇಡಿ"
+    "replaceExisting": "ಅಸ್ತಿತ್ವದಲ್ಲಿರುವುದನ್ನು ಬದಲಾಯಿಸಿ",
+    "keepBoth": "ಹೊಸ ಕಾರ್ಡ್ ಆಗಿ ಸೇರಿಸಿ"
   },
   "copilot": {
     "helpTitle": "ಸಹಾಯ/FAQಗಳು",
