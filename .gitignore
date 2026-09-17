@@ -48,6 +48,8 @@ build/
 .idea
 .gradle
 local.properties
+artifactory.local.properties
+android/artifactory.local.properties
 *.iml
 *.hprof
 *.hprof

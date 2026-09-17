@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Button, Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {Pressable, RefreshControl, View} from 'react-native';
@@ -68,6 +68,29 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
     setShowPinVc(true);
   };
   const {start} = useCopilot();
+
+  const shouldStartTour = controller.isOnboarding || controller.isTourGuide;
+
+  /**
+   * Covers the Settings "Replay tour guide". The onLayout below is what starts the tour
+   * on first launch — deliberately, so the first step is measured after native layout
+   * rather than during the mount commit — but that signal never arrives on a replay:
+   * Home is already mounted and laid out by then, nothing re-lays out, and onLayout
+   * doesn't fire again. The flag turning on is the only signal in that case, and since
+   * the screen is already laid out there's nothing left to wait for.
+   *
+   * Only the off->on transition, never the mount: on mount previous and current already
+   * agree, so this stays out of the way and leaves the first-launch path to onLayout. If
+   * the tab was unmounted while in Settings it remounts instead, and onLayout covers it.
+   */
+  const wasStartingTourRef = useRef(shouldStartTour);
+  useEffect(() => {
+    const justTurnedOn = shouldStartTour && !wasStartingTourRef.current;
+    wasStartingTourRef.current = shouldStartTour;
+    if (justTurnedOn) {
+      start(t('copilot:helpTitle'));
+    }
+  }, [shouldStartTour]);
 
   useEffect(() => {
     if (controller.isInitialDownloading) {
@@ -230,7 +253,24 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
 
   return (
     <React.Fragment>
-      <Column fill style={{display: props.isVisible ? 'flex' : 'none'}}>
+      {/* Starts the tour on first launch, once this screen has actually laid out. The
+          Settings replay used to call start() synchronously alongside
+          navigation.navigate() to Home, before Home had mounted at all (see
+          SettingScreenController's INJI_TOUR_GUIDE); this onLayout is that wait. Replays
+          are handled by the effect above instead, since they don't re-trigger layout.
+
+          start() is given the step's name rather than called bare because a bare start()
+          takes whichever step is registered with the lowest order at that instant, with
+          no retry — steps register in a useEffect, so if Help hadn't registered yet the
+          tour silently began on "Download Card" and reported itself as "2 of 5". Naming
+          the step uses the library's wait-for-it path instead: it retries via
+          requestAnimationFrame until that step exists. */}
+      <Column
+        fill
+        style={{display: props.isVisible ? 'flex' : 'none'}}
+        onLayout={
+          shouldStartTour ? () => start(t('copilot:helpTitle')) : undefined
+        }>
         {controller.isRequestSuccessful && (
           <BannerNotification
             type={BannerStatusType.SUCCESS}
@@ -392,7 +432,6 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                   />
                 }>
                 <View
-                  onLayout={controller.isOnboarding ? () => start() : undefined}
                   style={{
                     alignItems: 'center',
                   }}>

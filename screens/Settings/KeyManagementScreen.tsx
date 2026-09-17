@@ -107,14 +107,27 @@ export const KeyManagementScreen: React.FC<KeyManagementScreenProps> = () => {
     }
   };
 
+  // react-native-copilot measures its target the moment the tour starts, so starting
+  // it from the outer screen's onLayout (as this used to) measured the DragList while
+  // keyOrder was still [] — fetchSupportedKeyTypes hadn't resolved yet — giving it a
+  // near-zero highlight rect. The tooltip then anchored just below that sliver, which
+  // landed on top of the real, populated list once it rendered a moment later. Starting
+  // from the DragList's own onLayout instead means the tour only ever measures it once
+  // it has actual rows and a real height — onLayout fires again when the list grows
+  // from empty to populated, so this simply waits for that later firing.
+  const startTourGuideOnceListIsPopulated = () => {
+    if (keyOrder.length > 0) {
+      startTourGuide();
+    }
+  };
+
   return (
     <View
       style={{
         flex: 1,
         elevation: 5,
         backgroundColor: '#ffffff',
-      }}
-      onLayout={startTourGuide}>
+      }}>
       <View style={Theme.KeyManagementScreenStyle.outerViewStyle}>
         <TouchableOpacity onPress={isClosed}>
           <BackButton
@@ -144,6 +157,7 @@ export const KeyManagementScreen: React.FC<KeyManagementScreenProps> = () => {
             renderItem={renderItem}
             keyExtractor={item => item.value}
             onReordered={handleReorder}
+            onLayout={startTourGuideOnceListIsPopulated}
           />
         </Copilot>
       </View>

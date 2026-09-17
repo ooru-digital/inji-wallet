@@ -1,9 +1,33 @@
+// React Native 0.75+ autolinking. The old
+// `applyNativeModulesSettingsGradle(settings)` from
+// @react-native-community/cli-platform-android was removed upstream; the settings
+// plugin below is what now generates android/build/generated/autolinking/autolinking.json,
+// which :app:generateAutolinkingPackageList consumes.
+pluginManagement {
+    includeBuild("../node_modules/@react-native/gradle-plugin")
+}
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand()
+}
+
 rootProject.name = 'Inji'
 
-apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
 include ':app'
- includeBuild('../node_modules/@react-native/gradle-plugin') 
+
+// Also needed at the top level (not only in pluginManagement above): the root
+// buildscript declares `classpath("com.facebook.react:react-native-gradle-plugin")`
+// with no version, and Expo's included builds depend on it too, so both rely on
+// composite-build substitution from here.
+includeBuild('../node_modules/@react-native/gradle-plugin')
+
+// Not picked up by autolinking (no react-native.config.js), so it stays a manual include.
 include ':react-native-android-location-services-dialog-box'
 project(':react-native-android-location-services-dialog-box').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-android-location-services-dialog-box/android')
+
 apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle")
 useExpoModules()

@@ -1,21 +1,13 @@
 import React, {useRef} from 'react';
 import AppIntroSlider from 'react-native-app-intro-slider';
-import {
-  Dimensions,
-  ImageBackground,
-  StatusBar,
-  View,
-  ScrollView,
-} from 'react-native';
+import {Dimensions, StatusBar, View, ScrollView} from 'react-native';
 import {Centered, Column, Row, Text, Button} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {useTranslation} from 'react-i18next';
 import {RootRouteProps} from '../../routes';
 import {useWelcomeScreen} from '../WelcomeScreenController';
 import LinearGradient from 'react-native-linear-gradient';
-import {SvgImage} from '../../components/ui/svg';
 import testIDProps from '../../shared/commonUtil';
-import {INTRO_SLIDER_LOGO_MARGIN} from '../../shared/constants';
 import {StaticAuthScreen} from '../IntroSliders/biometricIntro';
 import {StaticScanScreen} from '../IntroSliders/quickAccessIntro';
 import StaticBackupAndRestoreScreen from '../IntroSliders/backupRestoreIntro';
@@ -66,13 +58,18 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
 
   const renderItem = ({item}) => {
     return (
-      <ImageBackground source={require('./IntroBg.png')}>
+      // IntroBg.png was a leftover purple-to-red decorative gradient, inconsistent with
+      // the rest of the app's rebrand to a single solid brand blue (Theme.Colors.GradientColors
+      // is now ['#2A2DA4', '#2A2DA4'] everywhere else). LinearGradient here (instead of a
+      // plain colored View) keeps this in step with that shared source of truth if a real
+      // two-tone gradient is ever reintroduced.
+      <LinearGradient
+        style={{flex: 1}}
+        colors={Theme.Colors.GradientColors}
+        start={Theme.LinearGradientDirection.start}
+        end={Theme.LinearGradientDirection.end}>
         <Centered>
-          <Row align="space-between" style={Theme.Styles.introSliderHeader}>
-            <Column style={{marginLeft: INTRO_SLIDER_LOGO_MARGIN}}>
-              {SvgImage.InjiSmallLogo()}
-            </Column>
-
+          <Row align="flex-end" style={Theme.Styles.introSliderHeader}>
             {item.key !== 'five' && (
               <Button
                 testID={
@@ -124,7 +121,7 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
             </ScrollView>
           </Column>
         </Centered>
-      </ImageBackground>
+      </LinearGradient>
     );
   };
 

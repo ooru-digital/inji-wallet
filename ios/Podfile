@@ -27,7 +27,11 @@ prepare_react_native_project!
 # ```
 
 target 'Inji' do
-  use_expo_modules!
+  # expo-face-detector pulls in GoogleMLKit/FaceDetection, which ships no
+  # arm64 iOS Simulator slice. Set NO_MLKIT=1 before `pod install` to drop it
+  # locally so Simulator builds can link on Apple Silicon; the liveness check
+  # screen won't work in that build, everything else is unaffected.
+  use_expo_modules!(ENV['NO_MLKIT'] == '1' ? {exclude: ['expo-face-detector']} : {})
   config = use_native_modules!
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
@@ -46,6 +50,24 @@ target 'Inji' do
   )
 
   post_install do |installer|
+    # Works around an fmt 11.0.2 bug where the FMT_STRING() compile-time
+    # format-string wrapper fails `consteval` checks under Clang 16.3+
+    # (Xcode 16.3+/26.x). Fixed upstream in later fmt releases; RN 0.79.6
+    # still pins 11.0.2. Neutering the macro falls back to fmt's normal
+    # runtime format-string parsing, which still works correctly.
+    fmt_format_h = File.join(__dir__, 'Pods/fmt/include/fmt/format.h')
+    if File.exist?(fmt_format_h)
+      contents = File.read(fmt_format_h)
+      patched = contents.sub(
+        '#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string, )',
+        '#define FMT_STRING(s) (s)'
+      )
+      if patched != contents
+        File.chmod(0644, fmt_format_h)
+        File.write(fmt_format_h, patched)
+      end
+    end
+
     installer.pods_project.targets.each do |target|
       if target.name == 'RNZipArchive'
         target.source_build_phase.files.each do |file|
@@ -83,6 +105,18 @@ target 'Inji' do
       # necessary for Mac Catalyst builds
       :mac_catalyst_enabled => false
     )
+
+    # CatCrypto (pulled in by RNArgon2) declares private clang submodules
+    # (Argon2, MD6, SHA3) that Swift's explicit-module dependency scanner
+    # can't independently resolve for downstream targets under newer Xcode.
+    # Falling back to implicit module builds avoids the "Unable to resolve
+    # module dependency" failure.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
+        config.build_settings['CLANG_ENABLE_EXPLICIT_MODULES'] = 'NO'
+      end
+    end
 
 
     # This is necessary for Xcode 14, because it signs resource bundles by default
@@ -147,8 +181,14 @@ target 'Inji' do
         end
       end
       target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
-        config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] =  "arm64"
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = podfile_properties['ios.deploymentTarget'] || '14.0'
+        # GoogleMLKit ships no arm64 iOS Simulator slice, so Simulator builds
+        # are normally pinned to x86_64. Skip that when NO_MLKIT=1 has excluded
+        # expo-face-detector (and its GoogleMLKit dependency) so arm64 Apple
+        # Silicon Simulator builds can link.
+        unless ENV['NO_MLKIT'] == '1'
+          config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] =  "arm64"
+        end
       end
     end
     # get team-id from project's first target
@@ -180,6 +220,11 @@ target 'Inji' do
           phase = target.shell_script_build_phases.find { |bp| bp.name == '[CP] Copy Pods Resources' }
           if !phase.nil?
             phase.output_paths.delete('${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Assets.car')
+          end
+          if ENV['NO_MLKIT'] == '1'
+            target.build_configurations.each do |config|
+              config.build_settings.delete("EXCLUDED_ARCHS[sdk=iphonesimulator*]")
+            end
           end
         end
     end

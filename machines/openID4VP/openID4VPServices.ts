@@ -27,6 +27,25 @@ export const openID4VPServices = () => {
     },
 
     getAuthenticationResponse: (context: any) => async () => {
+      // DIAGNOSTIC (dev only) — remove once the authenticateVerifier failure is understood.
+      // The xstate machine log truncates this string, and the native side currently reports the
+      // failure only as a bare "ERR_UNKNOWN" with an undefined userInfo, so neither end shows
+      // what the SDK was actually handed. This is the exact post-normalizeAuthorizationRequest
+      // input — worth checking specifically whether client_id_scheme=pre-registered was appended
+      // (needsPreRegisteredScheme should add it for this verifier's bare http client_id) and
+      // whether client_metadata came through with vp_formats.
+      if (__DEV__) {
+        console.log(
+          '[OpenID4VP] authenticateVerifier request:',
+          context.urlEncodedAuthorizationRequest,
+        );
+        console.log(
+          '[OpenID4VP] trustedVerifiers count:',
+          Array.isArray(context.trustedVerifiers)
+            ? context.trustedVerifiers.length
+            : typeof context.trustedVerifiers,
+        );
+      }
       return await OpenID4VP.authenticateVerifier(
         context.urlEncodedAuthorizationRequest,
         context.trustedVerifiers,

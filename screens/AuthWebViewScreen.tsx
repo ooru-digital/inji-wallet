@@ -27,7 +27,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
   const parsed = psl.parse(hostName);
   const rootDomain = parsed.domain || hostName;
   const ALERT_TITLE = t('title', {
-    wallet: 'Inji Wallet',
+    wallet: 'CredIssuer Wallet',
     domain: rootDomain || 'mosip.net',
   });
   const ALERT_MESSAGE = t('message');
@@ -119,7 +119,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
     return true;
   };
 
-  const Header = () => (
+  const renderHeader = () => (
     <View style={Theme.AuthWebViewScreenStyle.header}>
       <TouchableOpacity
         onPress={() => {
@@ -135,7 +135,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
 
   return (
     <View style={{flex: 1}}>
-      <Header />
+      {renderHeader()}
       {shouldRenderWebView && !showWebView && (
         <WebView style={{width: 0, height: 0}} source={{uri: 'about:blank'}} />
       )}

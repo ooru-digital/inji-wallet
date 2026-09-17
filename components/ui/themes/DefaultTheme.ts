@@ -7,10 +7,10 @@ import {
   ViewStyle,
 } from 'react-native';
 import {Spacing, Theme} from '../styleUtils';
-import {COPILOT_HEIGHT, isIOS, isAndroid} from '../../../shared/constants';
+import {COPILOT_HEIGHT, isIOS} from '../../../shared/constants';
 import Constants from 'expo-constants';
-import HomeScreenLogo from '../../../assets/InjiHomeLogo.svg';
-import InjiLogoSmall from '../../../assets/InjiLogo.svg';
+import HomeScreenLogo from '../../../assets/CredIssuerHorizontalLogo.svg';
+import InjiLogoSmall from '../../../assets/InjiHomeLogo.svg';
 import i18next from '../../../i18n';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -19,7 +19,7 @@ const Colors = {
   Black: '#000000',
   Zambezi: '#5F5F5F',
   Violet: '#5B03AD',
-  Primary: '#FF5300',
+  Primary: '#2A2DA4',
   Magenta: '#951F6F',
   Grey: '#C7C7C7',
   Grey5: '#E0E0E0',
@@ -34,9 +34,9 @@ const Colors = {
   DimGray: '#737373',
   DarkGray: '#A5A5A5',
   platinumGrey: '#EDEDED',
-  Secondary: '#951F6F',
+  Secondary: '#2A2DA4',
   OrangeBrown: '#D9822B',
-  Blue: '#0000FF',
+  Blue: '#2A2DA4',
   LightGrey: '#F8F8F8',
   ShadeOfGrey: '#6F6F6F',
   mediumDarkGrey: '#7B7B7B',
@@ -51,19 +51,19 @@ const Colors = {
   dorColor: '#CBCBCB',
   plainText: '#FFFFFF',
   walletbindingLabel: '#000000',
-  LightOrange: '#FDF1E6',
-  GradientColors: ['#FF5300', '#5B03AD'],
-  GradientColorsLight: ['#FF5300' + 14, '#5B03AD' + 14],
+  LightOrange: '#F7EDF3',
+  GradientColors: ['#2A2DA4', '#2A2DA4'],
+  GradientColorsLight: ['#2A2DA4' + 14, '#2A2DA4' + 14],
   DisabledColors: ['#C7C7C7', '#C7C7C7'],
   TimeoutHintBoxColor: '#FFF7E5',
   TimeoutHintBoxBorder: '#FFF2D6',
   TimeoutHintText: '#8B6105',
   resendCodeTimer: '#555555',
   uncheckedIcon: '#DBDBDB',
-  startColor: '#ff5300',
-  endColor: '#5b03ad',
+  startColor: '#2A2DA4',
+  endColor: '#2A2DA4',
   stroke: '#ee8123',
-  iconBg: '#ffa85a',
+  iconBg: '#2A2DA4',
   warningLogoBg: '#FFF7E5',
   toolTip: '#B7B7B7',
   toolTipContent: '#4B4B4B',
@@ -124,7 +124,7 @@ export const DefaultTheme = {
     DefaultToggle: Colors.LightOrange,
     GrayText: Colors.GrayText,
     errorGrayText: Colors.mediumDarkGrey,
-    gradientBtn: ['#FF5300', '#5B03AD'],
+    gradientBtn: ['#2A2DA4', '#2A2DA4'],
     dotColor: Colors.dorColor,
     plainText: Colors.plainText,
     IconBackground: Colors.LightOrange,
@@ -416,18 +416,21 @@ export const DefaultTheme = {
       flex: 1,
       justifyContent: 'space-between',
     },
+    // The brand mark is a square roundel (1599x1599). The previous wordmark was ~2:1, so these
+    // boxes were wide and carried negative margins to crop its built-in whitespace — a square
+    // asset in a wide box just letterboxes, so the boxes are square and the offsets are gone.
     welcomeLogo: {
-      width: 185,
-      height: 100,
+      width: 150,
+      height: 150,
     },
+    // CredIssuerHorizontalLogo.svg's own viewBox is 206x33 (icon + wordmark side by side),
+    // so this box is sized to that ratio rather than the square box the icon-only mark used.
     injiLogo: {
-      width: 191.58,
-      height: 84,
+      width: 175,
+      height: 28,
     },
     injiHomeLogo: {
-      marginLeft: -30,
-      marginTop: -12,
-      marginBottom: isAndroid() ? -30 : 0,
+      marginLeft: 12,
     },
     logo: {
       height: 35,
@@ -437,7 +440,7 @@ export const DefaultTheme = {
       resizeMode: 'contain',
       aspectRatio: 1,
       height: 35,
-      marginRight: 10
+      marginRight: 10,
     },
     vcDetailsLogo: {
       height: 65,
@@ -679,9 +682,11 @@ export const DefaultTheme = {
       marginTop: 10,
     },
     introSliderHeader: {
+      // Android's extra offset was bumped from +40 — the Skip button sat too close to
+      // (almost under) the status bar at that value.
       marginTop: isIOS()
         ? Constants.statusBarHeight + 40
-        : StatusBar.currentHeight + 40,
+        : (StatusBar.currentHeight ?? 0) + 130,
       width: '100%',
       marginBottom: 50,
     },
@@ -1080,19 +1085,29 @@ export const DefaultTheme = {
       borderBottomWidth: 1,
       borderBottomColor: Colors.Secondary,
     },
+    // Rounded, inset pill (rather than the old edge-to-edge underline bar) for the Home
+    // screen's VC search. Margins replace the previous `width: window width` full-bleed
+    // override, and the shadow gives it definition against the tab's own light-grey
+    // background instead of hairline borders.
     vcSearchBarContainer: {
       alignItems: 'center',
-      borderBottomWidth: 0.5,
-      borderTopWidth: 0.5,
-      borderColor: Colors.DimGray,
-      width: Dimensions.get('window').width,
+      marginHorizontal: 8,
+      marginVertical: 10,
+      height: 46,
+      borderRadius: 23,
       backgroundColor: Colors.White,
+      shadowColor: Colors.Black,
+      shadowOffset: {width: 0, height: 1},
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 1,
     },
     vcSearchIcon: {
       justifyContent: 'center',
-      height: Dimensions.get('window').height * 0.055,
-      width: Dimensions.get('window').width * 0.1,
-      paddingLeft: 15,
+      alignItems: 'center',
+      height: 46,
+      width: 44,
+      paddingLeft: 14,
     },
     searchIcon: {
       justifyContent: 'center',
@@ -1103,6 +1118,12 @@ export const DefaultTheme = {
       textAlign: I18nManager.isRTL ? 'right' : 'left',
       height: Dimensions.get('window').height * 0.055,
       width: Dimensions.get('window').width * 0.75,
+    },
+    vcSearchBar: {
+      textAlign: I18nManager.isRTL ? 'right' : 'left',
+      height: 46,
+      flex: 1,
+      paddingRight: 12,
     },
     clearSearch: {
       padding: 10,

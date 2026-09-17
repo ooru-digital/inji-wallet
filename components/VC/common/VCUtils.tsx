@@ -63,12 +63,25 @@ function iterateMsoMdocFor(
   element: 'elementIdentifier' | 'elementValue',
   fieldName: string,
 ) {
-  const foundItem = credential['issuerSigned']['nameSpaces'][namespace]?.find(
-    element => {
-      return element.elementIdentifier === fieldName;
-    },
-  );
-  return foundItem?.[element];
+  const raw =
+    credential?.issuerSigned?.nameSpaces?.[namespace] ??
+    credential?.nameSpaces?.[namespace];
+  if (raw == null) {
+    return undefined;
+  }
+  if (Array.isArray(raw)) {
+    const foundItem = raw.find(
+      (e: {elementIdentifier?: string}) => e.elementIdentifier === fieldName,
+    );
+    return foundItem?.[element];
+  }
+  if (typeof raw === 'object' && fieldName in raw) {
+    if (element === 'elementIdentifier') {
+      return fieldName;
+    }
+    return (raw as Record<string, unknown>)[fieldName];
+  }
+  return undefined;
 }
 
 export const getFieldValue = (

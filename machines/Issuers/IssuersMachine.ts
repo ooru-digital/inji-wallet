@@ -863,13 +863,13 @@ export const IssuersMachine = model.createMachine(
               'setVerificationResult',
               'resetCredentialOfferFlowType',
             ],
-            target: 'storing',
+            target: 'checkingForDuplicateCredential',
           },
           onError: [
             {
               cond: 'isVerificationPendingBecauseOfNetworkIssue',
               actions: ['resetLoadingReason', 'resetVerificationResult'],
-              target: 'storing',
+              target: 'checkingForDuplicateCredential',
             },
             {
               actions: [
@@ -888,6 +888,89 @@ export const IssuersMachine = model.createMachine(
           RESET_VERIFY_ERROR: {
             actions: ['resetVerificationErrorMessage'],
             target: 'selectingIssuer',
+          },
+        },
+      },
+
+      checkingForDuplicateCredential: {
+        description:
+          'checks whether the wallet already holds a W3C credential of the same specific type. ' +
+          'Sits here rather than earlier because the credential has to be downloaded before its ' +
+          'type is known. mdoc/mDL passes straight through.',
+        entry: ['setDuplicateCredentials'],
+        always: [
+          {
+            cond: 'hasCredentialOfSameType',
+            actions: ['resetLoadingReason'],
+            target: 'credentialAlreadyExists',
+          },
+          {
+            target: 'storing',
+          },
+        ],
+      },
+
+      credentialAlreadyExists: {
+        description:
+          'asks the user what to do about a credential of a type they already hold: keep both, or ' +
+          'replace one. Nothing is written to storage until they choose.',
+        on: {
+          KEEP_BOTH: {
+            actions: ['resetDuplicateCredentials'],
+            target: 'storing',
+          },
+          REPLACE_EXISTING: {
+            target: 'selectingCredentialsToReplace',
+          },
+        },
+      },
+
+      selectingCredentialsToReplace: {
+        description:
+          'lists every card sharing the incoming credential type and lets the user tick which to ' +
+          'replace. Without this the wallet chose for them — it deleted the single card that ' +
+          '`find` happened to return, which, because myVcs is built newest-first, was the most ' +
+          'recently downloaded rather than the oldest.',
+        on: {
+          TOGGLE_DUPLICATE_SELECTION: {
+            actions: ['toggleDuplicateSelection'],
+          },
+          CHECK_ALL_DUPLICATES: {
+            actions: ['checkAllDuplicates'],
+          },
+          UNCHECK_ALL_DUPLICATES: {
+            actions: ['uncheckAllDuplicates'],
+          },
+          CONFIRM_REPLACE: {
+            // Guarded so "Replace" with nothing ticked cannot fall through and delete nothing
+            // while still consuming the download.
+            cond: 'hasSelectedDuplicates',
+            target: 'replacingExistingCredential',
+          },
+          CANCEL_REPLACE: {
+            actions: ['uncheckAllDuplicates'],
+            target: 'credentialAlreadyExists',
+          },
+        },
+      },
+
+      replacingExistingCredential: {
+        description:
+          'deletes the cards the user chose, then stores the new one. Waits for the store to ' +
+          'acknowledge the removal before storing, so the two writes to the myVCs list cannot ' +
+          'interleave and clobber each other.',
+        entry: [
+          'removeSelectedDuplicatesFromStorage',
+          'removeSelectedDuplicatesFromVcMetaContext',
+        ],
+        on: {
+          STORE_RESPONSE: {
+            actions: ['resetDuplicateCredentials'],
+            target: 'storing',
+          },
+          STORE_ERROR: {
+            actions: ['setError', 'resetLoadingReason'],
+            target: '#issuersMachine.error',
           },
         },
       },

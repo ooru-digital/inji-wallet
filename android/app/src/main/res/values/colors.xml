@@ -1,5 +1,7 @@
 <resources>
-  <color name="splashscreen_background">#FFFFFF</color>
+  <!-- Soft tint of the brand blue (#2A2DA4 at ~8% over white) behind the Android 12+ system
+       splash icon, wired to AppTheme's windowSplashScreenBackground in styles.xml. -->
+  <color name="splashscreen_background">#EEEEF8</color>
   <color name="iconBackground">#FFFFFF</color>
   <color name="colorPrimary">#023c69</color>
   <color name="colorPrimaryDark">#ffffff</color>

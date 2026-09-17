@@ -57,7 +57,11 @@ public class RNInjiVcRendererModule extends ReactContextBaseJavaModule {
         }
     }
 
-    @ReactMethod
+    // Deliberately NOT @ReactMethod — same defect as InjiOpenID4VPModule's own reject helper. A
+    // private helper annotated @ReactMethod with a java.lang.Exception parameter is unparseable by
+    // the new architecture's TurboModuleInteropUtils, which eagerly builds a JNI signature for
+    // every annotated method and fails the entire module when one of them can't be parsed. Left
+    // as-is this would break NativeModules.RNInjiVcRenderer the same way it broke InjiOpenID4VP.
     private static void rejectWithVcRendererExceptions(Exception e, Promise promise) {
         if (e instanceof VcRendererExceptions) {
             VcRendererExceptions ex = (VcRendererExceptions) e;

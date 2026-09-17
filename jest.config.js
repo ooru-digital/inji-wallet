@@ -57,6 +57,7 @@ module.exports = {
     '<rootDir>/__mocks__/text-encoder.js',
     // https://github.com/react-native-google-signin/google-signin?tab=readme-ov-file#jest-module-mock
     '<rootDir>/node_modules/@react-native-google-signin/google-signin/jest/build/setup.js',
+    '<rootDir>/__mocks__/react-native-safe-area-context.mock.js',
   ],
   // TODO: enable this to also collect coverage
   collectCoverage: false,

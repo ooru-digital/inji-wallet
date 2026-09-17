@@ -35,7 +35,11 @@ export const SearchBar = ({
       )}
       <TextInput
         testID={searchBarTestID}
-        style={Theme.SearchBarStyles.searchBar}
+        style={
+          isVcSearch
+            ? Theme.SearchBarStyles.vcSearchBar
+            : Theme.SearchBarStyles.searchBar
+        }
         placeholder={placeholder}
         value={search}
         onFocus={onFocus}

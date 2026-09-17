@@ -44,4 +44,19 @@ declare module 'react-native-dotenv' {
    * Flag for Toggling for Liveness Detection
    */
   export const LIVENESS_DETECTION: string;
+
+  /**
+   * Flag for toggling the SnapKYC native liveness check (Android only)
+   */
+  export const SNAPKYC_LIVENESS: string;
+
+  /**
+   * Tenant id passed to the SnapKYC liveness SDK as `relayingPartyName`
+   */
+  export const SNAPKYC_RELAYING_PARTY_NAME: string;
+
+  /**
+   * Debug flag to launch SnapKYC liveness without the credential portrait
+   */
+  export const SNAPKYC_DEBUG_SKIP_FACE_IMAGE: string;
 }

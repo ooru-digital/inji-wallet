@@ -35,6 +35,12 @@ export const IssuersModel = createModel(
     publicKey: '',
     privateKey: '',
     vcMetadata: {} as VCMetadata,
+    // Every credential already in the wallet with the same specific type as the one being
+    // downloaded. Held so "replace" can list them and let the user choose.
+    duplicateVcMetadatas: [] as VCMetadata[],
+    // The vcKeys the user ticked on the replace screen. Empty until they choose, so nothing is
+    // ever deleted by default.
+    selectedDuplicateVcKeys: [] as string[],
     keyType: 'RS256' as string,
     wellknownKeyTypes: [] as string[],
     authEndpointToOpen: false as boolean,

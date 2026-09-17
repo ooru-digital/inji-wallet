@@ -31,7 +31,6 @@ import {GlobalContext} from '../../shared/GlobalContext';
 import {useTranslation} from 'react-i18next';
 import {RequestRouteProps, RootRouteProps} from '../../routes';
 import {BOTTOM_TAB_ROUTES, REQUEST_ROUTES} from '../../routes/routesConstants';
-import {useCopilot} from 'react-native-copilot';
 
 export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
   const {appService} = useContext(GlobalContext);
@@ -103,8 +102,6 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
   const hideAlert = () => {
     setHasAlertMsg('');
   };
-
-  const {start} = useCopilot();
 
   return {
     isVisible,
@@ -191,8 +188,11 @@ export function useSettingsScreen(props: RootRouteProps & RequestRouteProps) {
       settingsService.send(SettingsEvents.INJI_TOUR_GUIDE());
       props.navigation.navigate(BOTTOM_TAB_ROUTES.home);
       setIsVisible(false);
+      // The tour is deliberately not started here: calling start() synchronously
+      // alongside navigate() raced Home's mount, so the tour's first step could still be
+      // unregistered and it would begin on a later step instead. Setting this flag is
+      // enough — MyVcsTab starts the tour from its own onLayout, once Home is on screen.
       authService.send(AuthEvents.SET_TOUR_GUIDE(true));
-      start();
     },
 
     BACK: () => {

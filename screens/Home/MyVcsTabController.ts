@@ -38,6 +38,7 @@ import {
   AuthEvents,
   selectIsInitialDownload,
   selectIsOnboarding,
+  selectIsTourGuide,
 } from '../../machines/auth';
 
 export function useMyVcsTab(props: HomeScreenTabProps) {
@@ -125,6 +126,7 @@ export function useMyVcsTab(props: HomeScreenTabProps) {
       authService?.send(AuthEvents.SET_TOUR_GUIDE(set));
     },
     isOnboarding: authService && useSelector(authService, selectIsOnboarding),
+    isTourGuide: authService && useSelector(authService, selectIsTourGuide),
     isInitialDownloading:
       authService && useSelector(authService, selectIsInitialDownload),
   };

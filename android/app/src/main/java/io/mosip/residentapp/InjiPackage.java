@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.mosip.residentapp.mdoc.MdocIso18013PresentmentModule;
 import io.mosip.tuvali.verifier.Verifier;
 import io.mosip.tuvali.wallet.Wallet;
 
@@ -29,6 +30,8 @@ public class InjiPackage implements ReactPackage {
         modules.add(new InjiOpenID4VPModule(reactApplicationContext));
         modules.add(new RNVCVerifierModule(reactApplicationContext));
         modules.add(new RNInjiVcRendererModule(reactApplicationContext));
+        modules.add(new MdocIso18013PresentmentModule(reactApplicationContext));
+        modules.add(new RNSnapKycLivenessModule(reactApplicationContext));
         return modules;
     }
 

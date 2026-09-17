@@ -73,90 +73,105 @@ export const ScanLayout: React.FC = () => {
         onRetryVerification={controller.RETRY_VERIFICATION}
         isLivenessEnabled={LIVENESS_CHECK}
       />
+      {/*
+        All three screens are registered unconditionally, always — not gated behind the same
+        controller.isReviewing/flowType/openID4VPFlowType values that ScanLayoutController's own
+        useEffect (below) uses to decide when to navigate to them.
+
+        That effect fires from a useNavigation() resolved one level up (against MainLayout's tab
+        navigator, since this hook runs before this component renders its own ScanStack.Navigator
+        below it), so a navigate('SendVPScreen'/'SendVcScreen') dispatched from it has to be
+        resolved by drilling down into this stack's *own* registered route list. Conditionally
+        registering a screen on the identical state the effect reacts to raced that dispatch
+        against this render: react-navigation could resolve the navigate before the conditional
+        Screen had (re)registered, and — unlike a queued action — a NAVIGATE to an unregistered
+        route is simply dropped, not retried. That is what "liveness check doesn't come up" was:
+        openID4VPMachine kept progressing (checkFaceAuthConsent, ...) while the screen meant to
+        host it never mounted, logging "The action 'NAVIGATE' ... was not handled by any
+        navigator. Do you have a screen named 'SendVPScreen'?".
+
+        Registering every screen up front removes the race — react-navigation only mounts a
+        registered Screen once it is actually pushed via navigate(), so this has no eager-render
+        cost, same as the equivalent fix in AppLayout.tsx for Main/Notifications.
+      */}
       <ScanStack.Navigator initialRouteName="ScanScreen">
-        {controller.isReviewing &&
-          controller.flowType === VCShareFlowType.SIMPLE_SHARE && (
-            <ScanStack.Screen
-              name={SCAN_ROUTES.SendVcScreen}
-              component={SendVcScreen}
-              options={{
-                title: t('sharingVc'),
-                headerTitleAlign: 'center',
-                headerTitle: props => (
-                  <View style={Theme.Styles.sendVcHeaderContainer}>
-                    <Text style={Theme.Styles.scanLayoutHeaderTitle}>
-                      {props.children}
-                    </Text>
-                  </View>
-                ),
-                headerBackVisible: false,
-                headerRight: () =>
-                  !I18nManager.isRTL && (
-                    <Icon
-                      name="close"
-                      color={Theme.Colors.blackIcon}
-                      onPress={controller.CANCEL}
-                    />
-                  ),
-                headerLeft: () =>
-                  I18nManager.isRTL && (
-                    <Icon
-                      name="close"
-                      color={Theme.Colors.blackIcon}
-                      onPress={controller.CANCEL}
-                    />
-                  ),
-              }}
-            />
-          )}
-        {controller.openID4VPFlowType === VCShareFlowType.OPENID4VP ? (
-          <ScanStack.Screen
-            name={SCAN_ROUTES.SendVPScreen}
-            component={SendVPScreen}
-            options={{
-              title: t('SendVPScreen:requester'),
-              headerTitle: props => (
-                <View style={Theme.Styles.sendVPHeaderContainer}>
-                  <Text style={Theme.Styles.sendVPHeaderTitle}>
-                    {props.children}
-                  </Text>
-                  {controller.vpVerifierName && (
-                    <Text style={Theme.Styles.sendVPHeaderSubTitle}>
-                      {controller.vpVerifierName}
-                    </Text>
-                  )}
-                </View>
+        <ScanStack.Screen
+          name={SCAN_ROUTES.ScanScreen}
+          component={ScanScreen}
+          options={{
+            title: t('MainLayout:share'),
+            headerTitleAlign: 'left',
+            headerTitleStyle: Theme.Styles.scanLayoutHeaderTitle,
+          }}
+        />
+        <ScanStack.Screen
+          name={SCAN_ROUTES.SendVcScreen}
+          component={SendVcScreen}
+          options={{
+            title: t('sharingVc'),
+            headerTitleAlign: 'center',
+            headerTitle: props => (
+              <View style={Theme.Styles.sendVcHeaderContainer}>
+                <Text style={Theme.Styles.scanLayoutHeaderTitle}>
+                  {props.children}
+                </Text>
+              </View>
+            ),
+            headerBackVisible: false,
+            headerRight: () =>
+              !I18nManager.isRTL && (
+                <Icon
+                  name="close"
+                  color={Theme.Colors.blackIcon}
+                  onPress={controller.CANCEL}
+                />
               ),
-              headerBackVisible: false,
-              headerRight: () =>
-                !I18nManager.isRTL && (
-                  <Icon
-                    name="close"
-                    color={Theme.Colors.blackIcon}
-                    onPress={controller.DISMISS}
-                  />
-                ),
-              headerLeft: () =>
-                I18nManager.isRTL && (
-                  <Icon
-                    name="close"
-                    color={Theme.Colors.blackIcon}
-                    onPress={controller.DISMISS}
-                  />
-                ),
-            }}
-          />
-        ) : (
-          <ScanStack.Screen
-            name={SCAN_ROUTES.ScanScreen}
-            component={ScanScreen}
-            options={{
-              title: t('MainLayout:share'),
-              headerTitleAlign: 'left',
-              headerTitleStyle: Theme.Styles.scanLayoutHeaderTitle,
-            }}
-          />
-        )}
+            headerLeft: () =>
+              I18nManager.isRTL && (
+                <Icon
+                  name="close"
+                  color={Theme.Colors.blackIcon}
+                  onPress={controller.CANCEL}
+                />
+              ),
+          }}
+        />
+        <ScanStack.Screen
+          name={SCAN_ROUTES.SendVPScreen}
+          component={SendVPScreen}
+          options={{
+            title: t('SendVPScreen:requester'),
+            headerTitle: props => (
+              <View style={Theme.Styles.sendVPHeaderContainer}>
+                <Text style={Theme.Styles.sendVPHeaderTitle}>
+                  {props.children}
+                </Text>
+                {controller.vpVerifierName && (
+                  <Text style={Theme.Styles.sendVPHeaderSubTitle}>
+                    {controller.vpVerifierName}
+                  </Text>
+                )}
+              </View>
+            ),
+            headerBackVisible: false,
+            headerRight: () =>
+              !I18nManager.isRTL && (
+                <Icon
+                  name="close"
+                  color={Theme.Colors.blackIcon}
+                  onPress={controller.DISMISS}
+                />
+              ),
+            headerLeft: () =>
+              I18nManager.isRTL && (
+                <Icon
+                  name="close"
+                  color={Theme.Colors.blackIcon}
+                  onPress={controller.DISMISS}
+                />
+              ),
+          }}
+        />
       </ScanStack.Navigator>
        
       <SharingStatusModal

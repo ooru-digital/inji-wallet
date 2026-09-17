@@ -23,6 +23,14 @@ jest.mock('react-native', () => {
         decryptData: input => (input ? String(input) : 'mockedString'),
         deviceSupportsHardware: () => true,
       },
+      MdocIso18013Presentment: {
+        startPresentment: jest.fn().mockResolvedValue(true),
+        stopPresentment: jest.fn(),
+        approvePresentment: jest.fn().mockResolvedValue(true),
+        denyPresentment: jest.fn().mockResolvedValue(true),
+        addListener: jest.fn(),
+        removeListeners: jest.fn(),
+      },
     },
   });
 

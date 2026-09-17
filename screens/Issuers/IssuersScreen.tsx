@@ -29,6 +29,7 @@ import {SvgImage} from '../../components/ui/svg';
 import {Icon} from 'react-native-elements';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {CredentialTypeSelectionScreen} from './CredentialTypeSelectionScreen';
+import {ReplaceCredentialSelectionScreen} from './ReplaceCredentialSelectionScreen';
 import {QrScanner} from '../../components/QrScanner';
 import {AUTH_ROUTES} from '../../routes/routesConstants';
 import {TransactionCodeModal} from './TransactionCodeScreen';
@@ -305,6 +306,33 @@ export const IssuersScreen: React.FC<
         customStyles={{marginTop: '30%'}}
       />
     );
+  }
+  if (controller.isCredentialAlreadyExists) {
+    return (
+      <ErrorView
+        testID="credentialAlreadyExists"
+        isVisible={controller.isCredentialAlreadyExists}
+        isModal={true}
+        alignActionsOnEnd
+        title={t('errors.credentialAlreadyExists.title')}
+        message={t('errors.credentialAlreadyExists.message')}
+        // A choice, not a failure — the red error shield overstates it.
+        image={SvgImage.WarningLogo()}
+        showClose={false}
+        // Button labels are resolved by ErrorView against the `common` namespace, so these are
+        // keys in `common` — not `IssuersScreen` like the title and message above.
+        primaryButtonText="replaceExisting"
+        primaryButtonEvent={controller.REPLACE_EXISTING}
+        primaryButtonTestID="replaceExistingCredential"
+        textButtonText="keepBoth"
+        textButtonEvent={controller.KEEP_BOTH}
+        textButtonTestID="keepBothCredentials"
+        customStyles={{marginTop: '30%'}}
+      />
+    );
+  }
+  if (controller.isSelectingCredentialsToReplace) {
+    return <ReplaceCredentialSelectionScreen {...props} />;
   }
   if (controller.isConsentRequested) {
     return issuerTrustConsentComponent();
