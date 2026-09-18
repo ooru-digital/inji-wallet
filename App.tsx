@@ -3,6 +3,7 @@ import React, {useContext, useEffect, useState} from 'react';
 import {AppLayout} from './screens/AppLayout';
 import {useFont} from './shared/hooks/useFont';
 import {GlobalContextProvider} from './components/GlobalContextProvider';
+import {HolderAuthProvider} from './components/HolderAuthProvider';
 import {GlobalContext} from './shared/GlobalContext';
 import {useSelector} from '@xstate/react';
 import {useTranslation} from 'react-i18next';
@@ -16,7 +17,7 @@ import {
 } from './machines/app';
 import {DualMessageOverlay} from './components/DualMessageOverlay';
 import {useApp} from './screens/AppController';
-import {Alert, AppState} from 'react-native';
+import {Alert, AppState, PermissionsAndroid, Platform} from 'react-native';
 import {
   configureTelemetry,
   getErrorEventData,
@@ -33,6 +34,12 @@ import {Theme} from './components/ui/styleUtils';
 import {selectAppSetupComplete} from './machines/auth';
 import {COPILOT_ANDROID_STATUS_BAR_VISIBLE} from './shared/constants';
 import {roundedSvgMaskPath} from './shared/copilotMask';
+import {
+  requestPermission,
+  useBackgroundNotification,
+  useFcmTokenRefreshRegistration,
+  useForegroundNotification,
+} from './screens/Notification/NotificationScreen';
 
 const {RNSecureKeystoreModule} = NativeModules;
 // kludge: this is a bad practice but has been done temporarily to surface
@@ -49,6 +56,16 @@ const DecryptErrorAlert = (controller, t) => {
       style: 'cancel',
     },
   ]);
+};
+
+const checkApplicationPermission = async () => {
+  if (Platform.OS === 'android') {
+    try {
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      );
+    } catch (error) {}
+  }
 };
 
 const AppLayoutWrapper: React.FC = () => {
@@ -158,6 +175,15 @@ const AppInitialization: React.FC = () => {
     }
   }, [i18n.language]);
 
+  useEffect(() => {
+    requestPermission();
+    checkApplicationPermission();
+  }, []);
+
+  useForegroundNotification();
+  useBackgroundNotification();
+  useFcmTokenRefreshRegistration();
+
   return isReady && hasFontsLoaded ? (
     <AppLayoutWrapper />
   ) : (
@@ -168,18 +194,20 @@ const AppInitialization: React.FC = () => {
 export default function App() {
   return (
     <GlobalContextProvider>
-      <CopilotProvider
-        stopOnOutsideClick
-        // Version-dependent — see COPILOT_ANDROID_STATUS_BAR_VISIBLE. Keep in sync with
-        // MainLayout's provider.
-        androidStatusBarVisible={COPILOT_ANDROID_STATUS_BAR_VISIBLE}
-        tooltipComponent={CopilotTooltip}
-        tooltipStyle={Theme.Styles.copilotStyle}
-        stepNumberComponent={() => null}
-        svgMaskPath={roundedSvgMaskPath}
-        animated>
-        <AppInitialization />
-      </CopilotProvider>
+      <HolderAuthProvider>
+        <CopilotProvider
+          stopOnOutsideClick
+          // Version-dependent — see COPILOT_ANDROID_STATUS_BAR_VISIBLE. Keep in sync with
+          // MainLayout's provider.
+          androidStatusBarVisible={COPILOT_ANDROID_STATUS_BAR_VISIBLE}
+          tooltipComponent={CopilotTooltip}
+          tooltipStyle={Theme.Styles.copilotStyle}
+          stepNumberComponent={() => null}
+          svgMaskPath={roundedSvgMaskPath}
+          animated>
+          <AppInitialization />
+        </CopilotProvider>
+      </HolderAuthProvider>
     </GlobalContextProvider>
   );
 }

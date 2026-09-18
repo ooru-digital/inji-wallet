@@ -31,6 +31,8 @@
     "@react-native-clipboard/clipboard": "^1.10.0",
     "@react-native-community/image-editor": "^4.2.0",
     "@react-native-community/netinfo": "11.4.1",
+    "@react-native-firebase/app": "^21.14.0",
+    "@react-native-firebase/messaging": "^21.14.0",
     "@react-native-google-signin/google-signin": "^10.1.1",
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/bottom-tabs": "^7.4.0",

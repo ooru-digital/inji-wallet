@@ -10,6 +10,13 @@ declare module 'react-native-dotenv' {
   export const ESIGNET_HOST: string;
 
   /**
+   * Credissuer holders API host (email OTP + FCM registration).
+   * Production: https://app.credissuer.com
+   * Staging: https://staging-api.credissuer.com
+   */
+  export const CREDISSUER_APP_HOST: string;
+
+  /**
    * URL for the obsrv server for telemetry
    */
   export const OBSRV_HOST: string;

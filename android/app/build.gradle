@@ -6,6 +6,7 @@ apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
 apply plugin: "org.sonarqube"
 apply plugin: 'kotlin-android'
+apply plugin: 'com.google.gms.google-services'
 
 
 configurations.all {
@@ -351,6 +352,8 @@ dependencies {
         exclude group: 'io.inji', module: 'inji-openid4vp-aar'
     }
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation platform('com.google.firebase:firebase-bom:33.12.0')
+    implementation 'com.google.firebase:firebase-messaging'
     implementation("io.mosip:vcverifier-aar:1.6.0") {
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
     }

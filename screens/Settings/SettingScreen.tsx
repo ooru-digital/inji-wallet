@@ -128,6 +128,33 @@ export const SettingScreen: React.FC<
 
           <LanguageSetting />
 
+          {!!controller.holderEmail && (
+            <ListItem topDivider bottomDivider>
+              {SvgImage.settingsLanguageIcon(24)}
+              <ListItem.Content>
+                <ListItem.Title
+                  {...testIDProps('holderAccountTitle')}
+                  style={{paddingTop: 3}}>
+                  <Text weight="semibold" color={Theme.Colors.settingsLabel}>
+                    {t('holderAccount')}
+                  </Text>
+                </ListItem.Title>
+                <ListItem.Subtitle {...testIDProps('holderAccountEmail')}>
+                  <Text color={Theme.Colors.GrayText}>
+                    {controller.holderEmail}
+                  </Text>
+                </ListItem.Subtitle>
+              </ListItem.Content>
+              <Pressable
+                {...testIDProps('changeHolderEmail')}
+                onPress={controller.CHANGE_HOLDER_EMAIL}>
+                <Text weight="semibold" color={Theme.Colors.Icon}>
+                  {t('changeEmail')}
+                </Text>
+              </Pressable>
+            </ListItem>
+          )}
+
           <ListItem topDivider disabled={!controller.canUseBiometrics}>
             {SvgImage.fingerprintIcon(24)}
             <ListItem.Content>
