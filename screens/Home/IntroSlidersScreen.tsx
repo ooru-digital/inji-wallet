@@ -1,6 +1,7 @@
 import React, {useRef} from 'react';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import {Dimensions, StatusBar, View, ScrollView} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Centered, Column, Row, Text, Button} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {useTranslation} from 'react-i18next';
@@ -8,6 +9,7 @@ import {RootRouteProps} from '../../routes';
 import {useWelcomeScreen} from '../WelcomeScreenController';
 import LinearGradient from 'react-native-linear-gradient';
 import testIDProps from '../../shared/commonUtil';
+import {isIOS} from '../../shared/constants';
 import {StaticAuthScreen} from '../IntroSliders/biometricIntro';
 import {StaticScanScreen} from '../IntroSliders/quickAccessIntro';
 import StaticBackupAndRestoreScreen from '../IntroSliders/backupRestoreIntro';
@@ -16,6 +18,14 @@ import {StaticSendVcScreen} from '../IntroSliders/secureShareIntro';
 
 export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
   const slider = useRef<AppIntroSlider>();
+  // introSliderHeader's iOS marginTop is baked in from expo-constants' Constants.statusBarHeight
+  // at module-load time — deprecated by Expo, and it doesn't account for a Dynamic Island's
+  // larger safe-area top inset (~59pt vs a classic notch's ~44-47pt), so on those devices the
+  // computed offset under-shoots and Skip renders inside the unsafe area, overlapping the
+  // island/status bar. useSafeAreaInsets() reads the actual live inset for whatever device this
+  // is running on, so this override is correct on any iOS device without hardcoding one. Android
+  // isn't touched: its branch of introSliderHeader wasn't reported broken, so it's left as-is.
+  const insets = useSafeAreaInsets();
 
   const {t} = useTranslation('OnboardingOverlay');
   const controller = useWelcomeScreen(props);
@@ -69,7 +79,12 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
         start={Theme.LinearGradientDirection.start}
         end={Theme.LinearGradientDirection.end}>
         <Centered>
-          <Row align="flex-end" style={Theme.Styles.introSliderHeader}>
+          <Row
+            align="flex-end"
+            style={[
+              Theme.Styles.introSliderHeader,
+              isIOS() && {marginTop: insets.top + 120},
+            ]}>
             {item.key !== 'five' && (
               <Button
                 testID={

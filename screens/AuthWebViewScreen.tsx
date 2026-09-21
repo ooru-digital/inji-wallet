@@ -37,6 +37,15 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
     return true;
   }, []);
 
+  // Previously startAuthSessionOnIOS only ever ran from the Alert's "Continue" tap, so it could
+  // only ever fire once no matter how many times this effect itself re-ran. Now that it runs
+  // directly from the effect, it needs its own guard: this effect's dependency array closes over
+  // `navigation` and `controller`, and any re-render that hands in new references for those (or a
+  // React 18 StrictMode dev double-invoke) re-runs the effect and would open a second concurrent
+  // ASWebAuthenticationSession — which silently kills the first, dropping the prompt entirely
+  // rather than showing it twice.
+  const hasStartedIOSAuthRef = useRef(false);
+
   useEffect(() => {
     if (!authorizationURL || !clientId || !redirectUri) {
       console.error('Missing required parameters for authentication');
@@ -51,22 +60,33 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
       handleBackPress,
     );
 
-    Alert.alert(ALERT_TITLE, ALERT_MESSAGE, [
-      {
-        text: t('cancel'),
-        style: 'cancel',
-        onPress: () => {
-          controller.CANCEL();
-          navigation.goBack();
+    // iOS's ASWebAuthenticationSession (opened by startAuthSessionOnIOS below) already shows its
+    // own mandatory system consent dialog — "'CredIssuer Wallet' Wants to Use '<domain>' to Sign
+    // In" — the moment it opens, worded almost identically to this one. Showing this custom Alert
+    // first as well on iOS just duplicated that same confirmation back to back. Android has no
+    // such OS-level prompt around its plain WebView, so this Alert stays its only consent step.
+    if (isIOS()) {
+      if (!hasStartedIOSAuthRef.current) {
+        hasStartedIOSAuthRef.current = true;
+        startAuthSessionOnIOS();
+      }
+    } else {
+      Alert.alert(ALERT_TITLE, ALERT_MESSAGE, [
+        {
+          text: t('cancel'),
+          style: 'cancel',
+          onPress: () => {
+            controller.CANCEL();
+            navigation.goBack();
+          },
         },
-      },
-      {
-        text: t('continue'),
-        style: 'default',
-        onPress: () =>
-          isIOS() ? startAuthSessionOnIOS() : setShowWebView(true),
-      },
-    ]);
+        {
+          text: t('continue'),
+          style: 'default',
+          onPress: () => setShowWebView(true),
+        },
+      ]);
+    }
 
     return () => backHandler.remove();
   }, [

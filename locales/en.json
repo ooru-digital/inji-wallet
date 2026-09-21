@@ -504,7 +504,7 @@
     "generateVcFABDescription": "Tap on  \"+\" below to download your card",
     "downloadCard": "Download Card",
     "downloadingYourCard": "Downloading your card, this can take upto 5 minutes",
-    "downloadingVcSuccess": "Your Card has been downloaded successfully",
+    "downloadingVcSuccess": "Your card has been downloaded successfully",
     "downloadingVcFailed": "Sorry! Due to technical error we are unable to download your card now. Please try again later.",
     "activated": "Credentials are enabled for online authentication.",
     "noCardsTitle": "No Cards Found!",
@@ -1203,7 +1203,7 @@
     "keyManagementDesc": "Select the key generation method that aligns with your preference, putting you in control of your credential security.\nDrag and arrange the keys, with the top one being your highest priority."
   },
   "authWebView": {
-    "title": "“{{wallet}}” Wants to Use “{{domain}}” to Sign In",
+    "title": "“{{wallet}}” wants to use “{{domain}}” to Sign In",
     "message": "This allows the app and website to share information about you.",
     "cancel": "Cancel",
     "continue": "Continue"
@@ -1251,7 +1251,7 @@
       "This issuer will be added to your trusted list.",
       "You won't need to review trust again when downloading from them next time."
     ],
-    "description": "Make sure you recognize or trust this issuer. Once you trust this issuer:",
+    "description": "You're about to download a credential from {{name}} issuer.",
     "title": "Quick Check",
     "subTitle": "Before proceeding, confirm you recognize this issuer"
   }
