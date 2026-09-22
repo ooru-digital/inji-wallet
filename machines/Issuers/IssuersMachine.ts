@@ -314,11 +314,6 @@ export const IssuersMachine = model.createMachine(
               onDone: {
                 target: '#issuersMachine.selectingIssuer',
               },
-              // The user already declined; if telling the library so fails, still take them back
-              // rather than stranding them on the consent screen.
-              onError: {
-                target: '#issuersMachine.selectingIssuer',
-              },
             },
           },
           consentGivenDelay: {
@@ -485,14 +480,6 @@ export const IssuersMachine = model.createMachine(
                     ],
                     target: 'constructProof',
                   },
-                  onError: {
-                    actions: [
-                      'setError',
-                      'resetLoadingReason',
-                      'sendDownloadingFailedToVcMeta',
-                    ],
-                    target: '#issuersMachine.error',
-                  },
                 },
               },
               constructProof: {
@@ -538,18 +525,6 @@ export const IssuersMachine = model.createMachine(
           onDone: {
             actions: ['setVerifiableCredential', 'setCredentialWrapper'],
             target: 'verifyingCredential',
-          },
-          // Without this the credential is already downloaded and verified-pending, but a throw
-          // here (e.g. a CBOR/base64 decode failure in processForRendering) left the machine with
-          // nowhere to go: no error screen, no log the user would see, and a perfectly good
-          // credential silently discarded — indistinguishable from "the download never worked".
-          onError: {
-            actions: [
-              'setError',
-              'resetLoadingReason',
-              'sendDownloadingFailedToVcMeta',
-            ],
-            target: '#issuersMachine.error',
           },
         },
       },
@@ -1015,11 +990,6 @@ export const IssuersMachine = model.createMachine(
           onDone: {
             cond: 'isSignedIn',
             actions: ['sendBackupEvent'],
-            target: 'done',
-          },
-          // Deliberately `done`, not `error`: this state's entry actions have already persisted
-          // the credential, so a failed backup check must not present the download as failed.
-          onError: {
             target: 'done',
           },
         },

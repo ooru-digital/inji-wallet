@@ -62,8 +62,6 @@
 	<string>Allow $(PRODUCT_NAME) to access your camera</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>$(PRODUCT_NAME) can be unlocked using Face ID</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to connect to devices on your local network</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to access your location</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
