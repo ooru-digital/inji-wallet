@@ -407,8 +407,24 @@ async function getJWKECR1(publicKey): Promise<any> {
     const publicKeyJWKString = await jose.JWK.asKey(publicKey, 'pem');
     jwk = publicKeyJWKString.toJSON();
   } else {
-    const x = base64url(Buffer.from(publicKey.slice(1, 33))); // Skip the first byte (0x04) in the uncompressed public key
-    const y = base64url(Buffer.from(publicKey.slice(33, 65)));
+    /**
+     * The key arrives in one of two shapes on iOS, and the slices below are byte
+     * offsets into the uncompressed EC point — so it has to be bytes either way:
+     *
+     *  - fetchKeyPair() already decodes ES256 with Buffer.from(key, 'base64')
+     *  - generateKeyPairECR1() returns the base64 *string* it just encoded
+     *
+     * Slicing the string form would cut base64 characters rather than key bytes and
+     * silently produce a wrong x/y — a malformed proof JWT the issuer rejects. Only
+     * the generate path (first run, or after clearKeys) hits that, which is why it
+     * has stayed hidden. createSignatureECR1 already decodes defensively this way.
+     */
+    const keyBytes =
+      typeof publicKey === 'string'
+        ? Buffer.from(publicKey, 'base64')
+        : Buffer.from(publicKey);
+    const x = base64url(keyBytes.subarray(1, 33)); // Skip the first byte (0x04) in the uncompressed public key
+    const y = base64url(keyBytes.subarray(33, 65));
     jwk = {
       kty: 'EC',
       crv: 'P-256',
@@ -420,8 +436,16 @@ async function getJWKECR1(publicKey): Promise<any> {
   return jwk;
 }
 function getJWKECK1(publicKey): any {
-  const x = base64url(Buffer.from(publicKey.slice(1, 33))); // Skip the first byte (0x04) in the uncompressed public key
-  const y = base64url(Buffer.from(publicKey.slice(33)));
+  // Same two shapes as getJWKECR1, but on both platforms: fetchKeyPair() returns a
+  // Buffer, generateKeyPairECK1() returns the base64 string it just encoded. Slicing
+  // the string form cuts base64 characters instead of key bytes. Normalising is a
+  // no-op for the Buffer path, so the usual (post-onboarding) flow is unchanged.
+  const keyBytes =
+    typeof publicKey === 'string'
+      ? Buffer.from(publicKey, 'base64')
+      : Buffer.from(publicKey);
+  const x = base64url(keyBytes.subarray(1, 33)); // Skip the first byte (0x04) in the uncompressed public key
+  const y = base64url(keyBytes.subarray(33));
   const jwk = {
     kty: 'EC',
     crv: 'secp256k1',
@@ -431,7 +455,14 @@ function getJWKECK1(publicKey): any {
   return jwk;
 }
 function getJWKED(publicKey): any {
-  const x = base64url(publicKey);
+  // base64url() encodes the bytes it is given, so handing it the base64 *string* from
+  // generateKeyPairED() would encode that text and double-encode the key. Buffers from
+  // fetchKeyPair() are already correct, so this only changes the generate path.
+  const keyBytes =
+    typeof publicKey === 'string'
+      ? Buffer.from(publicKey, 'base64')
+      : Buffer.from(publicKey);
+  const x = base64url(keyBytes);
   const jwk = {
     kty: 'OKP',
     crv: 'Ed25519',

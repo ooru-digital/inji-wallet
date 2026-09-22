@@ -1,7 +1,10 @@
 #import <Foundation/Foundation.h>
 #import "React/RCTBridgeModule.h"
+#import <React/RCTEventEmitter.h>
 
-@interface RCT_EXTERN_MODULE(InjiVciClient, NSObject)
+// RCTEventEmitter, not NSObject: it supplies the addListener/removeListeners pair that
+// NativeEventEmitter requires on iOS. See the comment in RNVCIClientModule.swift.
+@interface RCT_EXTERN_MODULE(InjiVciClient, RCTEventEmitter)
 
 // Initializes the VCIClient with a traceability ID
 RCT_EXTERN_METHOD(init:(NSString *)traceabilityId)
@@ -53,8 +56,5 @@ RCT_EXTERN_METHOD(sendIssuerTrustResponseFromJS:(BOOL)isTrusted)
 
 // Sends token response JSON back to native side (in response to onRequestTokenResponse)
 RCT_EXTERN_METHOD(sendTokenResponseFromJS:(NSString *)tokenResponseJson)
-
-// Required by React Native
-RCT_EXTERN_METHOD(requiresMainQueueSetup:(BOOL)isRequired)
 
 @end
