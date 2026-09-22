@@ -19,8 +19,13 @@ type RequestStackParamList = {
   ReceiveVcScreen: undefined;
 };
 
+// `Main` is needed because this screen sits in the root stack alongside it rather
+// than inside the bottom tabs — see RequestLayoutController for the full reasoning.
 type RequestLayoutNavigation = NavigationProp<
-  RequestStackParamList & MainBottomTabParamList
+  RequestStackParamList &
+    MainBottomTabParamList & {
+      Main: {screen: string};
+    }
 >;
 
 export const RequestScreen: React.FC = () => {
@@ -54,7 +59,7 @@ export const RequestScreen: React.FC = () => {
           isVisible={controller.isMinimumStorageLimitReached}
           error="errors.storageLimitReached"
           onDismiss={() => {
-            navigation.navigate(BOTTOM_TAB_ROUTES.home);
+            navigation.navigate('Main', {screen: BOTTOM_TAB_ROUTES.home});
           }}
           translationPath="RequestScreen"
         />

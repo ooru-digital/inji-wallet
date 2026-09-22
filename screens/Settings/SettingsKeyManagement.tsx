@@ -1,7 +1,6 @@
 import React from 'react';
 import {Pressable} from 'react-native';
 import {ListItem, Icon} from 'react-native-elements';
-import {Row} from '../../components/ui';
 import testIDProps from '../../shared/commonUtil';
 import {Theme} from '../../components/ui/styleUtils';
 import {Text} from '../../components/ui';
@@ -36,15 +35,13 @@ export const SettingsKeyManagementScreen: React.FC<
             <ListItem.Title
               accessible={false}
               {...testIDProps('keyManagementText')}>
-              <Row>
-                <Text
-                  testID="keyManagementText"
-                  weight="semibold"
-                  color={Theme.Colors.settingsLabel}
-                  style={Theme.KeyManagementScreenStyle.textStyle}>
-                  {t('header')}
-                </Text>
-              </Row>
+              <Text
+                testID="keyManagementText"
+                weight="semibold"
+                color={Theme.Colors.settingsLabel}
+                style={Theme.KeyManagementScreenStyle.textStyle}>
+                {t('header')}
+              </Text>
             </ListItem.Title>
           </ListItem.Content>
           <Icon

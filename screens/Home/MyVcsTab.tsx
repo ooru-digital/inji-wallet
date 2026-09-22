@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Button, Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {Pressable, RefreshControl, View} from 'react-native';
@@ -28,6 +28,113 @@ import {Icon} from 'react-native-elements';
 import {VCMetadata} from '../../shared/VCMetadata';
 import {useCopilot} from 'react-native-copilot';
 import {isTranslationKeyFound} from '../../shared/commonUtil';
+
+/**
+ * Anything longer than this is a base64 photo or an encoded blob, never something a
+ * person types into the search bar. Real names and addresses stay well under it.
+ */
+const MAX_INDEXED_VALUE_LENGTH = 512;
+
+/**
+ * An array this long is decoded binary (an mdoc portrait arrives as a byte array),
+ * not a repeated human-readable field.
+ */
+const MAX_INDEXED_ARRAY_LENGTH = 200;
+
+/**
+ * `_sd`/`_sd_alg`/`cnf` are SD-JWT cryptographic material that survives into the
+ * resolved payload, and `proof`/`issuerAuth`/`deviceSigned` are the equivalent for
+ * the other formats. None of it is text anyone searches for.
+ */
+const SKIPPED_FIELDS = new Set([
+  'biometrics',
+  'id',
+  'vcVer',
+  '_sd',
+  '_sd_alg',
+  'cnf',
+  'proof',
+  'issuerAuth',
+  'deviceSigned',
+]);
+
+const shouldSkipField = (key: string): boolean => SKIPPED_FIELDS.has(key);
+
+/**
+ * URLs are excluded because several credentials carry a presigned `qr_code` link
+ * whose query string holds an Expires/Signature pair. Indexing those made common
+ * substrings ("id", "http", "sign") match every card in the wallet.
+ */
+const isIndexableValue = (value: string): boolean =>
+  value.length <= MAX_INDEXED_VALUE_LENGTH &&
+  !value.startsWith('data:') &&
+  !value.startsWith('http://') &&
+  !value.startsWith('https://');
+
+const collectSearchableValues = (value: any, collected: string[]): void => {
+  if (value == null) return;
+  // Numbers count: some issuers send ID numbers, pin codes and years unquoted, and
+  // the old string-only check silently made those unsearchable.
+  if (typeof value === 'number') {
+    collected.push(String(value));
+    return;
+  }
+  if (typeof value === 'string') {
+    if (isIndexableValue(value)) collected.push(value);
+    return;
+  }
+  if (typeof value !== 'object') return;
+  if (Array.isArray(value) && value.length > MAX_INDEXED_ARRAY_LENGTH) return;
+  // Arrays land here too, and their numeric keys never match shouldSkipField.
+  for (const [key, nested] of Object.entries(value)) {
+    if (shouldSkipField(key)) continue;
+    collectSearchableValues(nested, collected);
+  }
+};
+
+/**
+ * mdoc keeps its claims as `[{elementIdentifier, elementValue}]` lists grouped under
+ * namespaces. Only the values are indexed — pulling in the identifiers as well would
+ * let "country" or "number" match every mdoc card in the wallet.
+ */
+const mdocClaimValues = (processedCredential: any): any[] => {
+  const nameSpaces =
+    processedCredential?.issuerSigned?.nameSpaces ??
+    processedCredential?.nameSpaces;
+  if (nameSpaces == null || typeof nameSpaces !== 'object') return [];
+  return Object.values(nameSpaces)
+    .flat()
+    .map((claim: any) => claim?.elementValue);
+};
+
+/**
+ * Every known credential shape is probed rather than switched on `format`, so a card
+ * is indexed even if its stored metadata is missing or disagrees, and a new format
+ * that lands in one of these shapes is picked up for free. Each lookup is a no-op
+ * when the shape doesn't apply.
+ *
+ * Optional chaining throughout: an mso_mdoc VC keeps a CBOR string in `credential`
+ * rather than an object, so reaching for `credential.credentialSubject` on one used
+ * to throw and take the whole search down with it.
+ */
+const buildSearchableText = (vc: any): string => {
+  const collected: string[] = [];
+  const verifiableCredential = vc?.verifiableCredential;
+  const processedCredential = verifiableCredential?.processedCredential;
+  collectSearchableValues(vc?.vcMetadata?.credentialType, collected);
+  collectSearchableValues(vc?.vcMetadata?.mosipIndividualId, collected);
+  // ldp_vc
+  collectSearchableValues(verifiableCredential?.credentialSubject, collected);
+  collectSearchableValues(
+    verifiableCredential?.credential?.credentialSubject,
+    collected,
+  );
+  // vc+sd-jwt / dc+sd-jwt
+  collectSearchableValues(processedCredential?.fullResolvedPayload, collected);
+  // mso_mdoc
+  collectSearchableValues(mdocClaimValues(processedCredential), collected);
+  return collected.join('\n').toLowerCase();
+};
 
 export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
   const {t} = useTranslation('MyVcsTab');
@@ -109,75 +216,50 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
     filterVcs(search);
   }, [controller.vcData]);
 
+  /**
+   * One lowercased blob of searchable text per card, rebuilt only when the stored VCs
+   * change rather than on every keystroke. Walking the whole credential JSON per
+   * keypress was both slow and, because the walk short-circuited on the first hit,
+   * dependent on key order.
+   */
+  const searchIndex = useMemo(() => {
+    const index: Record<string, string> = {};
+    for (const [vcKey, vc] of Object.entries(controller.vcData ?? {})) {
+      // null/undefined means the card is still downloading — nothing to index yet.
+      if (vc == null) continue;
+      index[vcKey] = buildSearchableText(vc);
+    }
+    return index;
+  }, [controller.vcData]);
+
+  /**
+   * Every whitespace-separated token has to appear somewhere in the card's text, in
+   * any order and across any combination of fields. That is what makes "doe john"
+   * and "john doe" both find the same card even though the credential stores the
+   * given and family names in separate fields, and it also makes a stray trailing
+   * space harmless.
+   */
   const filterVcs = (searchText: string) => {
     setSearch(searchText);
-    setFilteredSearchData([]);
-    const searchTextLower = searchText.toLowerCase();
+    const tokens = searchText.toLowerCase().split(/\s+/).filter(Boolean);
     const filteredData: Array<Record<string, VCMetadata>> = [];
-    for (const [vcKey, vc] of Object.entries(controller.vcData)) {
-      const isDownloading = vc === null;
-      if (!isDownloading) {
-        let isVcFound = false;
-        const credentialSubject =
-          vc.verifiableCredential.credentialSubject ||
-          vc.verifiableCredential.credential.credentialSubject;
-        if (isStringAndContains(searchText, vc['vcMetadata'].credentialType))
-          isVcFound = true;
-        else if (credentialSubject) {
-          isVcFound = searchNestedCredentialFields(
-            searchTextLower,
-            credentialSubject,
-          );
-        }
 
-        if (isVcFound) {
-          filteredData.push({[vcKey]: vc['vcMetadata']});
-        }
+    // Driven off the same ordered list the unfiltered view renders, so results keep
+    // pinned cards on top instead of falling back to insertion order.
+    for (const vcMetadata of vcMetadataOrderedByPinStatus) {
+      const vcKey = vcMetadata.getVcKey();
+      const searchableText = searchIndex[vcKey];
+      if (searchableText === undefined) continue;
+      if (tokens.every(token => searchableText.includes(token))) {
+        filteredData.push({[vcKey]: vcMetadata});
       }
     }
 
     setFilteredSearchData(filteredData);
 
-    const isSearchNotEmpty = searchText !== '';
+    const isSearchNotEmpty = tokens.length > 0;
     setClearSearchIcon(isSearchNotEmpty);
     setShowPinVc(!isSearchNotEmpty);
-  };
-
-  const searchNestedCredentialFields = (
-    searchText: string,
-    credentialSubjectData: any,
-  ): boolean => {
-    for (const [credentialKey, credentialValue] of Object.entries(
-      credentialSubjectData,
-    )) {
-      if (shouldSkip(credentialKey)) {
-        continue;
-      }
-      if (isStringAndContains(searchText, credentialValue)) {
-        return true;
-      }
-      if (
-        isObjectAndNotNull(credentialValue) &&
-        searchNestedCredentialFields(searchText, credentialValue)
-      ) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const shouldSkip = (key: string): boolean => {
-    return key === 'biometrics' || key === 'id' || key === 'vcVer';
-  };
-
-  const isStringAndContains = (searchText: string, value: any): boolean => {
-    return (
-      typeof value === 'string' && value.toLowerCase().includes(searchText)
-    );
-  };
-
-  const isObjectAndNotNull = (value: any): boolean => {
-    return typeof value === 'object' && value !== null;
   };
 
   useEffect(() => {
@@ -382,6 +464,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                           isDownloading={controller.inProgressVcDownloads?.has(
                             vcKey,
                           )}
+                          isPinned={vcMetadata.isPinned}
                         />
                       );
                     })

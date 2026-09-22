@@ -2,7 +2,7 @@ import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {Pressable} from 'react-native';
 import {Icon, ListItem} from 'react-native-elements';
-import {Row, Text} from '../../components/ui';
+import {Text} from '../../components/ui';
 import {ErrorView} from '../../components/ui/Error';
 import {Loader} from '../../components/ui/Loader';
 import {Theme} from '../../components/ui/styleUtils';
@@ -46,15 +46,13 @@ export const DataBackupAndRestore: React.FC = () => {
             <ListItem.Title
               accessible={false}
               {...testIDProps('dataBackupAndRestoreText')}>
-              <Row>
-                <Text
-                  testID="dataBackupAndRestoreText"
-                  weight="semibold"
-                  color={Theme.Colors.settingsLabel}
-                  style={{paddingRight: 10, paddingTop: 10}}>
-                  {t('dataBackupAndRestore')}
-                </Text>
-              </Row>
+              <Text
+                testID="dataBackupAndRestoreText"
+                weight="semibold"
+                color={Theme.Colors.settingsLabel}
+                style={{paddingRight: 10, paddingTop: 10}}>
+                {t('dataBackupAndRestore')}
+              </Text>
             </ListItem.Title>
           </ListItem.Content>
           <Icon
