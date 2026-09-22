@@ -1,21 +1,17 @@
-import React, {Fragment, useEffect, useLayoutEffect, useState} from 'react';
+import React, {Fragment, useEffect, useLayoutEffect} from 'react';
 import {useTranslation} from 'react-i18next';
-import {FlatList, Pressable, View} from 'react-native';
+import {View} from 'react-native';
 import {Issuer} from '../../components/openId4VCI/Issuer';
 import {Header} from '../../components/ui/Header';
-import {Button, Column, Row, Text} from '../../components/ui';
+import {Button, Column, Row} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {RootRouteProps} from '../../routes';
 import {HomeRouteProps} from '../../routes/routeTypes';
 import {useIssuerScreenController} from './IssuerScreenController';
 import {Loader} from '../../components/ui/Loader';
 import ScanIcon from '../../assets/scanIcon.svg';
-import {isTranslationKeyFound, removeWhiteSpace} from '../../shared/commonUtil';
-import {
-  ErrorMessage,
-  getDisplayObjectForCurrentLanguage,
-  Protocols,
-} from '../../shared/openId4VCI/Utils';
+import {isTranslationKeyFound} from '../../shared/commonUtil';
+import {ErrorMessage} from '../../shared/openId4VCI/Utils';
 import {
   getInteractEventData,
   getStartEventData,
@@ -24,9 +20,7 @@ import {
 } from '../../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../../shared/telemetry/TelemetryConstants';
 import {MessageOverlay} from '../../components/MessageOverlay';
-import {SearchBar} from '../../components/ui/SearchBar';
 import {SvgImage} from '../../components/ui/svg';
-import {Icon} from 'react-native-elements';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {CredentialTypeSelectionScreen} from './CredentialTypeSelectionScreen';
 import {ReplaceCredentialSelectionScreen} from './ReplaceCredentialSelectionScreen';
@@ -38,7 +32,6 @@ import {SendVPScreen} from '../Scan/SendVPScreen';
 
 import {AuthorizationType} from '../../shared/constants';
 import {useTimer} from '../../shared/hooks/UseTimer';
-import {issuerType} from '../../machines/Issuers/IssuersMachine';
 import {
   ProcessingModal,
   ProgressIndicator,
@@ -50,11 +43,6 @@ export const IssuersScreen: React.FC<
 > = props => {
   const controller = useIssuerScreenController(props);
   const {i18n, t} = useTranslation('IssuersScreen');
-  const issuers = controller.issuers;
-  const [filteredSearchData, setFilteredSearchData] = useState(issuers);
-  const [search, setSearch] = useState('');
-  const [tapToSearch, setTapToSearch] = useState(false);
-  const [clearSearchIcon, setClearSearchIcon] = useState(false);
   const showFullScreenError = controller.isError;
   const [successDownloadRedirectTimer, initiateSuccessDownloadRedirectTimer] =
     useTimer({initialValue: 5});
@@ -134,22 +122,6 @@ export const IssuersScreen: React.FC<
     }
   }, [controller.isAuthEndpointToOpen]);
 
-  const onPressHandler = (id: string, protocol: string) => {
-    sendStartEvent(
-      getStartEventData(TelemetryConstants.FlowType.vcDownload, {id: id}),
-    );
-    sendInteractEvent(
-      getInteractEventData(
-        TelemetryConstants.FlowType.vcDownload,
-        TelemetryConstants.InteractEventSubtype.click,
-        `IssuerType: ${id}`,
-      ),
-    );
-    protocol === Protocols.OTP
-      ? controller.DOWNLOAD_ID()
-      : controller.SELECTED_ISSUER(id);
-  };
-
   const isGenericError = () => {
     return controller.errorMessageType === ErrorMessage.GENERIC;
   };
@@ -165,24 +137,12 @@ export const IssuersScreen: React.FC<
     );
   }
 
-  const onFocusSearch = () => {
-    setTapToSearch(true);
-  };
-
-  const clearSearchText = () => {
-    filterIssuers('');
-    setClearSearchIcon(false);
-  };
-
+  // Used to conditionally skip back with navigation.goBack() when the error happened during the
+  // old issuers-list fetch (nothing useful to reset back to, since that fetch is what populated
+  // this screen in the first place). That fetch is gone — the machine starts straight in
+  // selectingIssuer now — so any error here always has selectingIssuer to reset back to.
   const goBack = () => {
-    if (
-      controller.errorMessageType &&
-      controller.loadingReason === 'displayIssuers'
-    ) {
-      props.navigation.goBack();
-    } else {
-      controller.RESET_ERROR();
-    }
+    controller.RESET_ERROR();
   };
 
   const getImage = () => {
@@ -191,25 +151,6 @@ export const IssuersScreen: React.FC<
     }
     if (isBackendError()) return SvgImage.ErrorOccurred();
     return SvgImage.NoInternetConnection();
-  };
-
-  const filterIssuers = (searchText: string) => {
-    const filteredData = issuers.filter((item: issuerType) => {
-      if (
-        getDisplayObjectForCurrentLanguage(item.display)
-          ?.name.toLowerCase()
-          .includes(searchText.toLowerCase())
-      ) {
-        return getDisplayObjectForCurrentLanguage(item.display);
-      }
-    });
-    setFilteredSearchData(filteredData);
-    setSearch(searchText);
-    if (searchText !== '') {
-      setClearSearchIcon(true);
-    } else {
-      setClearSearchIcon(false);
-    }
   };
 
   if (
@@ -456,82 +397,20 @@ export const IssuersScreen: React.FC<
   return (
     <React.Fragment>
       <BannerNotificationContainer />
-      {controller.issuers.length > 0 && (
-        <Column style={Theme.IssuersScreenStyles.issuerListOuterContainer}>
-          <Row
-            style={
-              tapToSearch
-                ? Theme.SearchBarStyles.searchBarContainer
-                : Theme.SearchBarStyles.idleSearchBarBottomLine
-            }>
-            <SearchBar
-              searchIconTestID="searchIssuerIcon"
-              searchBarTestID="issuerSearchBar"
-              search={search}
-              placeholder={t('searchByIssuersName')}
-              onFocus={onFocusSearch}
-              onChangeText={filterIssuers}
-              onLayout={() => filterIssuers('')}
-            />
-            {clearSearchIcon && (
-              <Pressable
-                onPress={clearSearchText}
-                style={Theme.SearchBarStyles.clearSearch}>
-                <Icon
-                  testID="clearingIssuerSearchIcon"
-                  name="circle-with-cross"
-                  type="entypo"
-                  size={18}
-                  color={Theme.Colors.DetailsLabel}
-                />
-              </Pressable>
-            )}
-          </Row>
-          <Text
-            testID="issuersScreenDescription"
-            style={{
-              ...Theme.TextStyles.regularGrey,
-              ...Theme.IssuersScreenStyles.issuersSearchSubText,
-            }}>
-            {t('description')}
-          </Text>
-          {search === '' && (
-            <View style={{height: 85}}>
-              <Issuer
-                defaultLogo={ScanIcon}
-                displayDetails={{
-                  title: t('offerTitle'),
-                  locale: i18n.language,
-                  description: t('offerDescription'),
-                }}
-                onPress={controller.SCAN_CREDENTIAL_OFFER_QR_CODE}
-                testID={'credentalOfferButton'}
-              />
-            </View>
-          )}
-
-          <Column scroll style={Theme.IssuersScreenStyles.issuersContainer}>
-            {controller.issuers.length > 0 && (
-              <FlatList
-                data={filteredSearchData}
-                renderItem={({item}) => (
-                  <Issuer
-                    testID={removeWhiteSpace(item.issuer_id)}
-                    displayDetails={getDisplayObjectForCurrentLanguage(
-                      item.display,
-                    )}
-                    onPress={() =>
-                      onPressHandler(item.issuer_id, item.protocol)
-                    }
-                    {...props}
-                  />
-                )}
-                keyExtractor={item => item.issuer_id}
-              />
-            )}
-          </Column>
-        </Column>
-      )}
+      <Column style={Theme.IssuersScreenStyles.issuerListOuterContainer}>
+        <View style={{height: 85}}>
+          <Issuer
+            defaultLogo={ScanIcon}
+            displayDetails={{
+              title: t('offerTitle'),
+              locale: i18n.language,
+              description: t('offerDescription'),
+            }}
+            onPress={controller.SCAN_CREDENTIAL_OFFER_QR_CODE}
+            testID={'credentalOfferButton'}
+          />
+        </View>
+      </Column>
     </React.Fragment>
   );
 };

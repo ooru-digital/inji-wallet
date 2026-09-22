@@ -13,16 +13,6 @@ describe('API_URLS configuration', () => {
     });
   });
 
-  describe('issuersList', () => {
-    it('should have GET method', () => {
-      expect(API_URLS.issuersList.method).toBe('GET');
-    });
-
-    it('should build correct URL', () => {
-      expect(API_URLS.issuersList.buildURL()).toBe('/v1/mimoto/issuers');
-    });
-  });
-
   describe('issuerConfig', () => {
     it('should have GET method', () => {
       expect(API_URLS.issuerConfig.method).toBe('GET');
