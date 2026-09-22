@@ -34,10 +34,6 @@ export const API_URLS: ApiUrls = {
     method: 'GET',
     buildURL: (): `/${string}` => '/v1/mimoto/verifiers',
   },
-  issuersList: {
-    method: 'GET',
-    buildURL: (): `/${string}` => '/v1/mimoto/issuers',
-  },
   issuerConfig: {
     method: 'GET',
     buildURL: (issuerId: string): `/${string}` =>
@@ -121,14 +117,6 @@ export const API = {
     return response;
   },
 
-  fetchIssuers: async () => {
-    const response = await request(
-      API_URLS.issuersList.method,
-      API_URLS.issuersList.buildURL(),
-    );
-    return response.response.issuers || [];
-  },
-
   fetchIssuerConfig: async (issuerId: string) => {
     const response = await request(
       API_URLS.issuerConfig.method,
@@ -166,12 +154,6 @@ export const CACHED_API = {
       isCachePreferred,
       cacheKey: API_CACHED_STORAGE_KEYS.fetchTrustedVerifiers,
       fetchCall: API.fetchTrustedVerifiersList,
-    }),
-
-  fetchIssuers: () =>
-    generateCacheAPIFunction({
-      cacheKey: API_CACHED_STORAGE_KEYS.fetchIssuers,
-      fetchCall: API.fetchIssuers,
     }),
 
   fetchIssuerWellknownConfig: (

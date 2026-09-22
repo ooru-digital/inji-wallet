@@ -18,42 +18,23 @@ export const IssuersMachine = model.createMachine(
     preserveActionOrder: true,
     id: Issuer_Tab_Ref_Id,
     context: model.initialContext,
-    initial: 'displayIssuers',
+    // The issuers-list screen (browse-and-pick-an-issuer) has been removed — this machine used
+    // to start by fetching and displaying that list (the `displayIssuers` state, now gone) before
+    // landing here. Starting directly in `selectingIssuer` skips that fetch entirely; the only
+    // thing this state still does is wait for SCAN_CREDENTIAL_OFFER_QR_CODE, which is untouched
+    // and still drives w3cvc credential-offer downloads exactly as before.
+    initial: 'selectingIssuer',
     tsTypes: {} as import('./IssuersMachine.typegen').Typegen0,
     schema: {
       context: model.initialContext,
       events: {} as EventFrom<typeof model>,
     },
     states: {
-      displayIssuers: {
-        description: 'displays the issuers downloaded from the server',
-        invoke: {
-          src: 'downloadIssuersList',
-          onDone: {
-            actions: [
-              'sendImpressionEvent',
-              'setIssuers',
-              'resetLoadingReason',
-            ],
-            target: 'selectingIssuer',
-          },
-          onError: {
-            actions: ['setError'],
-            target: '#issuersMachine.error',
-          },
-        },
-      },
-
       error: {
         description: 'reaches here when any error happens',
         entry: ['resetAuthorization'],
         on: {
           TRY_AGAIN: [
-            {
-              cond: 'shouldFetchIssuersAgain',
-              actions: ['setLoadingReasonAsDisplayIssuers', 'resetError'],
-              target: 'displayIssuers',
-            },
             {
               cond: 'canSelectIssuerAgain',
               actions: 'resetError',
@@ -314,6 +295,11 @@ export const IssuersMachine = model.createMachine(
               onDone: {
                 target: '#issuersMachine.selectingIssuer',
               },
+              // The user already declined; if telling the library so fails, still take them back
+              // rather than stranding them on the consent screen.
+              onError: {
+                target: '#issuersMachine.selectingIssuer',
+              },
             },
           },
           consentGivenDelay: {
@@ -480,6 +466,14 @@ export const IssuersMachine = model.createMachine(
                     ],
                     target: 'constructProof',
                   },
+                  onError: {
+                    actions: [
+                      'setError',
+                      'resetLoadingReason',
+                      'sendDownloadingFailedToVcMeta',
+                    ],
+                    target: '#issuersMachine.error',
+                  },
                 },
               },
               constructProof: {
@@ -526,6 +520,18 @@ export const IssuersMachine = model.createMachine(
             actions: ['setVerifiableCredential', 'setCredentialWrapper'],
             target: 'verifyingCredential',
           },
+          // Without this the credential is already downloaded and verified-pending, but a throw
+          // here (e.g. a CBOR/base64 decode failure in processForRendering) left the machine with
+          // nowhere to go: no error screen, no log the user would see, and a perfectly good
+          // credential silently discarded — indistinguishable from "the download never worked".
+          onError: {
+            actions: [
+              'setError',
+              'resetLoadingReason',
+              'sendDownloadingFailedToVcMeta',
+            ],
+            target: '#issuersMachine.error',
+          },
         },
       },
       downloadIssuerWellknown: {
@@ -567,7 +573,7 @@ export const IssuersMachine = model.createMachine(
         }),
         on: {
           CANCEL: {
-            target: 'displayIssuers',
+            target: 'selectingIssuer',
           },
           SELECTED_CREDENTIAL_TYPE: {
             actions: 'setSelectedCredentialType',
@@ -990,6 +996,11 @@ export const IssuersMachine = model.createMachine(
           onDone: {
             cond: 'isSignedIn',
             actions: ['sendBackupEvent'],
+            target: 'done',
+          },
+          // Deliberately `done`, not `error`: this state's entry actions have already persisted
+          // the credential, so a failed backup check must not present the download as failed.
+          onError: {
             target: 'done',
           },
         },

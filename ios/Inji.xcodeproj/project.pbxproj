@@ -1164,7 +1164,7 @@
 			repositoryURL = "https://github.com/mosip/pixelpass-ios-swift/";
 			requirement = {
 				kind = exactVersion;
-				version = 0.6.3;
+				version = 0.7.0;
 			};
 		};
 		9CCC57752E9D7C7000669DB7 /* XCRemoteSwiftPackageReference "tuvali-ios-swift" */ = {
