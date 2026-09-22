@@ -44,7 +44,17 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
   // React 18 StrictMode dev double-invoke) re-runs the effect and would open a second concurrent
   // ASWebAuthenticationSession — which silently kills the first, dropping the prompt entirely
   // rather than showing it twice.
-  const hasStartedIOSAuthRef = useRef(false);
+  //
+  // Keyed by authorizationURL, not a plain one-shot boolean: IssuersMachine's
+  // AUTH_ENDPOINT_RECEIVED handler has no state target, so it can fire more than once per
+  // download (e.g. a second auth round for some flows) — each time with a new authorizationURL,
+  // routed here via the *same* navigate() call target. React Navigation reuses the already-
+  // mounted screen instance for that rather than remounting it, so a plain boolean guard would
+  // permanently block every auth round after the first on that instance — no error, just an
+  // infinite spinner, since startAuthSessionOnIOS never even gets called again. Keying by URL
+  // still blocks the original double-invoke race (same URL, same render) while still allowing a
+  // genuinely new round (new URL) to open.
+  const startedAuthForUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!authorizationURL || !clientId || !redirectUri) {
@@ -66,8 +76,8 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
     // first as well on iOS just duplicated that same confirmation back to back. Android has no
     // such OS-level prompt around its plain WebView, so this Alert stays its only consent step.
     if (isIOS()) {
-      if (!hasStartedIOSAuthRef.current) {
-        hasStartedIOSAuthRef.current = true;
+      if (startedAuthForUrlRef.current !== authorizationURL) {
+        startedAuthForUrlRef.current = authorizationURL;
         startAuthSessionOnIOS();
       }
     } else {

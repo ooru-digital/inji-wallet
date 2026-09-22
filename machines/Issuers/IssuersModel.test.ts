@@ -48,8 +48,8 @@ describe('IssuersModel', () => {
       expect(initialContext.errorMessage).toBe('');
     });
 
-    it('should have loadingReason as displayIssuers', () => {
-      expect(initialContext.loadingReason).toBe('displayIssuers');
+    it('should have loadingReason as null', () => {
+      expect(initialContext.loadingReason).toBeNull();
     });
 
     it('should have verifiableCredential as null', () => {
@@ -204,9 +204,8 @@ describe('IssuersModel', () => {
       });
     });
 
-    it('loadingReason should be displayIssuers', () => {
-      expect(context.loadingReason).toBe('displayIssuers');
-      expect(typeof context.loadingReason).toBe('string');
+    it('loadingReason should be null', () => {
+      expect(context.loadingReason).toBeNull();
     });
 
     it('keyType should be RS256', () => {
@@ -305,7 +304,7 @@ describe('IssuersModel', () => {
       expect(typeof context.selectedIssuerId).toBe('string');
       expect(typeof context.qrData).toBe('string');
       expect(typeof context.errorMessage).toBe('string');
-      expect(typeof context.loadingReason).toBe('string');
+      expect(context.loadingReason).toBeNull();
       expect(typeof context.keyType).toBe('string');
       expect(typeof context.authEndpointToOpen).toBe('boolean');
       expect(typeof context.isTransactionCodeRequested).toBe('boolean');

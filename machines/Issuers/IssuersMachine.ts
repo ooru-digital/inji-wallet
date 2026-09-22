@@ -18,42 +18,23 @@ export const IssuersMachine = model.createMachine(
     preserveActionOrder: true,
     id: Issuer_Tab_Ref_Id,
     context: model.initialContext,
-    initial: 'displayIssuers',
+    // The issuers-list screen (browse-and-pick-an-issuer) has been removed — this machine used
+    // to start by fetching and displaying that list (the `displayIssuers` state, now gone) before
+    // landing here. Starting directly in `selectingIssuer` skips that fetch entirely; the only
+    // thing this state still does is wait for SCAN_CREDENTIAL_OFFER_QR_CODE, which is untouched
+    // and still drives w3cvc credential-offer downloads exactly as before.
+    initial: 'selectingIssuer',
     tsTypes: {} as import('./IssuersMachine.typegen').Typegen0,
     schema: {
       context: model.initialContext,
       events: {} as EventFrom<typeof model>,
     },
     states: {
-      displayIssuers: {
-        description: 'displays the issuers downloaded from the server',
-        invoke: {
-          src: 'downloadIssuersList',
-          onDone: {
-            actions: [
-              'sendImpressionEvent',
-              'setIssuers',
-              'resetLoadingReason',
-            ],
-            target: 'selectingIssuer',
-          },
-          onError: {
-            actions: ['setError'],
-            target: '#issuersMachine.error',
-          },
-        },
-      },
-
       error: {
         description: 'reaches here when any error happens',
         entry: ['resetAuthorization'],
         on: {
           TRY_AGAIN: [
-            {
-              cond: 'shouldFetchIssuersAgain',
-              actions: ['setLoadingReasonAsDisplayIssuers', 'resetError'],
-              target: 'displayIssuers',
-            },
             {
               cond: 'canSelectIssuerAgain',
               actions: 'resetError',
@@ -592,7 +573,7 @@ export const IssuersMachine = model.createMachine(
         }),
         on: {
           CANCEL: {
-            target: 'displayIssuers',
+            target: 'selectingIssuer',
           },
           SELECTED_CREDENTIAL_TYPE: {
             actions: 'setSelectedCredentialType',

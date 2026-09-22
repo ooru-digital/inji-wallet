@@ -35,7 +35,6 @@ export const IssuersGuards = () => {
         context.errorMessage.includes(ErrorMessage.REQUEST_TIMEDOUT)
       );
     },
-    shouldFetchIssuersAgain: (context: any) => context.issuers.length === 0,
     hasUserCancelledBiometric: (_: any, event: any) =>
       event.data instanceof BiometricCancellationError,
     isCredentialOfferFlow: (context: any) => {
