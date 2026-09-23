@@ -11,7 +11,6 @@ import {VcDetailsContainer} from '../../components/VC/VcDetailsContainer';
 import {TelemetryConstants} from '../../shared/telemetry/TelemetryConstants';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {Theme} from '../../components/ui/styleUtils';
-import {HelpScreen} from '../../components/HelpScreen';
 import {Pressable, View} from 'react-native';
 import {KebabPopUp} from '../../components/KebabPopUp';
 import {SvgImage} from '../../components/ui/svg';
@@ -32,7 +31,6 @@ import {
   BannerStatus,
 } from '../../components/BannerNotification';
 import {VCProcessor} from '../../components/VC/common/VCProcessor';
-import {HelpIcon} from '../../components/ui/HelpIcon';
 import VcRenderer from '../../shared/vcRenderer/VcRenderer';
 import {RevocationStatus} from '../../shared/vcVerifier/VcVerifier';
 
@@ -144,7 +142,6 @@ export const ViewVcModal: React.FC<ViewVcModalProps> = props => {
   const headerRight = flow => {
     return flow === 'downloadedVc' ? (
       <Row align="space-between">
-        <HelpScreen source={'Inji'} triggerComponent={HelpIcon()} />
         {isVCLoaded(verifiableCredential) ? (
           <Pressable
             onPress={() => props.vcItemActor.send('KEBAB_POPUP')}

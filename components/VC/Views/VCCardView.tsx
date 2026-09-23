@@ -140,7 +140,7 @@ export const VCCardView: React.FC<VCItemProps> = ({
   const wrapTopCard = () => (
     <Copilot
       description={t('copilot:cardMessage')}
-      order={6}
+      order={5}
       title={t('copilot:cardTitle')}>
       {CardViewContent()}
     </Copilot>

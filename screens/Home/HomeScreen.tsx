@@ -93,7 +93,7 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
       <Copilot
         title={t('copilot:downloadTitle')}
         description={t('copilot:downloadMessage')}
-        order={2}
+        order={1}
         targetStyle={Theme.Styles.downloadFabIconCopilotContainer}>
         <DownloadFABIcon />
       </Copilot>

@@ -195,7 +195,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
     const justTurnedOn = shouldStartTour && !wasStartingTourRef.current;
     wasStartingTourRef.current = shouldStartTour;
     if (justTurnedOn) {
-      start(t('copilot:helpTitle'));
+      start(t('copilot:downloadTitle'));
     }
   }, [shouldStartTour]);
 
@@ -343,15 +343,19 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
 
           start() is given the step's name rather than called bare because a bare start()
           takes whichever step is registered with the lowest order at that instant, with
-          no retry — steps register in a useEffect, so if Help hadn't registered yet the
-          tour silently began on "Download Card" and reported itself as "2 of 5". Naming
+          no retry — steps register in a useEffect, so if the first step hadn't registered
+          yet the tour silently began on the wrong one and misreported its position. Naming
           the step uses the library's wait-for-it path instead: it retries via
-          requestAnimationFrame until that step exists. */}
+          requestAnimationFrame until that step exists.
+
+          That retry has no timeout, so the name must match a step that actually exists —
+          naming a removed step leaves the tour retrying forever and looking like a dead
+          button. Keep this in sync with whichever step holds order 1 (see copilotTestID). */}
       <Column
         fill
         style={{display: props.isVisible ? 'flex' : 'none'}}
         onLayout={
-          shouldStartTour ? () => start(t('copilot:helpTitle')) : undefined
+          shouldStartTour ? () => start(t('copilot:downloadTitle')) : undefined
         }>
         {controller.isRequestSuccessful && (
           <BannerNotification

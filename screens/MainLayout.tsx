@@ -113,7 +113,9 @@ export const MainLayout: React.FC = () => {
                     <Copilot
                       title={t(`copilot:${route.name}Title`)}
                       description={t(`copilot:${route.name}Message`)}
-                      order={2 + index}
+                      // `home` (index 0) renders no Copilot, so the tab steps start at index 1
+                      // and occupy 2..4, after the download FAB at 1.
+                      order={1 + index}
                       targetStyle={Theme.Styles.tabBarIconCopilot}>
                       <>
                         {focused ? (
