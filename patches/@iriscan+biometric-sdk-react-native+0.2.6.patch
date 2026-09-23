@@ -1,0 +1,55 @@
+diff --git a/node_modules/@iriscan/biometric-sdk-react-native/ios/BiometricSdkReactNative.swift b/node_modules/@iriscan/biometric-sdk-react-native/ios/BiometricSdkReactNative.swift
+index 8ab1f84..853f478 100644
+--- a/node_modules/@iriscan/biometric-sdk-react-native/ios/BiometricSdkReactNative.swift
++++ b/node_modules/@iriscan/biometric-sdk-react-native/ios/BiometricSdkReactNative.swift
+@@ -69,7 +69,7 @@ class BiometricSdkReactNative: NSObject {
+                               reject: @escaping RCTPromiseRejectBlock) -> Void {
+         let instance = BiometricSdkFactory.shared.getInstance()!
+         let imageData = Data(base64Encoded: b64Img as String)!
+-        let img = UIImage(data: imageData)!
++        let img = UIImage(data: imageData)!.normalizedForFaceSdk()
+         let cgImagePtr = UnsafeMutableRawPointer(Unmanaged.passRetained(img.cgImage!).toOpaque())
+         let template = instance.face().encoder().extractAndEncode(nativeImage: cgImagePtr)
+         if (template != nil) {
+@@ -107,7 +107,7 @@ class BiometricSdkReactNative: NSObject {
+                        resolve:  @escaping RCTPromiseResolveBlock,
+                        reject: @escaping RCTPromiseRejectBlock) -> Void {
+         let imageData = Data(base64Encoded: b64Img as String)!
+-        let img = UIImage(data: imageData)!
++        let img = UIImage(data: imageData)!.normalizedForFaceSdk()
+         let cgImagePtr = UnsafeMutableRawPointer(Unmanaged.passRetained(img.cgImage!).toOpaque())
+         let instance = BiometricSdkFactory.shared.getInstance()!
+         resolve(instance.face().liveness().extractAndScore(nativeImage: cgImagePtr))
+@@ -118,9 +118,31 @@ class BiometricSdkReactNative: NSObject {
+                           resolve:  @escaping RCTPromiseResolveBlock,
+                           reject: @escaping RCTPromiseRejectBlock) -> Void {
+         let imageData = Data(base64Encoded: b64Img as String)!
+-        let img = UIImage(data: imageData)!
++        let img = UIImage(data: imageData)!.normalizedForFaceSdk()
+         let cgImagePtr = UnsafeMutableRawPointer(Unmanaged.passRetained(img.cgImage!).toOpaque())
+         let instance = BiometricSdkFactory.shared.getInstance()!
+         resolve(instance.face().liveness().extractAndValidate(nativeImage: cgImagePtr))
+     }
+ }
++
++extension UIImage {
++    /// `.cgImage` is the raw, unrotated pixel buffer — it carries no orientation of its own.
++    /// `UIImage.imageOrientation` (parsed from the source JPEG's EXIF tag) is only ever applied
++    /// when this UIImage itself is *drawn* (UIImageView, draw(in:), etc.); every call site above
++    /// hands `.cgImage` straight to the face SDK's native encoder/liveness model, bypassing that
++    /// entirely. A front-camera capture routinely comes back with a non-.up EXIF orientation (the
++    /// pixels aren't physically rotated on capture, just tagged), so the model was receiving a
++    /// sideways/mirrored buffer even though the exact same UIImage displays correctly everywhere
++    /// else in the app — the face is misaligned for detection/encoding, not merely "not a match".
++    /// Redrawing into a fresh bitmap context bakes `imageOrientation` into the actual pixels, so
++    /// the CGImage handed to the model matches what a person looking at the photo would see.
++    func normalizedForFaceSdk() -> UIImage {
++        if imageOrientation == .up {
++            return self
++        }
++        let renderer = UIGraphicsImageRenderer(size: size)
++        return renderer.image { _ in
++            draw(in: CGRect(origin: .zero, size: size))
++        }
++    }
++}

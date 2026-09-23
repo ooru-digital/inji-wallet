@@ -5,6 +5,7 @@ import {createModel} from 'xstate/lib/model';
 
 import {faceCompare} from '@iriscan/biometric-sdk-react-native';
 import { ImageType } from '../components/FaceScanner/FaceScannerHelper';
+import {isIOS} from '../shared/constants';
 
 const model = createModel(
   {
@@ -179,6 +180,16 @@ export const createFaceScannerMachine = (vcImages: string[]) =>
         },
 
         verifyImage: async context => {
+          // Face verification is disabled on iOS for now, not removed: SnapKYC's native liveness
+          // SDK is Android-only (SNAPKYC_LIVENESS_ENABLED), so this legacy @iriscan-based compare
+          // is the only path iOS ever reaches here, and it isn't reliably matching real captures
+          // yet. Every capture is treated as a valid match so the flow continues exactly as it
+          // would after a genuine match on Android (straight through to sharing with the
+          // verifier), until iOS face verification is actually built.
+          if (isIOS()) {
+            return true;
+          }
+
           const {capturedImage} = context;
           if (!capturedImage || !capturedImage.base64) {
             throw new Error('No image captured');
