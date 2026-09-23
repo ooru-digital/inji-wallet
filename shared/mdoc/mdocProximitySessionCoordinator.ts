@@ -1,5 +1,8 @@
 import {Platform} from 'react-native';
-import {countBleTransferMethodRowsInDeviceEngagement} from './cborDecodeMinimal';
+import {
+  countBleTransferMethodRowsInDeviceEngagement,
+  deviceEngagementAdvertisesBlePsm,
+} from './cborDecodeMinimal';
 import type {MdocDeviceEngagementSession} from './deviceEngagement';
 import {
   loadPersistedMdocProximity,
@@ -36,7 +39,12 @@ export function loadOrCreateMdocProximityQrPayload(
         existing.deviceEngagementCbor,
       );
       const expectedRows = Platform.OS === 'android' ? 2 : 1;
-      if (bleRows === expectedRows) {
+      // iOS serves GATT only, so a cached engagement advertising an L2CAP PSM (BLE key 21) is
+      // stale regardless of row count — readers act on that PSM and can stall on it.
+      const stalePsm =
+        Platform.OS !== 'android' &&
+        deviceEngagementAdvertisesBlePsm(existing.deviceEngagementCbor);
+      if (bleRows === expectedRows && !stalePsm) {
         return {
           mdocUri: existing.mdocUri,
           deviceEngagementCbor: existing.deviceEngagementCbor,
@@ -45,13 +53,17 @@ export function loadOrCreateMdocProximityQrPayload(
       }
       if (__DEV__) {
         console.warn(
-          `[mDoc proximity] Regenerating cached engagement: found ${bleRows} BLE row(s); ` +
-            `expected ${expectedRows} for ${Platform.OS} ` +
-            `(${
-              Platform.OS === 'android'
-                ? 'multipaz dual-row'
-                : 'tap2id single-row'
-            }).`,
+          stalePsm
+            ? '[mDoc proximity] Regenerating cached engagement: it advertises a BLE L2CAP PSM ' +
+                '(map key 21), which this platform does not serve — readers can stall trying to ' +
+                'open L2CAP instead of falling back to GATT.'
+            : `[mDoc proximity] Regenerating cached engagement: found ${bleRows} BLE row(s); ` +
+                `expected ${expectedRows} for ${Platform.OS} ` +
+                `(${
+                  Platform.OS === 'android'
+                    ? 'multipaz dual-row'
+                    : 'tap2id single-row'
+                }).`,
         );
       }
     }

@@ -10,6 +10,26 @@ export class CborTag24 {
   constructor(readonly innerCbor: Uint8Array) {}
 }
 
+/**
+ * Pre-encoded CBOR to splice in verbatim, bypassing the encoder entirely.
+ *
+ * ISO 18013-5 signs over *bytes*, not over decoded values: the MSO digests cover each
+ * `IssuerSignedItemBytes` exactly as the issuer emitted it, and `issuerAuth` is a COSE_Sign1
+ * whose signature covers its own serialization. Decode-then-re-encode is only byte-identical
+ * when the producer used the same canonical length headers we emit — true in practice, but a
+ * single non-canonical header (`0x59 0x00 0x50` where we would write `0x58 0x50`) silently
+ * invalidates the issuer's signature with no local error. Carrying the original slice through
+ * removes that whole class of failure from the response path.
+ */
+export class CborRaw {
+  constructor(readonly bytes: Uint8Array) {}
+}
+
+/** Tag with an arbitrary number, for tags other than the #6.24 special case. */
+export class CborTagged {
+  constructor(readonly tag: number, readonly value: unknown) {}
+}
+
 function writeUIntHead(mt: number, n: number, bs: number[]): void {
   const major = mt << 5;
   if (n < 24) {
@@ -25,6 +45,21 @@ function writeUIntHead(mt: number, n: number, bs: number[]): void {
       (n >>> 16) & 0xff,
       (n >>> 8) & 0xff,
       n & 0xff,
+    );
+  } else if (Number.isSafeInteger(n)) {
+    // ai=27 (8-byte argument). Split at 2^32 rather than using bit ops, which are 32-bit in JS.
+    const hi = Math.floor(n / 0x1_0000_0000);
+    const lo = n % 0x1_0000_0000;
+    bs.push(
+      major | 27,
+      (hi >>> 24) & 0xff,
+      (hi >>> 16) & 0xff,
+      (hi >>> 8) & 0xff,
+      hi & 0xff,
+      (lo >>> 24) & 0xff,
+      (lo >>> 16) & 0xff,
+      (lo >>> 8) & 0xff,
+      lo & 0xff,
     );
   } else {
     throw new Error('CBOR: integer too large');
@@ -115,9 +150,20 @@ function encodeValue(val: unknown, bs: number[]): void {
     writeBytes(new Uint8Array(v.buffer, v.byteOffset, v.byteLength), bs);
     return;
   }
+  if (val instanceof CborRaw) {
+    for (let i = 0; i < val.bytes.length; i++) {
+      bs.push(val.bytes[i]);
+    }
+    return;
+  }
   if (val instanceof CborTag24) {
     writeTag(24, bs);
     writeBytes(val.innerCbor, bs);
+    return;
+  }
+  if (val instanceof CborTagged) {
+    writeTag(val.tag, bs);
+    encodeValue(val.value, bs);
     return;
   }
   if (Array.isArray(val)) {

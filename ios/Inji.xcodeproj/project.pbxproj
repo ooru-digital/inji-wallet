@@ -15,6 +15,8 @@
 		1EED69F92DA913D30042EAFC /* IntentData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EED69F82DA913D30042EAFC /* IntentData.swift */; };
 		1EED69FD2DA914D00042EAFC /* RNDeepLinkIntentModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 1EED69FC2DA914D00042EAFC /* RNDeepLinkIntentModule.m */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		484795BB1F421DA994663FA6 /* MdocBleTransport.m in Sources */ = {isa = PBXBuildFile; fileRef = 33EF4E5610B6BE9B7F914788 /* MdocBleTransport.m */; };
+		603FADE6940A81709AA21AF8 /* MdocBleTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40898D9790F8108A993691DF /* MdocBleTransport.swift */; };
 		61450CD968A57153077CB5A9 /* libPods-Inji.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 433CCC1AA8055E18ADC2C596 /* libPods-Inji.a */; };
 		717E6FEC33D6D8A2F9B01CBC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1D23B9CD47CFD7F3C87D202F /* PrivacyInfo.xcprivacy */; };
 		73295844242A4AD3AA52D0BE /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B96A488E54CBDB286B26F /* noop-file.swift */; };
@@ -107,6 +109,8 @@
 		1EED69F82DA913D30042EAFC /* IntentData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentData.swift; sourceTree = "<group>"; };
 		1EED69FA2DA914130042EAFC /* RNDeepLinkIntentModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RNDeepLinkIntentModule.swift; sourceTree = "<group>"; };
 		1EED69FC2DA914D00042EAFC /* RNDeepLinkIntentModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNDeepLinkIntentModule.m; sourceTree = "<group>"; };
+		33EF4E5610B6BE9B7F914788 /* MdocBleTransport.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = MdocBleTransport.m; path = Inji/MdocBleTransport.m; sourceTree = "<group>"; };
+		40898D9790F8108A993691DF /* MdocBleTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MdocBleTransport.swift; path = Inji/MdocBleTransport.swift; sourceTree = "<group>"; };
 		433CCC1AA8055E18ADC2C596 /* libPods-Inji.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Inji.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		457171B817B28D9B58D26B1A /* Pods-Inji.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Inji.release.xcconfig"; path = "Target Support Files/Pods-Inji/Pods-Inji.release.xcconfig"; sourceTree = "<group>"; };
 		9C0E86B42BEE357A00E9F9F6 /* RNPixelpassModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RNPixelpassModule.swift; sourceTree = "<group>"; };
@@ -232,6 +236,8 @@
 				1EED69F82DA913D30042EAFC /* IntentData.swift */,
 				1EED69FA2DA914130042EAFC /* RNDeepLinkIntentModule.swift */,
 				1EED69FC2DA914D00042EAFC /* RNDeepLinkIntentModule.m */,
+				40898D9790F8108A993691DF /* MdocBleTransport.swift */,
+				33EF4E5610B6BE9B7F914788 /* MdocBleTransport.m */,
 			);
 			name = Inji;
 			sourceTree = "<group>";
@@ -910,6 +916,8 @@
 				9C4850512C3E59B5002ECBD5 /* RNVersionModule.m in Sources */,
 				C3F6A9DF2E661903006C9904 /* RNInjiVcRenderer.m in Sources */,
 				73295844242A4AD3AA52D0BE /* noop-file.swift in Sources */,
+				603FADE6940A81709AA21AF8 /* MdocBleTransport.swift in Sources */,
+				484795BB1F421DA994663FA6 /* MdocBleTransport.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

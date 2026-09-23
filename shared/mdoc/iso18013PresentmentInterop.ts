@@ -18,6 +18,22 @@ import {
   Platform,
 } from 'react-native';
 
+import {
+  MDOC_PRESENTMENT_CANNOT_SATISFY,
+  MDOC_PRESENTMENT_CONSENT_DISMISSED,
+  MDOC_PRESENTMENT_CONSENT_REQUIRED,
+  MDOC_PRESENTMENT_RESPONSE_SENT,
+  type PresentmentEventName,
+} from './presentment/events';
+import {
+  addPresentmentListener,
+  approveMdocPresentmentConsent,
+  denyMdocPresentmentConsent,
+  isMdocPresentmentEngineAvailable,
+  startMdocPresentmentSession,
+  stopMdocPresentmentSession,
+} from './presentment';
+
 /** Multipaz holder QR presentment composable (KMP) — wire equivalent in Android/iOS native. */
 export const MULTIPAZ_REFERENCE = {
   holderPresentationDoc:
@@ -118,12 +134,15 @@ export interface MdocPresentmentConsentRequest {
   };
 }
 
-export const MDOC_PRESENTMENT_CONSENT_REQUIRED =
-  'MdocPresentmentConsentRequired';
-export const MDOC_PRESENTMENT_CONSENT_DISMISSED =
-  'MdocPresentmentConsentDismissed';
-export const MDOC_PRESENTMENT_CANNOT_SATISFY = 'MdocPresentmentCannotSatisfy';
-export const MDOC_PRESENTMENT_RESPONSE_SENT = 'MdocPresentmentResponseSent';
+// Defined in a leaf module so the common TypeScript engine can emit them without importing this
+// file at runtime (it needs the types from here, which `import type` erases). Re-exported so
+// every existing importer is unaffected.
+export {
+  MDOC_PRESENTMENT_CANNOT_SATISFY,
+  MDOC_PRESENTMENT_CONSENT_DISMISSED,
+  MDOC_PRESENTMENT_CONSENT_REQUIRED,
+  MDOC_PRESENTMENT_RESPONSE_SENT,
+} from './presentment/events';
 
 export interface MdocPresentmentCannotSatisfyEvent {
   reason: string;
@@ -163,6 +182,36 @@ function getEventEmitter(): NativeEventEmitter | null {
   return new NativeEventEmitter(nm as never);
 }
 
+/**
+ * True when this platform runs the common TypeScript engine rather than a native presenter.
+ *
+ * iOS only, for now. Android has a working Multipaz-based native presenter and is deliberately
+ * left on it — see `presentment/bleTransport.ts`.
+ */
+function usesCommonEngine(): boolean {
+  return isMdocPresentmentEngineAvailable();
+}
+
+/**
+ * Subscribes to a presentment event on whichever engine is active.
+ *
+ * Both engines use the same event names and payload shapes, so every `subscribeMdocPresentment*`
+ * helper below is engine-agnostic and callers never branch on platform.
+ */
+function addEngineListener(
+  event: PresentmentEventName,
+  listener: (payload: unknown) => void,
+): EmitterSubscription | {remove: () => void} | null {
+  if (usesCommonEngine()) {
+    return addPresentmentListener(event, listener);
+  }
+  const emitter = getEventEmitter();
+  if (!emitter) {
+    return null;
+  }
+  return emitter.addListener(event, listener);
+}
+
 function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
   const obj = (raw ?? {}) as {
     docType?: string;
@@ -171,11 +220,19 @@ function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
     purpose?: string;
     purposeHintCode?: number | null;
     requestInfoJson?: string;
+    requestInfo?: unknown;
     elements?: Array<{
       namespace?: string;
       element?: string;
       intentToRetain?: boolean;
       optional?: boolean;
+    }>;
+    requestedElements?: Array<{
+      namespace?: string;
+      element?: string;
+      intentToRetain?: boolean;
+      servable?: boolean;
+      servedAs?: string | null;
     }>;
   };
   const purposeHintCode =
@@ -199,7 +256,21 @@ function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
           optional: !!el?.optional,
         }))
       : [],
+    requestedElements: Array.isArray(obj.requestedElements)
+      ? obj.requestedElements.map(el => ({
+          namespace: String(el?.namespace ?? ''),
+          element: String(el?.element ?? ''),
+          intentToRetain: !!el?.intentToRetain,
+          servable: el?.servable !== false,
+          servedAs: typeof el?.servedAs === 'string' ? el.servedAs : null,
+        }))
+      : undefined,
     requestInfo: (() => {
+      // Android serialises requestInfo to JSON to cross the bridge; the common TypeScript
+      // engine has no bridge in the way and passes the object straight through.
+      if (obj.requestInfo && typeof obj.requestInfo === 'object') {
+        return obj.requestInfo as MdocPresentmentConsentRequest['requestInfo'];
+      }
       if (typeof obj.requestInfoJson === 'string' && obj.requestInfoJson) {
         try {
           return JSON.parse(obj.requestInfoJson);
@@ -213,9 +284,9 @@ function normalizeConsentPayload(raw: unknown): MdocPresentmentConsentRequest {
 }
 
 /**
- * Stand-in returned by the subscribe helpers when there is no event emitter to attach
- * to (non-Android, or the native module isn't registered in this build), so callers can
- * always call .remove() unconditionally.
+ * Stand-in returned by the subscribe helpers when there is no engine to attach to (no native
+ * module registered and no common engine available), so callers can always call .remove()
+ * unconditionally.
  */
 const noopSubscription = {
   remove: () => {
@@ -224,37 +295,23 @@ const noopSubscription = {
 };
 
 /**
- * Subscribe to native "consent required" events (after DeviceRequest, before DeviceResponse).
+ * Subscribe to "consent required" (after DeviceRequest, before DeviceResponse).
  * Keep the subscription active for the whole presentment lifetime.
  */
 export function subscribeMdocPresentmentConsentRequired(
   listener: (request: MdocPresentmentConsentRequest) => void,
 ): EmitterSubscription | {remove: () => void} {
-  const emitter = getEventEmitter();
-  if (!emitter) {
-    return noopSubscription;
-  }
-  return emitter.addListener(MDOC_PRESENTMENT_CONSENT_REQUIRED, raw => {
-    console.log(
-      '[DEBUG] Raw mDoc Consent Request:',
-      JSON.stringify(raw, null, 2),
-    );
-    if (raw && (raw as any).requestInfoJson) {
-      console.log('[DEBUG] requestInfo field detected!');
-      try {
-        const parsed = JSON.parse((raw as any).requestInfoJson);
+  return (
+    addEngineListener(MDOC_PRESENTMENT_CONSENT_REQUIRED, raw => {
+      if (__DEV__) {
         console.log(
-          '[DEBUG] Parsed requestInfo:\n' + JSON.stringify(parsed, null, 2),
-        );
-      } catch (e) {
-        console.log(
-          '[DEBUG] requestInfo (raw string):',
-          (raw as any).requestInfoJson,
+          '[mdoc presentment] consent required:',
+          JSON.stringify(raw, null, 2),
         );
       }
-    }
-    listener(normalizeConsentPayload(raw));
-  });
+      listener(normalizeConsentPayload(raw));
+    }) ?? noopSubscription
+  );
 }
 
 /**
@@ -266,26 +323,22 @@ export function subscribeMdocPresentmentConsentRequired(
 export function subscribeMdocPresentmentResponseSent(
   listener: () => void,
 ): EmitterSubscription | {remove: () => void} {
-  const emitter = getEventEmitter();
-  if (!emitter) {
-    return noopSubscription;
-  }
-  return emitter.addListener(MDOC_PRESENTMENT_RESPONSE_SENT, () => {
-    listener();
-  });
+  return (
+    addEngineListener(MDOC_PRESENTMENT_RESPONSE_SENT, () => {
+      listener();
+    }) ?? noopSubscription
+  );
 }
 
 /** Subscribe when the consent overlay should close. */
 export function subscribeMdocPresentmentConsentDismissed(
   listener: () => void,
 ): EmitterSubscription | {remove: () => void} {
-  const emitter = getEventEmitter();
-  if (!emitter) {
-    return noopSubscription;
-  }
-  return emitter.addListener(MDOC_PRESENTMENT_CONSENT_DISMISSED, () => {
-    listener();
-  });
+  return (
+    addEngineListener(MDOC_PRESENTMENT_CONSENT_DISMISSED, () => {
+      listener();
+    }) ?? noopSubscription
+  );
 }
 
 /**
@@ -295,37 +348,39 @@ export function subscribeMdocPresentmentConsentDismissed(
 export function subscribeMdocPresentmentCannotSatisfy(
   listener: (event: MdocPresentmentCannotSatisfyEvent) => void,
 ): EmitterSubscription | {remove: () => void} {
-  const emitter = getEventEmitter();
-  if (!emitter) {
-    return noopSubscription;
-  }
-  return emitter.addListener(MDOC_PRESENTMENT_CANNOT_SATISFY, raw => {
-    const obj = (raw ?? {}) as {
-      reason?: string;
-      walletDocType?: string;
-      requestedDocTypes?: unknown;
-    };
-    listener({
-      reason: typeof obj.reason === 'string' ? obj.reason : '',
-      walletDocType:
-        typeof obj.walletDocType === 'string' ? obj.walletDocType : '',
-      requestedDocTypes: Array.isArray(obj.requestedDocTypes)
-        ? obj.requestedDocTypes.map(String)
-        : [],
-    });
-  });
+  return (
+    addEngineListener(MDOC_PRESENTMENT_CANNOT_SATISFY, raw => {
+      const obj = (raw ?? {}) as {
+        reason?: string;
+        walletDocType?: string;
+        requestedDocTypes?: unknown;
+      };
+      listener({
+        reason: typeof obj.reason === 'string' ? obj.reason : '',
+        walletDocType:
+          typeof obj.walletDocType === 'string' ? obj.walletDocType : '',
+        requestedDocTypes: Array.isArray(obj.requestedDocTypes)
+          ? obj.requestedDocTypes.map(String)
+          : [],
+      });
+    }) ?? noopSubscription
+  );
 }
 
 /**
- * Starts full proximity presentation (BLE + session + DeviceResponse) via Android native Multipaz.
- * Consent is requested mid-session via [subscribeMdocPresentmentConsentRequired] / callbacks.
+ * Starts full proximity presentation (BLE + session + DeviceResponse).
+ *
+ * Runs on whichever engine this platform has: the common TypeScript implementation (iOS) or the
+ * native Multipaz presenter (Android). Consent is requested mid-session via
+ * [subscribeMdocPresentmentConsentRequired] / callbacks either way.
  */
 export async function startIso18013ProximityPresentment(
   params: Iso18013PresentmentParams,
   callbacks?: Iso18013PresentmentCallbacks,
 ): Promise<void> {
   const nm = getNativeModule();
-  if (Platform.OS !== 'android' || !nm?.startPresentment) {
+  const useCommonEngine = usesCommonEngine();
+  if (!useCommonEngine && (Platform.OS !== 'android' || !nm?.startPresentment)) {
     throw new Iso18013PresentmentNotImplementedError();
   }
 
@@ -343,26 +398,36 @@ export async function startIso18013ProximityPresentment(
 
   try {
     callbacks?.onPhase?.('bleAdvertising');
-    await nm.startPresentment({
-      issuerSignedCompact: params.msoMdocCredentialCompact,
-      deviceEngagementCborBase64: Buffer.from(
-        params.deviceEngagementCbor,
-      ).toString('base64'),
-      ephemeralPrivateKeyBase64: Buffer.from(
-        params.ephemeralPresentationPrivateKey,
-      ).toString('base64'),
-      useSoftwareDeviceKey: !!params.useSoftwareDeviceKey,
-      deviceKeyPrivateBase64: params.deviceKeyPrivateBase64,
-    });
-    callbacks?.onPhase?.('completed');
+    if (useCommonEngine) {
+      // The TS engine reports each phase as it happens, so the caller's onPhase is threaded
+      // through rather than being synthesised around a single opaque await.
+      await startMdocPresentmentSession(params, callbacks?.onPhase);
+    } else {
+      await nm!.startPresentment({
+        issuerSignedCompact: params.msoMdocCredentialCompact,
+        deviceEngagementCborBase64: Buffer.from(
+          params.deviceEngagementCbor,
+        ).toString('base64'),
+        ephemeralPrivateKeyBase64: Buffer.from(
+          params.ephemeralPresentationPrivateKey,
+        ).toString('base64'),
+        useSoftwareDeviceKey: !!params.useSoftwareDeviceKey,
+        deviceKeyPrivateBase64: params.deviceKeyPrivateBase64,
+      });
+      callbacks?.onPhase?.('completed');
+    }
   } finally {
     consentSub?.remove();
     dismissSub?.remove();
   }
 }
 
-/** Stops active native proximity session (BLE), if any. */
+/** Stops the active proximity session (BLE), if any. */
 export function stopIso18013ProximityPresentment(): void {
+  if (usesCommonEngine()) {
+    void stopMdocPresentmentSession();
+    return;
+  }
   const nm = getNativeModule();
   nm?.stopPresentment?.();
 }
@@ -371,6 +436,12 @@ export function stopIso18013ProximityPresentment(): void {
 export async function approveIso18013PresentmentConsent(
   purposesJson?: string,
 ): Promise<void> {
+  if (usesCommonEngine()) {
+    // The TS engine already holds the narrowed disclosure set it showed the user, so there is
+    // nothing for the caller to pass back; purposesJson is an Android-only echo.
+    approveMdocPresentmentConsent();
+    return;
+  }
   const nm = getNativeModule();
   if (!nm?.approvePresentment) {
     throw new Iso18013PresentmentNotImplementedError(
@@ -382,6 +453,10 @@ export async function approveIso18013PresentmentConsent(
 
 /** Deny sharing after [MDOC_PRESENTMENT_CONSENT_REQUIRED] — no DeviceResponse is sent. */
 export async function denyIso18013PresentmentConsent(): Promise<void> {
+  if (usesCommonEngine()) {
+    denyMdocPresentmentConsent();
+    return;
+  }
   const nm = getNativeModule();
   if (!nm?.denyPresentment) {
     throw new Iso18013PresentmentNotImplementedError(
