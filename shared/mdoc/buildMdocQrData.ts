@@ -38,5 +38,16 @@ export function buildMdocDeviceEngagementQrForVc(
     proximityPresentationProfile:
       extra?.proximityPresentationProfile ??
       (Platform.OS === 'android' ? 'multipaz' : 'tap2id'),
+    ble: {
+      ...extra?.ble,
+      // iOS serves GATT only (`MdocBleTransport`), so it must not advertise an L2CAP PSM.
+      // Readers map BLE option key 21 to `peripheralServerModePsm`: one was observed looping on
+      // `L2capcoc client connection … port 130 … result 12` — port 130 being exactly the value
+      // the tap2id profile puts at key 21 — and never falling back to GATT. Android keeps its
+      // hint because its Multipaz presenter negotiates L2CAP itself.
+      interopPairingHint21:
+        extra?.ble?.interopPairingHint21 ??
+        (Platform.OS === 'android' ? undefined : null),
+    },
   });
 }

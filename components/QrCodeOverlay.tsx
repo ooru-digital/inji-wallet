@@ -308,8 +308,9 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
   const isMdoc = props.meta?.format === VCFormat.mso_mdoc;
 
   useEffect(() => {
+    // Platform-agnostic: `nativeMdocProximityPresentmentAvailable` covers both the Android
+    // native presenter and the common TypeScript engine used on iOS.
     if (
-      Platform.OS !== 'android' ||
       props.meta?.format !== VCFormat.mso_mdoc ||
       !nativeMdocProximityPresentmentAvailable()
     ) {
@@ -418,7 +419,6 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
          * Fire native `startPresentment` (non-blocking) before `setQrString` so BLE is up when the QR paints.
          */
         if (
-          Platform.OS === 'android' &&
           nativeMdocProximityPresentmentAvailable() &&
           props.meta?.format === VCFormat.mso_mdoc &&
           typeof qrData === 'string' &&
@@ -478,11 +478,12 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
         } else if (
           __DEV__ &&
           props.meta?.format === VCFormat.mso_mdoc &&
-          Platform.OS === 'android' &&
           !nativeMdocProximityPresentmentAvailable()
         ) {
           console.warn(
-            '[QrCodeOverlay] MdocIso18013Presentment native module unavailable — rebuild Android with Multipaz + InjiPackage registration.',
+            Platform.OS === 'android'
+              ? '[QrCodeOverlay] MdocIso18013Presentment native module unavailable — rebuild Android with Multipaz + InjiPackage registration.'
+              : '[QrCodeOverlay] MdocBleTransport native module unavailable — rebuild iOS (pod install + clean build) so the BLE transport is linked.',
           );
         }
         if (qrData?.length < MAX_QR_DATA_LENGTH) {

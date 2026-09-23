@@ -84,8 +84,15 @@ export interface MdocDeviceEngagementOptions {
     /**
      * Map key {@link BLE_OPT_INTEROP_PAIRING_HINT_21} on the **single** BLE row (default Tap2iD style) or on the **first** row when dual BLE is enabled.
      * Defaults: **130** (single-row Tap2iD working sample), **128** (first row of Multipaz dual-row).
+     *
+     * Pass `null` to **omit key 21 entirely**. Multipaz — and readers built against it — map this
+     * key to `MdocConnectionMethodBle.peripheralServerModePsm`, i.e. an **L2CAP PSM**, not a hint.
+     * A reader that believes it will open an L2CAP channel on that port and may never fall back to
+     * GATT, so a holder that does not actually serve L2CAP must not advertise a PSM. Observed in
+     * the field: a reader looping on `L2capcoc client connection … port 130 … result 12` against
+     * an iOS holder that only runs a GATT server.
      */
-    interopPairingHint21?: number;
+    interopPairingHint21?: number | null;
     /**
      * `true`: two `[2,1,BleOptions]` rows (Multipaz-style).
      * `false`: one BLE row (Tap2iD-style).
@@ -313,6 +320,10 @@ export function createMdocDeviceEngagementSession(
     dualBle = profile === 'multipaz';
   }
 
+  // `null` means "omit key 21"; `undefined` means "use the profile default". They are distinct,
+  // so `??` alone cannot express this — a reader treats key 21 as an L2CAP PSM, and a holder that
+  // serves only GATT must be able to leave it out.
+  const omitHint21 = options.ble?.interopPairingHint21 === null;
   const hint21Single =
     options.ble?.interopPairingHint21 ??
     BLE_OPT_INTEROP_PAIRING_HINT_21_DEFAULT;
@@ -331,8 +342,10 @@ export function createMdocDeviceEngagementSession(
       [BLE_OPT_SUPPORTS_PERIPHERAL_SERVER, true],
       [BLE_OPT_SUPPORTS_CENTRAL_CLIENT, false],
       [BLE_OPT_PERIPHERAL_SERVER_UUID, peripheralUuid],
-      [BLE_OPT_INTEROP_PAIRING_HINT_21, hint21DualFirst],
     ]);
+    if (!omitHint21) {
+      blePeripheralRow.set(BLE_OPT_INTEROP_PAIRING_HINT_21, hint21DualFirst);
+    }
     const bleCentralRow = new Map<number, boolean | number | Uint8Array>([
       [BLE_OPT_SUPPORTS_PERIPHERAL_SERVER, false],
       [BLE_OPT_SUPPORTS_CENTRAL_CLIENT, true],
@@ -347,8 +360,10 @@ export function createMdocDeviceEngagementSession(
       [BLE_OPT_SUPPORTS_PERIPHERAL_SERVER, true],
       [BLE_OPT_SUPPORTS_CENTRAL_CLIENT, false],
       [BLE_OPT_PERIPHERAL_SERVER_UUID, peripheralUuid],
-      [BLE_OPT_INTEROP_PAIRING_HINT_21, hint21Single],
     ]);
+    if (!omitHint21) {
+      bleTap2idRow.set(BLE_OPT_INTEROP_PAIRING_HINT_21, hint21Single);
+    }
     transferMethods = [
       [TRANSFER_METHOD_BLE, TRANSFER_METHOD_BLE_VERSION, bleTap2idRow],
     ];

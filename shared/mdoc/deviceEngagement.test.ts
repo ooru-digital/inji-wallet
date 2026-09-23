@@ -6,9 +6,67 @@ import {
 } from './deviceEngagement';
 import {
   countBleTransferMethodRowsInDeviceEngagement,
+  deviceEngagementAdvertisesBlePsm,
   parseBlePeripheralUuidFromDeviceEngagement,
   parseCoseEc2P256FromDeviceEngagement,
 } from './cborDecodeMinimal';
+
+describe('BLE option key 21 (L2CAP PSM)', () => {
+  // Readers map key 21 to MdocConnectionMethodBle.peripheralServerModePsm and will try to open
+  // an L2CAP channel on it. A GATT-only holder that advertises one was seen making a reader loop
+  // on `L2capcoc client connection … port 130 … result 12` without ever falling back.
+  it('emits key 21 by default', () => {
+    const session = createMdocDeviceEngagementSession({});
+    expect(
+      deviceEngagementAdvertisesBlePsm(session.deviceEngagementCbor),
+    ).toBe(true);
+  });
+
+  it('omits key 21 when interopPairingHint21 is null', () => {
+    const session = createMdocDeviceEngagementSession({
+      ble: {interopPairingHint21: null},
+    });
+    expect(
+      deviceEngagementAdvertisesBlePsm(session.deviceEngagementCbor),
+    ).toBe(false);
+    // Omitting the PSM must not disturb anything else the reader needs.
+    expect(
+      countBleTransferMethodRowsInDeviceEngagement(
+        session.deviceEngagementCbor,
+      ),
+    ).toBe(1);
+    expect(
+      parseBlePeripheralUuidFromDeviceEngagement(session.deviceEngagementCbor),
+    ).toHaveLength(16);
+    expect(
+      validateDeviceEngagementInteroperability(session.deviceEngagementCbor).ok,
+    ).toBe(true);
+  });
+
+  it('omits key 21 on the dual-row profile too', () => {
+    const session = createMdocDeviceEngagementSession({
+      proximityPresentationProfile: 'multipaz',
+      ble: {interopPairingHint21: null},
+    });
+    expect(
+      deviceEngagementAdvertisesBlePsm(session.deviceEngagementCbor),
+    ).toBe(false);
+    expect(
+      countBleTransferMethodRowsInDeviceEngagement(
+        session.deviceEngagementCbor,
+      ),
+    ).toBe(2);
+  });
+
+  it('still honours an explicit numeric hint', () => {
+    const session = createMdocDeviceEngagementSession({
+      ble: {interopPairingHint21: 128},
+    });
+    expect(
+      deviceEngagementAdvertisesBlePsm(session.deviceEngagementCbor),
+    ).toBe(true);
+  });
+});
 
 describe('mDoc DeviceEngagement (ISO 18013-5 interop / Tap2ID)', () => {
   it('encodes CBOR maps in canonical key order (same bytes regardless of insertion order)', () => {

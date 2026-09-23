@@ -7,6 +7,7 @@ import {KeyTypes} from '../cryptoutil/KeyTypes';
 import {isAndroid, isIOS} from '../constants';
 import {getJWK} from '../openId4VCI/Utils';
 import {loadPersistedMdocProximityFull} from './mdocProximitySessionStore';
+import {isMdocPresentmentEngineAvailable} from './presentment';
 import type {Iso18013PresentmentParams} from './iso18013PresentmentInterop';
 
 function issuerSignedCompactFromVc(vc: VerifiableCredential): string | null {
@@ -191,7 +192,18 @@ export async function buildIso18013PresentmentParamsForVc(
   };
 }
 
+/**
+ * True when this build can run an ISO 18013-5 proximity session at all.
+ *
+ * Two engines satisfy this. Android uses the native Multipaz presenter
+ * (`MdocIso18013Presentment`); iOS uses the common TypeScript engine in `presentment/`, which
+ * needs only the thin `MdocBleTransport` native module. Callers do not care which — they just
+ * need to know whether to start a session.
+ */
 export function nativeMdocProximityPresentmentAvailable(): boolean {
+  if (isMdocPresentmentEngineAvailable()) {
+    return true;
+  }
   return (
     Platform.OS === 'android' &&
     !!(NativeModules as {MdocIso18013Presentment?: unknown})
