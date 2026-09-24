@@ -16,6 +16,7 @@ import {SplashScreen} from '../screens/SplashScreen';
 import {RequestStackParamList} from './routesConstants';
 import {KeyManagementScreen} from '../screens/Settings/KeyManagementScreen';
 import AuthWebViewScreen from '../screens/AuthWebViewScreen';
+import {HolderLoginScreen} from '../screens/Login/HolderLoginScreen';
 
 export const baseRoutes: Screen[] = [
   {
@@ -64,6 +65,13 @@ export const baseRoutes: Screen[] = [
     component: BiometricScreen,
   },
   {
+    name: 'HolderLogin',
+    component: HolderLoginScreen,
+    options: {
+      headerShown: false,
+    },
+  },
+  {
     name: 'Request',
     component: RequestLayout,
     options: {
@@ -99,6 +107,7 @@ export type RootStackParamList = {
   Biometric: {
     setup: boolean;
   };
+  HolderLogin: undefined;
   Main: undefined;
   Notifications: undefined;
 };

@@ -31,10 +31,17 @@ import {
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
 
 import {isAndroid} from '../shared/constants';
+import {useHolderAuthService} from '../components/HolderAuthProvider';
+import {
+  selectIsCheckingHolderSession,
+  selectIsHolderAuthenticated,
+} from '../machines/holderAuth';
+import {navigateAfterDeviceAuth} from '../shared/credissuer/navigateAfterDeviceAuth';
 
 export function useBiometricScreen(props: RootRouteProps) {
   const {appService} = useContext(GlobalContext);
   const authService = appService.children.get('auth');
+  const holderAuthService = useHolderAuthService();
 
   const [error, setError] = useState('');
   const [isReEnabling, setReEnabling] = useState(false);
@@ -42,6 +49,14 @@ export function useBiometricScreen(props: RootRouteProps) {
   const [, bioSend, bioService] = useMachine(biometricsMachine);
 
   const isAuthorized = useSelector(authService, selectAuthorized);
+  const isHolderAuthenticated = useSelector(
+    holderAuthService,
+    selectIsHolderAuthenticated,
+  );
+  const isCheckingHolderSession = useSelector(
+    holderAuthService,
+    selectIsCheckingHolderSession,
+  );
   const isAvailable = useSelector(bioService, selectIsAvailable);
   const isUnavailable = useSelector(bioService, selectIsUnvailable);
   const isSuccessBio = useSelector(bioService, selectIsSuccess);
@@ -64,17 +79,14 @@ export function useBiometricScreen(props: RootRouteProps) {
   }, [isAvailable]);
 
   useEffect(() => {
-    if (isAuthorized) {
+    if (isAuthorized && !isCheckingHolderSession) {
       sendEndEvent(
         getEndEventData(
           TelemetryConstants.FlowType.appLogin,
           TelemetryConstants.EndEventStatus.success,
         ),
       );
-      props.navigation.reset({
-        index: 0,
-        routes: [{name: 'Main'}],
-      });
+      navigateAfterDeviceAuth(props.navigation, isHolderAuthenticated);
       return;
     }
 
@@ -121,6 +133,8 @@ export function useBiometricScreen(props: RootRouteProps) {
     }
   }, [
     isAuthorized,
+    isHolderAuthenticated,
+    isCheckingHolderSession,
     isAvailable,
     isUnenrolled,
     isUnavailable,

@@ -32,7 +32,7 @@ export const AppLayout: React.FC = () => {
             {baseRoutes.map(route => (
               <Screen key={route.name} {...route} />
             ))}
-            {controller.isAuthorized &&
+            {controller.canEnterMain &&
               authRoutes.map(route => <Screen key={route.name} {...route} />)}
           </Navigator>
         </NavigationContainer>

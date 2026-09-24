@@ -16,30 +16,42 @@ import {
 } from '../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
 import { SettingsEvents } from '../machines/settings';
+import {useHolderAuthService} from '../components/HolderAuthProvider';
+import {
+  selectIsCheckingHolderSession,
+  selectIsHolderAuthenticated,
+} from '../machines/holderAuth';
+import {navigateAfterDeviceAuth} from '../shared/credissuer/navigateAfterDeviceAuth';
 
 export function usePasscodeScreen(props: PasscodeRouteProps) {
   const {appService} = useContext(GlobalContext);
   const authService = appService.children.get('auth');
   const settingsService = appService.children.get('settings');
+  const holderAuthService = useHolderAuthService();
   const isAuthorized = useSelector(authService, selectAuthorized);
+  const isHolderAuthenticated = useSelector(
+    holderAuthService,
+    selectIsHolderAuthenticated,
+  );
+  const isCheckingHolderSession = useSelector(
+    holderAuthService,
+    selectIsCheckingHolderSession,
+  );
   const isPasscodeSet = () => !!passcode;
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isAuthorized) {
+    if (isAuthorized && !isCheckingHolderSession) {
       sendEndEvent(
         getEndEventData(
           getEventType(props.route.params?.setup),
           TelemetryConstants.EndEventStatus.success,
         ),
       );
-      props.navigation.reset({
-        index: 0,
-        routes: [{name: 'Main'}],
-      });
+      navigateAfterDeviceAuth(props.navigation, isHolderAuthenticated);
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, isHolderAuthenticated, isCheckingHolderSession]);
 
   return {
     isPasscodeSet,
