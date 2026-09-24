@@ -149,7 +149,7 @@ export const KeyManagementScreen: React.FC<KeyManagementScreenProps> = () => {
         <Copilot
           title={t('copilot:keyManagementTitle')}
           description={t('copilot:keyManagementDesc')}
-          order={7}>
+          order={6}>
           <DragList
             style={Theme.KeyManagementScreenStyle.dragViewStyleSettingsScreen}
             scrollEnabled={false}

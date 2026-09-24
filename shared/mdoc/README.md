@@ -138,7 +138,25 @@ The list below is the **complete** ISO/IEC 18013-5 holder proximity path Tap2iD 
 
 ### RN bridge contract (TypeScript)
 
-- `shared/mdoc/iso18013PresentmentInterop.ts` — calls Android `NativeModules.MdocIso18013Presentment.startPresentment` when the module is registered; throws `Iso18013PresentmentNotImplementedError` on iOS or builds without the native module.
+- `shared/mdoc/iso18013PresentmentInterop.ts` — dispatches to whichever engine the platform has: the common TypeScript engine (`shared/mdoc/presentment/`, iOS) or Android `NativeModules.MdocIso18013Presentment.startPresentment`. Throws `Iso18013PresentmentNotImplementedError` only when neither is available.
+
+## Two engines, one protocol implementation
+
+| | **Android (today)** | **iOS (today)** |
+| --- | --- | --- |
+| Protocol (CBOR, session keys, SessionTranscript, DeviceRequest/Response, DeviceAuth) | Kotlin, delegating to Multipaz | **`shared/mdoc/presentment/` — common TypeScript** |
+| BLE GATT transport | Multipaz `MdocTransport` | `ios/Inji/MdocBleTransport.swift` (~420 lines, bytes only) |
+| Native lines | ~2500 Kotlin | ~420 Swift |
+
+The iOS path implements the protocol **once, in TypeScript**, and keeps native to the one thing that cannot be JavaScript: operating a GATT peripheral (`CBPeripheralManager` / `BluetoothGattServer` are unreachable from Hermes, and no maintained RN package exposes peripheral mode — the peripheral-capable ones were last published in 2022). Multipaz makes the same split; its BLE lives in `.android.kt` / `.ios.kt` actuals under a common protocol layer.
+
+Android is **deliberately unchanged**: it has a working presenter, and `isMdocBleTransportAvailable()` is iOS-only so nothing reroutes. When Android does adopt the common engine it implements the same `MdocBleTransport` native contract and everything above it is reused as-is. The one thing that must be designed for now is signing: `Es256Signer` is **injected**, because iOS can hand the ES256 private key to JS (`useSoftwareDeviceKey`) while Android's device key is non-extractable and can only sign across the bridge.
+
+### Verifying without a reader
+
+`shared/mdoc/presentment/presentment.test.ts` plays the **reader**: it derives the session keys independently from the reader side, decrypts what the holder sends, and verifies the DeviceAuth signature the way a verifier would — plus a negative test proving a response bound to one session does not validate in another. That covers everything except the BLE bytes themselves.
+
+For byte-parity against the known-good Android session, `logByteCommitment` prints `sha256` of SessionTranscriptBytes, DeviceRequest, DeviceAuthenticationBytes and DeviceResponse in `__DEV__`. Compare those hashes with Android's for the same reader and credential; a mismatch localises the divergence to one structure.
 
 ### Multipaz holder flow vs Inji (Tap2iD / ISO proximity)
 
@@ -158,7 +176,7 @@ The list below is the **complete** ISO/IEC 18013-5 holder proximity path Tap2iD 
 | BLE + `Iso18013Presentment`      | **Android native** `InjiIso18013ProximityPresenter`: parses persisted CBOR → `advertise` → `waitForConnection` → Multipaz `Iso18013Presentment`.                                                                                           |
 | CBOR / transport parity          | **Risk:** JS and native must agree on every BLE option byte. Inji sets `MdocTransportOptions.bleUseL2CAPInEngagement` from **whether the parsed engagement lists a PSM** so we do not start an L2CAP server that the QR did not advertise. |
 | Consent UX                       | RN overlay after `DeviceRequest` (`promptModelRnBridgedConsent`); Allow/Deny before `DeviceResponse`.                                                                                                                                      |
-| iOS                              | Not wired — `Iso18013PresentmentNotImplementedError`.                                                                                                                                                                                      |
+| iOS                              | Common TypeScript engine (`shared/mdoc/presentment/`) over the thin `MdocBleTransport` Swift module. Requires `UIBackgroundModes: bluetooth-peripheral` so advertising survives screen lock — the counterpart to Android's foreground service. |
 | Runtime BLE on API 31+           | `MainActivity` requests **CONNECT** + **ADVERTISE**; native module **refuses** presentment if still denied (avoids hard crashes).                                                                                                          |
 | Multipaz `initializeApplication` | **Not** called from `Application.onCreate` anymore (cold-start stability); `MdocMultipazBootstrap.initFrom` runs at the start of the presenter coroutine.                                                                                  |
 

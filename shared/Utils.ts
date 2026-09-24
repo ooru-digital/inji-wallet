@@ -7,7 +7,16 @@ import {v4 as uuid} from 'uuid';
 import {utf8ToBytes} from '@noble/hashes/utils';
 import {Buffer} from 'buffer';
 import base64url from 'base64url';
-import jsonld from 'jsonld';
+// Not the plain 'jsonld' package — @digitalcredentials/jsonld is the RN-safe fork already relied
+// on elsewhere in this app (shared/vcjs/verifyCredential.ts) for processing these same W3C VCs.
+// canonicalize() below is the one caller that used plain 'jsonld' instead, with no document
+// loader configured at all — on iOS (the only platform that calls it; Android's native library
+// pre-canonicalizes before this ever runs) that surfaced as
+// `jsonld.SyntaxError: Invalid JSON-LD syntax; tried to redefine "VerifiableCredential" which is
+// a protected term`, since jsonld.js's default loader isn't reliable in this runtime. Passing the
+// same jsonld.documentLoaders.xhr() already proven to work for verifyCredential.ts fixes it here
+// too, for the same reason.
+import jsonld from '@digitalcredentials/jsonld';
 
 export const getVCsOrderedByPinStatus = (vcMetadatas: VCMetadata[]) => {
   const [pinned, unpinned] = groupBy(
@@ -99,6 +108,40 @@ export function base64ToByteArray(base64String) {
   }
 }
 
+/**
+ * Strips every `@protected` flag out of a fetched JSON-LD context, at the root and inside nested
+ * term definitions alike.
+ *
+ * The VP this app signs is built by the native OpenID4VP library with the VC Data Model **v1**
+ * context, while the credential embedded inside it is a **v2** credential. v1 marks
+ * `VerifiableCredential` as `@protected`, so when the processor then applies v2 within the
+ * credential's scope — which defines that same term with a v2-era scoped context — it refuses
+ * outright: `tried to redefine "VerifiableCredential" which is a protected term`.
+ *
+ * Relaxing protection is safe here specifically because both contexts map the term to the *same*
+ * IRI (`https://www.w3.org/2018/credentials#VerifiableCredential`). `@protected` governs only
+ * whether redefinition is permitted; it has no effect on what terms expand to. So dropping it
+ * leaves the canonical form — and therefore the signature the verifier recomputes — unchanged,
+ * while letting a v2 credential be read with v2 semantics as intended.
+ *
+ * The real fix belongs upstream: a VP wrapping v2 credentials should itself carry the v2 context.
+ * That document is assembled inside the native library, so it can't be corrected from here
+ * without signing something different from what actually gets sent.
+ */
+function stripProtectedFlags(node: any): any {
+  if (Array.isArray(node)) {
+    return node.map(stripProtectedFlags);
+  }
+  if (node !== null && typeof node === 'object') {
+    return Object.fromEntries(
+      Object.entries(node)
+        .filter(([key]) => key !== '@protected')
+        .map(([key, value]) => [key, stripProtectedFlags(value)]),
+    );
+  }
+  return node;
+}
+
 export async function canonicalize(unsignedVp: any) {
   try {
     const jsonldProof = {...unsignedVp['proof']};
@@ -107,14 +150,32 @@ export async function canonicalize(unsignedVp: any) {
     if ('proof' in jsonldObjectClone) {
       delete jsonldObjectClone.proof;
     }
-    const expandedJsonldObject = await jsonld.expand(jsonldObjectClone);
+    const loadRemoteContext = jsonld.documentLoaders.xhr();
+    const documentLoader = async (url: string, options?: any) => {
+      const remoteDocument = await loadRemoteContext(url, options);
+      // The xhr loader hands back `document` as raw JSON text, not a parsed object — passing
+      // that straight to stripProtectedFlags made it a silent no-op, since the function returns
+      // anything non-object untouched. jsonld accepts an already-parsed object here just fine.
+      const parsed =
+        typeof remoteDocument.document === 'string'
+          ? JSON.parse(remoteDocument.document)
+          : remoteDocument.document;
+      return {...remoteDocument, document: stripProtectedFlags(parsed)};
+    };
+    const expandedJsonldObject = await jsonld.expand(jsonldObjectClone, {
+      documentLoader,
+    });
     const normalizedJsonldObject = await jsonld.canonize(expandedJsonldObject, {
       algorithm: 'URDNA2015',
+      documentLoader,
     });
 
-    const expandedJsonldProof = await jsonld.expand(jsonldProof);
+    const expandedJsonldProof = await jsonld.expand(jsonldProof, {
+      documentLoader,
+    });
     const normalizedJsonldProof = await jsonld.canonize(expandedJsonldProof, {
       algorithm: 'URDNA2015',
+      documentLoader,
     });
 
     const canonicalizationResult = Buffer.alloc(64);
@@ -126,6 +187,23 @@ export async function canonicalize(unsignedVp: any) {
     return base64url(canonicalizationResult);
   } catch (err) {
     console.error('Canonization failed:', err);
+    // The contexts in play are what actually decide whether expansion can succeed — a
+    // "protected term" failure means two of them define the same term incompatibly, and the
+    // error itself names only the term, never which documents collided. This is the only place
+    // that still holds the document being expanded, so it is the only place that can report it.
+    const embeddedCredentials = Array.isArray(unsignedVp?.verifiableCredential)
+      ? unsignedVp.verifiableCredential
+      : [unsignedVp?.verifiableCredential];
+    console.error(
+      'Canonization input contexts:',
+      JSON.stringify({
+        vp: unsignedVp?.['@context'],
+        proof: unsignedVp?.['proof']?.['@context'],
+        credentials: embeddedCredentials
+          .filter(Boolean)
+          .map((vc: any) => vc?.['@context']),
+      }),
+    );
   }
 }
 
