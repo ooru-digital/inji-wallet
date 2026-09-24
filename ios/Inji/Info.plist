@@ -70,17 +70,6 @@
 	<string>Allow CredIssuer Wallet to access your location</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allow CredIssuer Wallet to access your microphone</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<!--
-			ISO 18013-5 proximity sharing runs a GATT peripheral: the wallet must keep advertising
-			the DeviceEngagement service UUID for as long as the QR is live, including while the
-			screen locks mid-presentation. Without this the CBPeripheralManager stops on
-			backgrounding and the reader finds nothing to connect to — the same symptom as the
-			Android foreground service (`connectedDeviceService`) exists to prevent.
-		-->
-		<string>bluetooth-peripheral</string>
-	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>MaterialIcons.ttf</string>
@@ -96,6 +85,10 @@
 		<string>Entypo.ttf</string>
 		<string>Feather.ttf</string>
 		<string>AntDesign.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-peripheral</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
