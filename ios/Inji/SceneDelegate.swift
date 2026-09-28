@@ -76,4 +76,33 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
   func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
     appDelegate?.route(userActivity)
   }
+
+  // MARK: - Lifecycle forwarding
+  //
+  // Under scenes UIKit stops calling the AppDelegate's activation and background methods, so
+  // ExpoAppDelegate never passes them on to its subscribers. Nothing depends on that today: the
+  // three registered subscribers (Google Sign-In, expo-linking, expo-file-system) use only the
+  // URL and background-URL-session callbacks, and expo-modules-core and RN's AppState get
+  // lifecycle from UIApplication notifications, which UIKit still posts. These forwards are
+  // insurance for a future Expo module that subscribes to these callbacks.
+  //
+  // The app runs a single scene (UIApplicationSupportsMultipleScenes is false), so each
+  // transition reaches Expo once. If an Expo upgrade adds its own scene forwarding, remove these
+  // or subscribers will receive every transition twice.
+
+  func sceneDidBecomeActive(_ scene: UIScene) {
+    appDelegate?.applicationDidBecomeActive(UIApplication.shared)
+  }
+
+  func sceneWillResignActive(_ scene: UIScene) {
+    appDelegate?.applicationWillResignActive(UIApplication.shared)
+  }
+
+  func sceneWillEnterForeground(_ scene: UIScene) {
+    appDelegate?.applicationWillEnterForeground(UIApplication.shared)
+  }
+
+  func sceneDidEnterBackground(_ scene: UIScene) {
+    appDelegate?.applicationDidEnterBackground(UIApplication.shared)
+  }
 }
