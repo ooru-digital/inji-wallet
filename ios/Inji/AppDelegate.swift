@@ -28,19 +28,47 @@ class AppDelegate: ExpoAppDelegate {
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
 
-    window = UIWindow(frame: UIScreen.main.bounds)
+    // No window here. Under the UIScene lifecycle (required from iOS 27) the window belongs to a
+    // scene, which doesn't exist yet at this point. SceneDelegate creates it and calls
+    // startReactNative(in:launchOptions:) below.
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
 
-    factory.startReactNative(
+  /// Mounts React Native into the scene's window. Called once by SceneDelegate when the scene connects.
+  func startReactNative(
+    in window: UIWindow,
+    launchOptions: [UIApplication.LaunchOptionsKey: Any]
+  ) {
+    reactNativeFactory?.startReactNative(
       withModuleName: "main",
       in: window,
       initialProperties: [:],
       launchOptions: launchOptions
     )
-
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  // Linking API
+  /// Routes a scene-delivered URL through the existing open-URL handler below, so scene and
+  /// pre-scene delivery share one path.
+  func route(_ urlContext: UIOpenURLContext) {
+    var options: [UIApplication.OpenURLOptionsKey: Any] = [
+      .openInPlace: urlContext.options.openInPlace,
+    ]
+    if let sourceApplication = urlContext.options.sourceApplication {
+      options[.sourceApplication] = sourceApplication
+    }
+    if let annotation = urlContext.options.annotation {
+      options[.annotation] = annotation
+    }
+    _ = application(UIApplication.shared, open: urlContext.url, options: options)
+  }
+
+  /// Routes a scene-delivered universal link through the existing user-activity handler below.
+  func route(_ userActivity: NSUserActivity) {
+    _ = application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
+  }
+
+  // Linking API. Under the UIScene lifecycle UIKit no longer calls this directly;
+  // SceneDelegate reaches it through route(_: UIOpenURLContext).
   override func application(
     _ app: UIApplication,
     open url: URL,
@@ -73,7 +101,7 @@ class AppDelegate: ExpoAppDelegate {
     }
   }
 
-  // Universal Links
+  // Universal Links. Reached through route(_: NSUserActivity) from SceneDelegate, as above.
   override func application(
     _ application: UIApplication,
     continue userActivity: NSUserActivity,

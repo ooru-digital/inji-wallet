@@ -20,6 +20,7 @@
 		61450CD968A57153077CB5A9 /* libPods-Inji.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 433CCC1AA8055E18ADC2C596 /* libPods-Inji.a */; };
 		717E6FEC33D6D8A2F9B01CBC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1D23B9CD47CFD7F3C87D202F /* PrivacyInfo.xcprivacy */; };
 		73295844242A4AD3AA52D0BE /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98B96A488E54CBDB286B26F /* noop-file.swift */; };
+		81413086C8848919E1B7ABA8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16D814700B491A9521EB9A8 /* SceneDelegate.swift */; };
 		8949005CA7AD6C012CBA5263 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1296F5D0513B0720049202A0 /* AppDelegate.swift */; };
 		9C0E86B52BEE357A00E9F9F6 /* RNPixelpassModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0E86B42BEE357A00E9F9F6 /* RNPixelpassModule.swift */; };
 		9C0E86BB2BEE36C300E9F9F6 /* RNPixelpassModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 9C0E86BA2BEE36C300E9F9F6 /* RNPixelpassModule.m */; };
@@ -141,6 +142,7 @@
 		9CE2B71C2F3E03B8001A3231 /* OpenId4VPUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenId4VPUtils.swift; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Inji/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		C16D814700B491A9521EB9A8 /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = Inji/SceneDelegate.swift; sourceTree = "<group>"; };
 		C3F6A9DC2E66188D006C9904 /* RNInjiVcRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RNInjiVcRenderer.swift; sourceTree = "<group>"; };
 		C3F6A9DE2E6618F6006C9904 /* RNInjiVcRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNInjiVcRenderer.m; sourceTree = "<group>"; };
 		D98B96A488E54CBDB286B26F /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "Inji/noop-file.swift"; sourceTree = "<group>"; };
@@ -238,6 +240,7 @@
 				1EED69FC2DA914D00042EAFC /* RNDeepLinkIntentModule.m */,
 				40898D9790F8108A993691DF /* MdocBleTransport.swift */,
 				33EF4E5610B6BE9B7F914788 /* MdocBleTransport.m */,
+				C16D814700B491A9521EB9A8 /* SceneDelegate.swift */,
 			);
 			name = Inji;
 			sourceTree = "<group>";
@@ -918,6 +921,7 @@
 				73295844242A4AD3AA52D0BE /* noop-file.swift in Sources */,
 				603FADE6940A81709AA21AF8 /* MdocBleTransport.swift in Sources */,
 				484795BB1F421DA994663FA6 /* MdocBleTransport.m in Sources */,
+				81413086C8848919E1B7ABA8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
