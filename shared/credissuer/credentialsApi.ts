@@ -10,15 +10,17 @@ const REQUEST_TIMEOUT_MS = 15000;
  * The `qr_code` stored in a downloaded credential is a presigned link that expires within a day
  * (and some credentials don't carry one at all), so the current one is fetched from CredIssuer.
  * `expectedVcId` guards against the lookup ID resolving to a different person's credential.
+ * Without it there is nothing to compare against, so no request is made and the caller keeps
+ * the stored QR.
  */
 export async function fetchIssuerQrCodeUrl(
   credentialId: string,
   expectedVcId: string | null,
 ): Promise<string | null> {
+  if (!expectedVcId) {
+    return null; // can't verify ownership, so use the stored QR
+  }
   if (!CREDISSUER_API_TOKEN_VALUE) {
-    console.warn(
-      '[CredIssuer] CREDISSUER_API_TOKEN is not set; using the QR code stored in the credential',
-    );
     return null;
   }
 
@@ -44,10 +46,7 @@ export async function fetchIssuerQrCodeUrl(
     }
     const body = await response.json();
     const returnedVcId = getCredentialId(body?.credential);
-    if (expectedVcId && returnedVcId !== expectedVcId) {
-      console.warn(
-        `[CredIssuer] ${credentialId} resolved to ${returnedVcId}, not ${expectedVcId}; ignoring its QR code`,
-      );
+    if (returnedVcId !== expectedVcId) {
       return null;
     }
     return getIssuerQrCodeUrl(body?.credential);

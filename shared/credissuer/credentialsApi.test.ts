@@ -51,6 +51,13 @@ describe('fetchIssuerQrCodeUrl', () => {
     await expect(fetchIssuerQrCodeUrl('UTPNID002', VC_ID)).resolves.toBeNull();
   });
 
+  it('returns null without calling the API when the wallet credential has no id to verify ownership', async () => {
+    mockFetchResponse(200, credentialsApiBody(VC_ID));
+
+    await expect(fetchIssuerQrCodeUrl('UTPNID002', null)).resolves.toBeNull();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('returns null when the response has no qr_code', async () => {
     mockFetchResponse(200, {credential: {id: VC_ID, credentialSubject: {}}});
 

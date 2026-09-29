@@ -23,7 +23,10 @@ import {
 import {Button, Column, Row, Text} from '../../ui';
 import {Theme} from '../../ui/styleUtils';
 import {QrCodeOverlay} from '../../QrCodeOverlay';
-import {IssuerQrCodeImage} from '../../IssuerQrCodeImage';
+import {
+  IssuerQrCodeImage,
+  IssuerQrCodePlaceholder,
+} from '../../IssuerQrCodeImage';
 import {
   getCredentialId,
   getCredissuerCredentialId,
@@ -72,12 +75,33 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
     string | null
   >(null);
   const issuerQrCodeUrl = freshIssuerQrCodeUrl ?? storedIssuerQrCodeUrl;
+  // A CredIssuer card must not show any QR until the fresh lookup has settled. Otherwise the slot
+  // shows a placeholder first (the stored image, or the wallet-generated QR when there is none),
+  // and swaps to the fresh one only when the API answers, up to 15 s later. A verifier that scans
+  // during that window gets a QR that doesn't verify, which made verification look intermittent.
+  // This starts true on the first render, not from the effect below: effects run after the first
+  // paint, and even a single frame of placeholder QR would still be scannable.
+  const [isFetchingIssuerQrCode, setIsFetchingIssuerQrCode] = useState(
+    () => credissuerCredentialId !== null,
+  );
+  // The stored link expires within a day and the fresh one needs the network, so an issuer QR
+  // image that fails to load is an expected case (offline, a day after download), not an edge
+  // case. When it fails, the wallet-generated QR is shown instead, because it works offline.
+  // The failed URL is stored rather than a boolean, so a different URL (e.g. after the credential
+  // changes) is never mistaken for the one that failed and gets its own chance to load.
+  const [failedIssuerQrCodeUrl, setFailedIssuerQrCodeUrl] = useState<
+    string | null
+  >(null);
+  const showIssuerQrCode =
+    !!issuerQrCodeUrl && issuerQrCodeUrl !== failedIssuerQrCodeUrl;
 
   useEffect(() => {
     setFreshIssuerQrCodeUrl(null);
     if (!credissuerCredentialId) {
+      setIsFetchingIssuerQrCode(false);
       return;
     }
+    setIsFetchingIssuerQrCode(true);
     let cancelled = false;
     fetchIssuerQrCodeUrl(credissuerCredentialId, vcId)
       .then(url => {
@@ -85,7 +109,11 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
       })
       .catch(error =>
         console.error('Error fetching issuer QR code from CredIssuer:', error),
-      );
+      )
+      .finally(() => {
+        // Settled either way. If there is no fresh URL, the stored image or the wallet QR shows.
+        if (!cancelled) setIsFetchingIssuerQrCode(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -256,8 +284,13 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
                 <Row padding="14 14 0 14" margin="0 0 0 0">
                   <Column crossAlign="center">
                     {getProfileImage(face)}
-                    {issuerQrCodeUrl ? (
-                      <IssuerQrCodeImage qrCodeUrl={issuerQrCodeUrl} />
+                    {isFetchingIssuerQrCode ? (
+                      <IssuerQrCodePlaceholder />
+                    ) : showIssuerQrCode ? (
+                      <IssuerQrCodeImage
+                        qrCodeUrl={issuerQrCodeUrl}
+                        onLoadError={setFailedIssuerQrCodeUrl}
+                      />
                     ) : (
                       <QrCodeOverlay
                         verifiableCredential={
