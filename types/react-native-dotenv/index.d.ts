@@ -59,4 +59,15 @@ declare module 'react-native-dotenv' {
    * Debug flag to launch SnapKYC liveness without the credential portrait
    */
   export const SNAPKYC_DEBUG_SKIP_FACE_IMAGE: string;
+
+  /**
+   * CredIssuer API host, used to fetch a fresh issuer QR code for a credential.
+   * Defaults to https://api.credissuer.com
+   */
+  export const CREDISSUER_API_HOST: string;
+
+  /**
+   * Bearer token for the CredIssuer credentials API. Keep it in the git-ignored .env.local.
+   */
+  export const CREDISSUER_API_TOKEN: string;
 }

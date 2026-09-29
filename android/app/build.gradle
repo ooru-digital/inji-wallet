@@ -282,7 +282,9 @@ android {
         variant.outputs.all { output ->
             def datetime = new Date().format('yyyyMMdd_HHmm')
             def architecture = output.getFilter(com.android.build.OutputFile.ABI) ?: "universal"
-            outputFileName = "Inji_${architecture}.apk"
+            // residentapp is the CredIssuer Wallet build; the other flavors are still Inji apps.
+            def appName = variant.flavorName == "residentapp" ? "CredIssuerWallet" : "Inji"
+            outputFileName = "${appName}_${architecture}.apk"
         }
     }
 
