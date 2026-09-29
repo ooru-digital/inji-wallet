@@ -49,7 +49,9 @@ export const IssuerQrCodeImage: React.FC<IssuerQrCodeImageProps> = props => {
           onPress={closeModal}>
           <Pressable
             style={styles.dialogCard}
-            onPress={() => {}}
+            onPress={() => {
+              // Keep taps inside the dialog from reaching the backdrop.
+            }}
             accessible={false}>
             <Pressable
               {...testIDProps('closeIssuerQrDialog')}
