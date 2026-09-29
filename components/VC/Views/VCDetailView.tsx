@@ -23,6 +23,14 @@ import {
 import {Button, Column, Row, Text} from '../../ui';
 import {Theme} from '../../ui/styleUtils';
 import {QrCodeOverlay} from '../../QrCodeOverlay';
+import {IssuerQrCodeImage} from '../../IssuerQrCodeImage';
+import {
+  getCredentialId,
+  getCredissuerCredentialId,
+  getIssuerQrCodeUrl,
+  isCredissuerCredential,
+} from '../../../shared/qr/issuerQrCode';
+import {fetchIssuerQrCodeUrl} from '../../../shared/credissuer/credentialsApi';
 import {SvgImage} from '../../ui/svg';
 import {isActivationNeeded} from '../../../shared/openId4VCI/Utils';
 import {
@@ -55,6 +63,33 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
   const face = props.verifiableCredentialData.face;
   const verifiableCredential = props.credential;
   const wellknownDisplayProperty = new Display(props.wellknown);
+  const storedIssuerQrCodeUrl = getIssuerQrCodeUrl(verifiableCredential);
+  const credissuerCredentialId = isCredissuerCredential(verifiableCredential)
+    ? getCredissuerCredentialId(verifiableCredential)
+    : null;
+  const vcId = getCredentialId(verifiableCredential);
+  const [freshIssuerQrCodeUrl, setFreshIssuerQrCodeUrl] = useState<
+    string | null
+  >(null);
+  const issuerQrCodeUrl = freshIssuerQrCodeUrl ?? storedIssuerQrCodeUrl;
+
+  useEffect(() => {
+    setFreshIssuerQrCodeUrl(null);
+    if (!credissuerCredentialId) {
+      return;
+    }
+    let cancelled = false;
+    fetchIssuerQrCodeUrl(credissuerCredentialId, vcId)
+      .then(url => {
+        if (!cancelled) setFreshIssuerQrCodeUrl(url);
+      })
+      .catch(error =>
+        console.error('Error fetching issuer QR code from CredIssuer:', error),
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [credissuerCredentialId, vcId]);
 
   const {width: deviceWidth} = Dimensions.get('window');
   const CARD_WIDTH = deviceWidth * 0.8;
@@ -221,14 +256,18 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
                 <Row padding="14 14 0 14" margin="0 0 0 0">
                   <Column crossAlign="center">
                     {getProfileImage(face)}
-                    <QrCodeOverlay
-                      verifiableCredential={
-                        props.credentialWrapper as unknown as VerifiableCredential
-                      }
-                      meta={props.verifiableCredentialData.vcMetadata}
-                      showInlineQr={true}
-                      onCloseDetails={props.onCloseDetails}
-                    />
+                    {issuerQrCodeUrl ? (
+                      <IssuerQrCodeImage qrCodeUrl={issuerQrCodeUrl} />
+                    ) : (
+                      <QrCodeOverlay
+                        verifiableCredential={
+                          props.credentialWrapper as unknown as VerifiableCredential
+                        }
+                        meta={props.verifiableCredentialData.vcMetadata}
+                        showInlineQr={true}
+                        onCloseDetails={props.onCloseDetails}
+                      />
+                    )}
                     <Column
                       width={80}
                       height={59}

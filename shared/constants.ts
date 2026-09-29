@@ -7,6 +7,8 @@ import {
   SNAPKYC_LIVENESS,
   SNAPKYC_RELAYING_PARTY_NAME,
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE,
+  CREDISSUER_API_HOST,
+  CREDISSUER_API_TOKEN,
 } from 'react-native-dotenv';
 import {Argon2iConfig} from './commonUtil';
 import {VcIdType} from '../machines/VerifiableCredential/VCMetaMachine/vc';
@@ -32,6 +34,11 @@ export const SNAPKYC_RELAYING_PARTY_NAME_VALUE =
 /** Debug-only: launch liveness without the credential portrait, to isolate SDK start failures. */
 export const SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED =
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE === 'true';
+
+export const CREDISSUER_API_BASE_URL = (
+  CREDISSUER_API_HOST || 'https://api.credissuer.com'
+).replace(/\/+$/, '');
+export const CREDISSUER_API_TOKEN_VALUE = (CREDISSUER_API_TOKEN || '').trim();
 
 export const changeCrendetialRegistry = (host: string) =>
   (MIMOTO_BASE_URL = host);
