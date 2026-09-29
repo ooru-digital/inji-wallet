@@ -58,6 +58,15 @@ const getProfileImage = (face: any) => {
   return <></>;
 };
 
+/** Key for one issuer-QR lookup: both inputs to the lookup, or null when there is no lookup. */
+const getIssuerQrLookupKey = (
+  credissuerCredentialId: string | null,
+  vcId: string | null,
+): string | null =>
+  credissuerCredentialId === null
+    ? null
+    : JSON.stringify([credissuerCredentialId, vcId]);
+
 export const VCDetailView: React.FC<VCItemDetailsProps> = (
   props: VCItemDetailsProps,
 ) => {
@@ -71,19 +80,26 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
     ? getCredissuerCredentialId(verifiableCredential)
     : null;
   const vcId = getCredentialId(verifiableCredential);
-  const [freshIssuerQrCodeUrl, setFreshIssuerQrCodeUrl] = useState<
-    string | null
-  >(null);
-  const issuerQrCodeUrl = freshIssuerQrCodeUrl ?? storedIssuerQrCodeUrl;
+  // Identifies which credential a lookup result belongs to. The result is stored together with
+  // this key, and a result counts only while the key matches the credential being rendered.
+  // Resetting state from the effect isn't enough: the effect runs after the render in which the
+  // credential changed, so that render would still show the previous credential's QR.
+  const issuerQrLookupKey = getIssuerQrLookupKey(credissuerCredentialId, vcId);
+  const [issuerQrLookup, setIssuerQrLookup] = useState<{
+    key: string;
+    url: string | null;
+  } | null>(null);
   // A CredIssuer card must not show any QR until the fresh lookup has settled. Otherwise the slot
   // shows a placeholder first (the stored image, or the wallet-generated QR when there is none),
   // and swaps to the fresh one only when the API answers, up to 15 s later. A verifier that scans
   // during that window gets a QR that doesn't verify, which made verification look intermittent.
-  // This starts true on the first render, not from the effect below: effects run after the first
-  // paint, and even a single frame of placeholder QR would still be scannable.
-  const [isFetchingIssuerQrCode, setIsFetchingIssuerQrCode] = useState(
-    () => credissuerCredentialId !== null,
-  );
+  // Being derived, this is already true on the first render and on the first render after the
+  // credential changes, so no frame ever shows a QR that belongs to nobody or to someone else.
+  const isFetchingIssuerQrCode =
+    issuerQrLookupKey !== null && issuerQrLookup?.key !== issuerQrLookupKey;
+  const freshIssuerQrCodeUrl =
+    issuerQrLookup?.key === issuerQrLookupKey ? issuerQrLookup.url : null;
+  const issuerQrCodeUrl = freshIssuerQrCodeUrl ?? storedIssuerQrCodeUrl;
   // The stored link expires within a day and the fresh one needs the network, so an issuer QR
   // image that fails to load is an expected case (offline, a day after download), not an edge
   // case. When it fails, the wallet-generated QR is shown instead, because it works offline.
@@ -96,23 +112,19 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
     !!issuerQrCodeUrl && issuerQrCodeUrl !== failedIssuerQrCodeUrl;
 
   useEffect(() => {
-    setFreshIssuerQrCodeUrl(null);
-    if (!credissuerCredentialId) {
-      setIsFetchingIssuerQrCode(false);
+    const key = getIssuerQrLookupKey(credissuerCredentialId, vcId);
+    if (!credissuerCredentialId || key === null) {
       return;
     }
-    setIsFetchingIssuerQrCode(true);
     let cancelled = false;
     fetchIssuerQrCodeUrl(credissuerCredentialId, vcId)
       .then(url => {
-        if (!cancelled) setFreshIssuerQrCodeUrl(url);
+        if (!cancelled) setIssuerQrLookup({key, url});
       })
-      .catch(error =>
-        console.error('Error fetching issuer QR code from CredIssuer:', error),
-      )
-      .finally(() => {
-        // Settled either way. If there is no fresh URL, the stored image or the wallet QR shows.
-        if (!cancelled) setIsFetchingIssuerQrCode(false);
+      .catch(error => {
+        console.error('Error fetching issuer QR code from CredIssuer:', error);
+        // Settled with no fresh URL, so the stored image or the wallet QR shows.
+        if (!cancelled) setIssuerQrLookup({key, url: null});
       });
     return () => {
       cancelled = true;
