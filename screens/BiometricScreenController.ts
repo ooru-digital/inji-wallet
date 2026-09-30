@@ -32,7 +32,15 @@ import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
 
 import {isAndroid} from '../shared/constants';
 
-export function useBiometricScreen(props: RootRouteProps) {
+/**
+ * `autoStart` (default true) starts biometric authentication as soon as biometrics are available,
+ * which is what the Biometric screen does on arrival. The Welcome screen passes false on iOS: it
+ * hosts the unlock itself and starts it only when the user taps its button, via `unlock()`.
+ */
+export function useBiometricScreen(
+  props: RootRouteProps,
+  {autoStart = true}: {autoStart?: boolean} = {},
+) {
   const {appService} = useContext(GlobalContext);
   const authService = appService.children.get('auth');
 
@@ -51,7 +59,8 @@ export function useBiometricScreen(props: RootRouteProps) {
   const passcodeSalt = useSelector(authService, selectPasscodeSalt);
 
   useEffect(() => {
-    if (isAvailable) {
+    // Without autoStart, the login flow starts on the user's tap, and unlock() reports it there.
+    if (isAvailable && autoStart) {
       sendStartEvent(getStartEventData(TelemetryConstants.FlowType.appLogin));
       sendInteractEvent(
         getInteractEventData(
@@ -78,7 +87,7 @@ export function useBiometricScreen(props: RootRouteProps) {
       return;
     }
 
-    if (initAuthBio && isAvailable) {
+    if (autoStart && initAuthBio && isAvailable) {
       checkBiometricsChange();
 
       // so we only init authentication of biometrics just once
@@ -141,7 +150,30 @@ export function useBiometricScreen(props: RootRouteProps) {
         },
       );
     } else {
-      // TODO: solution for iOS
+      // iOS has no equivalent of the fingerprint-change check above yet (TODO), so authenticate
+      // directly. Previously nothing happened here, so Face ID never came up on its own.
+      bioSend({type: 'AUTHENTICATE'});
+    }
+  };
+
+  /**
+   * Starts the unlock from a button tap. The first attempt goes through the same
+   * biometrics-changed check the auto-start path uses; retries authenticate directly.
+   */
+  const unlock = () => {
+    sendStartEvent(getStartEventData(TelemetryConstants.FlowType.appLogin));
+    sendInteractEvent(
+      getInteractEventData(
+        TelemetryConstants.FlowType.appLogin,
+        TelemetryConstants.InteractEventSubtype.click,
+        'Unlock application button',
+      ),
+    );
+    if (initAuthBio && isAvailable) {
+      updateInitAuthBio(false);
+      checkBiometricsChange();
+    } else {
+      bioSend({type: 'AUTHENTICATE'});
     }
   };
 
@@ -188,6 +220,7 @@ export function useBiometricScreen(props: RootRouteProps) {
     passcodeSalt,
     storedPasscode: useSelector(authService, selectPasscode),
     useBiometrics,
+    unlock,
 
     onSuccess,
     onError,
