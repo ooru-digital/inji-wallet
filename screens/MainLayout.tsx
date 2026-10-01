@@ -90,7 +90,18 @@ export const MainLayout: React.FC = () => {
                   {...testIDProps(route.name + 'Icon')}
                   align="center"
                   crossAlign="center"
-                  style={focused ? Theme.Styles.bottomTabIconStyle : null}>
+                  style={[
+                    // bottomTabIconStyle used to apply here only `focused`, sizing the icon
+                    // container off screen dimensions with its own padding — since Home is
+                    // focused by default, that gave Home's container extra size/padding the
+                    // other (unfocused) tabs didn't have. Dropped: the fixed 30x30 gradient
+                    // box below already governs the active-state look on its own.
+                    // Icon and label are separate siblings in the tab bar's own layout (the
+                    // label is rendered by react-navigation, not here) — this is the icon's
+                    // own container, so a bottom margin on it is what actually pushes the
+                    // label down. A marginTop on tabBarLabelStyle (theme) had no visible effect.
+                    {marginBottom: 5},
+                  ]}>
                   {route.name === 'home' ? (
                     focused ? (
                       <LinearGradient
@@ -98,9 +109,9 @@ export const MainLayout: React.FC = () => {
                         start={Theme.LinearGradientDirection.start}
                         end={Theme.LinearGradientDirection.end}
                         style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 10,
+                          width: 30,
+                          height: 30,
+                          borderRadius: 8,
                           justifyContent: 'center',
                           alignItems: 'center',
                         }}>
@@ -121,9 +132,9 @@ export const MainLayout: React.FC = () => {
                         {focused ? (
                           <LinearGradient
                             style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 10,
+                              width: 30,
+                              height: 30,
+                              borderRadius: 8,
                               justifyContent: 'center',
                               alignItems: 'center',
                             }}
