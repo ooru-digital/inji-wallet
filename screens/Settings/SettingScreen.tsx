@@ -156,7 +156,8 @@ export const SettingScreen: React.FC<
 
           <AboutInji appId={controller.appId} />
 
-          <DataBackupAndRestore />
+          {/* Disabled: Backup & Restore should not render in Settings for now. */}
+          {/* <DataBackupAndRestore /> */}
           <SettingsKeyManagementScreen controller={controller} />
 
           {CREDENTIAL_REGISTRY_EDIT === 'true' && (
