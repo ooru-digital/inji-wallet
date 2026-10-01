@@ -1,4 +1,4 @@
-import {getVersion} from 'react-native-device-info';
+import {getBuildNumber, getVersion} from 'react-native-device-info';
 import ShortUniqueId from 'short-unique-id';
 import {APP_ID_LENGTH, isIOS} from './constants';
 import {NativeModules} from 'react-native';
@@ -29,7 +29,10 @@ export class __TuvaliVersion {
   }
 }
 export class __InjiVersion {
-  private static value = getVersion();
+  // getVersion() -> iOS CFBundleShortVersionString / Android versionName (e.g. "1.0.0").
+  // getBuildNumber() -> iOS CFBundleVersion / Android versionCode (e.g. "7"). Both read from
+  // the native build config at runtime, so this stays in sync with the actual build.
+  private static value = `${getVersion()}(${getBuildNumber()})`;
 
   public static getValue(): string {
     return __InjiVersion.value;

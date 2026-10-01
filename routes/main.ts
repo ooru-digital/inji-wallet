@@ -1,5 +1,8 @@
 import React from 'react';
+import {Dimensions} from 'react-native';
 import {BottomTabNavigationOptions} from '@react-navigation/bottom-tabs';
+import {getDefaultHeaderHeight} from '@react-navigation/elements';
+import {initialWindowMetrics} from 'react-native-safe-area-context';
 import {ScanLayout} from '../screens/Scan/ScanLayout';
 import {HistoryScreen} from '../screens/History/HistoryScreen';
 import i18n from '../i18n';
@@ -7,6 +10,19 @@ import {BOTTOM_TAB_ROUTES} from './routesConstants';
 import {HomeScreenLayout} from '../screens/HomeScreenLayout';
 import {Theme} from '../components/ui/styleUtils';
 import {SettingScreen} from '../screens/Settings/SettingScreen';
+import {isIOS} from '../shared/constants';
+
+// Extends the Settings header's white bar a bit further down the screen (purely cosmetic
+// spacing above Language), computed the same way the header itself derives its default height —
+// screen size + safe-area top inset — so the extra space stays consistent across iOS devices
+// instead of a hardcoded height clipping or overshooting on some of them.
+const SETTINGS_HEADER_EXTRA_HEIGHT = 16;
+const settingsHeaderHeight =
+  getDefaultHeaderHeight(
+    Dimensions.get('window'),
+    false,
+    initialWindowMetrics?.insets.top ?? 0,
+  ) + SETTINGS_HEADER_EXTRA_HEIGHT;
 
 const home: TabScreen = {
   name: BOTTOM_TAB_ROUTES.home,
@@ -46,8 +62,9 @@ const settings: TabScreen = {
     headerTitleStyle: {
       fontSize: 26,
       fontFamily: 'Montserrat_600SemiBold',
-      marginTop: 15,
+      marginTop: isIOS() ? 1 : 15, //isIOS condition to fix rendering issue of 'settings' on ios
     },
+    headerStyle: isIOS() ? {height: settingsHeaderHeight} : undefined,
     title: i18n.t('MainLayout:settings'),
   },
 };

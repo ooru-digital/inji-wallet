@@ -20,6 +20,7 @@ import {
   sendStartEvent,
 } from '../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
+import {isIOS} from '../shared/constants';
 
 export function useWelcomeScreen(props: RootRouteProps) {
   const {appService} = useContext(GlobalContext);
@@ -38,10 +39,18 @@ export function useWelcomeScreen(props: RootRouteProps) {
     selectBiometricUnlockEnabled,
   );
 
+  // iOS only: biometric unlock runs on this screen itself (see WelcomeScreen), so returning users
+  // see a single unlock page. The separate Biometric screen showed a second unlock page there and
+  // needed a second tap, because it never raised Face ID by itself. Android keeps navigating to
+  // the Biometric screen below, which prompts automatically, and is deliberately left unchanged.
+  const isBiometricUnlock =
+    isIOS() && !isSettingUp && isBiometricUnlockEnabled && biometrics !== '';
+
   return {
     isSettingUp,
     isLanguagesetup,
     isPasscodeSet,
+    isBiometricUnlock,
     NEXT: () => {
       authService.send(AuthEvents.NEXT()), props.navigation.navigate('Auth');
     },
