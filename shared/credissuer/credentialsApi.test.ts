@@ -3,7 +3,12 @@ jest.mock('../constants', () => ({
   CREDISSUER_API_TOKEN_VALUE: 'test-token',
 }));
 
-import {fetchIssuerQrCodeUrl} from './credentialsApi';
+import {
+  attachIssuerQrCode,
+  fetchIssuerQrCodeImage,
+  fetchIssuerQrCodeUrl,
+  getTokenResponseCredentialId,
+} from './credentialsApi';
 
 const VC_ID = 'urn:uuid:64218a46-4d0d-4955-8d5f-1df660210c28';
 const FRESH_QR =
@@ -71,4 +76,149 @@ describe('fetchIssuerQrCodeUrl', () => {
       'HTTP 404',
     );
   });
+});
+
+const PNG_BASE64 = 'iVBORw0KGgo=';
+
+// The credentials API answers first, then the presigned image download.
+const mockApiThenImage = (
+  apiBody: unknown,
+  image: {ok?: boolean; status?: number; type?: string} = {},
+) =>
+  (global.fetch as jest.Mock)
+    .mockResolvedValueOnce({ok: true, status: 200, json: async () => apiBody})
+    .mockResolvedValueOnce({
+      ok: image.ok ?? true,
+      status: image.status ?? 200,
+      blob: async () => ({type: image.type ?? 'image/png'}),
+    });
+
+// Reads any blob as the same PNG, labelled with the blob's own type.
+class FakeFileReader {
+  result: string | null = null;
+  error: Error | null = null;
+  onloadend: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  readAsDataURL(blob: {type: string}) {
+    this.result = `data:${blob.type};base64,${PNG_BASE64}`;
+    this.onloadend?.();
+  }
+}
+
+const OriginalFileReader = global.FileReader;
+beforeAll(() => {
+  global.FileReader = FakeFileReader as unknown as typeof FileReader;
+});
+afterAll(() => {
+  global.FileReader = OriginalFileReader;
+});
+
+describe('fetchIssuerQrCodeImage', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  it('downloads the presigned QR image and returns it as a data URI', async () => {
+    mockApiThenImage(credentialsApiBody(VC_ID));
+
+    await expect(fetchIssuerQrCodeImage('UTPNID002', VC_ID)).resolves.toBe(
+      `data:image/png;base64,${PNG_BASE64}`,
+    );
+    expect(global.fetch).toHaveBeenLastCalledWith(FRESH_QR, expect.anything());
+  });
+
+  it('labels a QR served as generic binary data as a PNG', async () => {
+    mockApiThenImage(credentialsApiBody(VC_ID), {
+      type: 'binary/octet-stream',
+    });
+
+    await expect(fetchIssuerQrCodeImage('UTPNID002', VC_ID)).resolves.toBe(
+      `data:image/png;base64,${PNG_BASE64}`,
+    );
+  });
+
+  it("returns null without downloading when the credential isn't the wallet's", async () => {
+    mockApiThenImage(credentialsApiBody('urn:uuid:someone-else'));
+
+    await expect(
+      fetchIssuerQrCodeImage('UTPNID002', VC_ID),
+    ).resolves.toBeNull();
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects when the image download fails', async () => {
+    mockApiThenImage(credentialsApiBody(VC_ID), {ok: false, status: 403});
+
+    await expect(fetchIssuerQrCodeImage('UTPNID002', VC_ID)).rejects.toThrow(
+      'HTTP 403',
+    );
+  });
+});
+
+describe('attachIssuerQrCode', () => {
+  const wrapper = () => ({
+    format: 'ldp_vc',
+    verifiableCredential: {
+      credential: {id: VC_ID, credentialSubject: {}},
+      issuerLogo: 'logo',
+    },
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  it('stores the credential ID and QR image next to the signed credential', async () => {
+    mockApiThenImage(credentialsApiBody(VC_ID));
+    const original = wrapper();
+
+    const result = await attachIssuerQrCode(original, 'UTPNID002');
+
+    expect(result.verifiableCredential).toEqual({
+      ...original.verifiableCredential,
+      credissuerCredentialId: 'UTPNID002',
+      issuerQrCode: `data:image/png;base64,${PNG_BASE64}`,
+    });
+    // The signed VC itself is untouched.
+    expect(result.verifiableCredential.credential).toBe(
+      original.verifiableCredential.credential,
+    );
+  });
+
+  it('keeps the credential ID but no QR when the fetch fails, without failing', async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('offline'));
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const result = await attachIssuerQrCode(wrapper(), 'UTPNID002');
+
+    expect(result.verifiableCredential).toMatchObject({
+      credissuerCredentialId: 'UTPNID002',
+    });
+    expect(result.verifiableCredential).not.toHaveProperty('issuerQrCode');
+  });
+
+  it('leaves the credential unchanged when the token response had no credential ID', async () => {
+    const original = wrapper();
+
+    await expect(attachIssuerQrCode(original, null)).resolves.toBe(original);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('getTokenResponseCredentialId', () => {
+  it('reads credential_id from the token response', () => {
+    expect(
+      getTokenResponseCredentialId({
+        access_token: 'token',
+        credential_id: 'A1B2C3D4E5F6',
+      }),
+    ).toBe('A1B2C3D4E5F6');
+  });
+
+  it.each([undefined, null, {}, {credential_id: ''}, {credential_id: 42}])(
+    'returns null for %p',
+    tokenResponse => {
+      expect(getTokenResponseCredentialId(tokenResponse)).toBeNull();
+    },
+  );
 });

@@ -22,6 +22,10 @@ import {
 import {createCacheObject} from '../../shared/Utils';
 import {VerificationResult} from '../../shared/vcjs/verifyCredential';
 import {sign} from '@noble/secp256k1';
+import {
+  attachIssuerQrCode,
+  getTokenResponseCredentialId,
+} from '../../shared/credissuer/credentialsApi';
 
 export const IssuersService = () => {
   return {
@@ -270,7 +274,12 @@ export const IssuersService = () => {
         context,
         context.credential,
       );
-      return credential;
+      // Only the credential-offer flow comes through here, and it always made its own token
+      // request, so the token response belongs to this credential.
+      return await attachIssuerQrCode(
+        credential,
+        getTokenResponseCredentialId(context.tokenResponse),
+      );
     },
     cacheIssuerWellknown: async (context: any) => {
       const credentialIssuer = context.credentialOfferCredentialIssuer;

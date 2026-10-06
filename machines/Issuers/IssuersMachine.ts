@@ -94,7 +94,13 @@ export const IssuersMachine = model.createMachine(
       },
 
       credentialDownloadFromOffer: {
-        entry: ['setCredentialOfferFlowType', 'resetSelectedIssuer'],
+        entry: [
+          'setCredentialOfferFlowType',
+          'resetSelectedIssuer',
+          // The CredIssuer credential_id is read from this flow's token response, so one left
+          // over from an earlier download must never be attached to this credential.
+          model.assign({tokenResponse: {}}),
+        ],
         invoke: {
           src: 'downloadCredentialFromOffer',
           onDone: {
