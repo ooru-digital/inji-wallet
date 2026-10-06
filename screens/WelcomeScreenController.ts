@@ -20,6 +20,7 @@ import {
   sendStartEvent,
 } from '../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
+import {PLATFORM_SPECIFIC} from '../shared/iosPlatform';
 
 export function useWelcomeScreen(props: RootRouteProps) {
   const {appService} = useContext(GlobalContext);
@@ -38,10 +39,19 @@ export function useWelcomeScreen(props: RootRouteProps) {
     selectBiometricUnlockEnabled,
   );
 
+  // See PLATFORM_SPECIFIC.welcome: on iOS the biometric unlock runs on this screen itself (see
+  // WelcomeScreen); Android keeps navigating to the Biometric screen in unlockPage below.
+  const isBiometricUnlock =
+    PLATFORM_SPECIFIC.welcome.unlocksBiometricsInPlace &&
+    !isSettingUp &&
+    isBiometricUnlockEnabled &&
+    biometrics !== '';
+
   return {
     isSettingUp,
     isLanguagesetup,
     isPasscodeSet,
+    isBiometricUnlock,
     NEXT: () => {
       authService.send(AuthEvents.NEXT()), props.navigation.navigate('Auth');
     },

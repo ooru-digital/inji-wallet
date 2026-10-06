@@ -176,6 +176,10 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
   };
   const {start} = useCopilot();
 
+  // The tour starts automatically only while onboarding (a fresh install, until the first tour is
+  // finished or dismissed), or when isTourGuide is turned on by the Settings "tour guide" button.
+  // Don't set isTourGuide anywhere else: an effect here used to set it on every mount until the
+  // first credential was downloaded, which replayed the whole tour on every app open.
   const shouldStartTour = controller.isOnboarding || controller.isTourGuide;
 
   /**
@@ -198,12 +202,6 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
       start(t('copilot:downloadTitle'));
     }
   }, [shouldStartTour]);
-
-  useEffect(() => {
-    if (controller.isInitialDownloading) {
-      controller.SET_TOUR_GUIDE(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (!props.isViewingVc) {

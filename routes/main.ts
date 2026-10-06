@@ -7,6 +7,7 @@ import {BOTTOM_TAB_ROUTES} from './routesConstants';
 import {HomeScreenLayout} from '../screens/HomeScreenLayout';
 import {Theme} from '../components/ui/styleUtils';
 import {SettingScreen} from '../screens/Settings/SettingScreen';
+import {PLATFORM_SPECIFIC} from '../shared/iosPlatform';
 
 const home: TabScreen = {
   name: BOTTOM_TAB_ROUTES.home,
@@ -46,8 +47,9 @@ const settings: TabScreen = {
     headerTitleStyle: {
       fontSize: 26,
       fontFamily: 'Montserrat_600SemiBold',
-      marginTop: 15,
+      marginTop: PLATFORM_SPECIFIC.settings.headerMarginTop,
     },
+    headerStyle: {height: PLATFORM_SPECIFIC.settings.headerHeight},
     title: i18n.t('MainLayout:settings'),
   },
 };
