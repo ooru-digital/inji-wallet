@@ -15,7 +15,6 @@ import {RequestRouteProps, RootRouteProps} from '../../routes';
 import {ReceivedCards} from './ReceivedCards';
 import testIDProps from '../../shared/commonUtil';
 import {SvgImage} from '../../components/ui/svg';
-import {DataBackupAndRestore} from './DataBackupAndRestore';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {SettingsKeyManagementScreen} from './SettingsKeyManagement';
 
@@ -156,8 +155,6 @@ export const SettingScreen: React.FC<
 
           <AboutInji appId={controller.appId} />
 
-          {/* Disabled: Backup & Restore should not render in Settings for now. */}
-          {/* <DataBackupAndRestore /> */}
           <SettingsKeyManagementScreen controller={controller} />
 
           {CREDENTIAL_REGISTRY_EDIT === 'true' && (
