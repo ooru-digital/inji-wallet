@@ -170,6 +170,13 @@ export const ScanServices = (model: any) => {
         }
       };
       const { processedCredential, ...rest } = context.selectedVc;
+      // The saved CredIssuer QR image is display data kept next to the credential, not part of
+      // it, and as a base64 PNG it would add tens of KB to a slow BLE transfer.
+      if (rest.verifiableCredential?.issuerQrCode) {
+        const {issuerQrCode, ...verifiableCredential} =
+          rest.verifiableCredential;
+        rest.verifiableCredential = verifiableCredential;
+      }
       const payload = JSON.stringify(rest);
       wallet.sendData(
         payload
