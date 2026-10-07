@@ -2,7 +2,12 @@ import {
   CREDISSUER_API_BASE_URL,
   CREDISSUER_API_TOKEN_VALUE,
 } from '../constants';
-import {getCredentialId, getIssuerQrCodeUrl} from '../qr/issuerQrCode';
+import {
+  getCredentialId,
+  getCredissuerCredentialId,
+  getIssuerQrCodeUrl,
+  isCredissuerCredential,
+} from '../qr/issuerQrCode';
 
 const REQUEST_TIMEOUT_MS = 15000;
 
@@ -162,4 +167,22 @@ export function getTokenResponseCredentialId(
   return typeof credentialId === 'string' && credentialId.trim().length > 0
     ? credentialId.trim()
     : null;
+}
+
+/**
+ * The CredIssuer credential ID to fetch a new credential's QR with: the token response's
+ * `credential_id` when there is one, otherwise the ID older CredIssuer credentials carry in
+ * `credentialSubject` (the same fallback the card uses when it is opened). Null for credentials
+ * from other issuers.
+ */
+export function resolveCredissuerCredentialId(
+  tokenResponse: unknown,
+  credential: unknown,
+): string | null {
+  return (
+    getTokenResponseCredentialId(tokenResponse) ??
+    (isCredissuerCredential(credential)
+      ? getCredissuerCredentialId(credential)
+      : null)
+  );
 }

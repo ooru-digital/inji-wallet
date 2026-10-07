@@ -24,7 +24,7 @@ import {VerificationResult} from '../../shared/vcjs/verifyCredential';
 import {sign} from '@noble/secp256k1';
 import {
   attachIssuerQrCode,
-  getTokenResponseCredentialId,
+  resolveCredissuerCredentialId,
 } from '../../shared/credissuer/credentialsApi';
 
 export const IssuersService = () => {
@@ -274,11 +274,19 @@ export const IssuersService = () => {
         context,
         context.credential,
       );
-      // Only the credential-offer flow comes through here, and it always made its own token
-      // request, so the token response belongs to this credential.
+      return credential;
+    },
+
+    // Both download flows (credential offer and issuer list) pass through here once the credential
+    // is in context, so the token response read here is the one from this download.
+    attachIssuerQrCode: async (context: any) => {
+      const credentialWrapper = context.credentialWrapper;
       return await attachIssuerQrCode(
-        credential,
-        getTokenResponseCredentialId(context.tokenResponse),
+        credentialWrapper,
+        resolveCredissuerCredentialId(
+          context.tokenResponse,
+          credentialWrapper?.verifiableCredential?.credential,
+        ),
       );
     },
     cacheIssuerWellknown: async (context: any) => {

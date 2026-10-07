@@ -8,6 +8,7 @@ import {
   fetchIssuerQrCodeImage,
   fetchIssuerQrCodeUrl,
   getTokenResponseCredentialId,
+  resolveCredissuerCredentialId,
 } from './credentialsApi';
 
 const VC_ID = 'urn:uuid:64218a46-4d0d-4955-8d5f-1df660210c28';
@@ -221,4 +222,34 @@ describe('getTokenResponseCredentialId', () => {
       expect(getTokenResponseCredentialId(tokenResponse)).toBeNull();
     },
   );
+});
+
+describe('resolveCredissuerCredentialId', () => {
+  const credissuerVc = {
+    id: VC_ID,
+    issuer: 'did:web:did.credissuer.com:issuer',
+    credentialSubject: {credential_id: 'UTPNID002'},
+  };
+
+  it("prefers the token response's credential_id", () => {
+    expect(
+      resolveCredissuerCredentialId(
+        {credential_id: 'A1B2C3D4E5F6'},
+        credissuerVc,
+      ),
+    ).toBe('A1B2C3D4E5F6');
+  });
+
+  it('falls back to the ID inside a CredIssuer credential', () => {
+    expect(resolveCredissuerCredentialId({}, credissuerVc)).toBe('UTPNID002');
+  });
+
+  it('returns null for credentials from other issuers', () => {
+    expect(
+      resolveCredissuerCredentialId(
+        {},
+        {...credissuerVc, issuer: 'did:web:other.example'},
+      ),
+    ).toBeNull();
+  });
 });
