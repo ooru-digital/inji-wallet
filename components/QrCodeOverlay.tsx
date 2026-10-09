@@ -443,6 +443,11 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
                 },
               );
               if (!cancelled && p && isoPresentmentGeneration === generation) {
+                // A reader that tapped the phone is waiting for this card: answer the tap
+                // rather than advertise for the QR code. Consent and the rest are the same.
+                if (props.nfcEngagementId) {
+                  p.nfcEngagementId = props.nfcEngagementId;
+                }
                 if (__DEV__) {
                   console.log(
                     '[QrCodeOverlay] Starting native ISO 18013-5 presentment before QR paint (Multipaz order)…',
@@ -622,7 +627,7 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
 
   return (
     <>
-      {qrString != '' && !qrError && (
+      {!props.presentmentOnly && qrString != '' && !qrError && (
         <React.Fragment>
           <View testID="qrCodeView" style={Theme.QrCodeStyles.QrView}>
             {props.showInlineQr !== false && (
@@ -817,4 +822,8 @@ interface QrCodeOverlayProps {
   /** Dismisses the enclosing VC-details modal — without this, navigating to the Home
    * tab is invisible because that modal stays stacked on top of it. */
   onCloseDetails?: () => void;
+  /** A reader that tapped the phone (NFC) and is waiting for this card; see NfcShareModal. */
+  nfcEngagementId?: string;
+  /** Run the session, consent and result only - no QR code, the reader already has us. */
+  presentmentOnly?: boolean;
 }
