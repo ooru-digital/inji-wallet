@@ -135,6 +135,7 @@ class InjiIso18013ProximityPresenter(
         ephemeralPrivateKey32: ByteArray,
         useSoftwareDeviceKey: Boolean,
         softwareDeviceKeyPrivate32: ByteArray?,
+        nfc: MdocNfcEngagement? = null,
         onDone: (Throwable?) -> Unit,
     ) {
         cancel()
@@ -146,6 +147,7 @@ class InjiIso18013ProximityPresenter(
                     ephemeralPrivateKey32 = ephemeralPrivateKey32,
                     useSoftwareDeviceKey = useSoftwareDeviceKey,
                     softwareDeviceKeyPrivate32 = softwareDeviceKeyPrivate32,
+                    nfc = nfc,
                 )
                 onDone(null)
             } catch (e: CancellationException) {
@@ -1042,6 +1044,9 @@ class InjiIso18013ProximityPresenter(
         ephemeralPrivateKey32: ByteArray,
         useSoftwareDeviceKey: Boolean,
         softwareDeviceKeyPrivate32: ByteArray?,
+        // Set when the reader tapped instead of scanning our QR code. The engagement, key, BLE
+        // method and handover are then the ones the tap produced; nothing else changes.
+        nfc: MdocNfcEngagement? = null,
     ) {
         MdocMultipazBootstrap.initFrom(reactContext)
 
@@ -1224,11 +1229,16 @@ class InjiIso18013ProximityPresenter(
             )
 
             val de = DeviceEngagement.fromDataItem(Cbor.decode(deviceEngagementCbor))
-            val eDevicePrivate = buildEphemeralPrivate(de, ephemeralPrivateKey32)
+            val eDevicePrivate = nfc?.eDeviceKey as? EcPrivateKeyDoubleCoordinate
+                ?: buildEphemeralPrivate(de, ephemeralPrivateKey32)
+            // In an NFC static handover the methods travel in the handover itself, not in the
+            // engagement, so take them from the tap.
+            val connectionMethods = nfc?.connectionMethods ?: de.connectionMethods
+            val handover = nfc?.handover ?: Simple.NULL
 
         // If engagement lists a BLE PSM, mirror Multipaz testapp (`bleUseL2CAPInEngagement = true` when PSM present).
         // Tap2iD-style QR from JS (no PSM in BleOptions) → false so peripheral setup matches scanned CBOR.
-        val bleMethods = de.connectionMethods.filterIsInstance<MdocConnectionMethodBle>()
+        val bleMethods = connectionMethods.filterIsInstance<MdocConnectionMethodBle>()
         /**
          * Multipaz maps BLE map key **21** to [MdocConnectionMethodBle.peripheralServerModePsm].
          * Tap2iD / Inji proximity QRs put **128** or **130** there as **interop pairing hints**, not an L2CAP PSM
@@ -1254,7 +1264,7 @@ class InjiIso18013ProximityPresenter(
             bleUseL2CAPInEngagement = bleUseL2capFromEngagement,
         )
 
-        for (cm in de.connectionMethods) {
+        for (cm in connectionMethods) {
             when (cm) {
                 is MdocConnectionMethodBle ->
                     Log.i(
@@ -1274,7 +1284,7 @@ class InjiIso18013ProximityPresenter(
         // from Dispatchers.Default caused native crashes when opening the mDL QR screen.
         val transports = withContext(Dispatchers.Main) {
             Log.i(TAG, "runSession#$sid calling advertise() on Main (factory=Default)…")
-            de.connectionMethods.advertise(
+            connectionMethods.advertise(
                 MdocRole.MDOC,
                 MdocTransportFactory.Default,
                 transportOptions,
@@ -1304,7 +1314,7 @@ class InjiIso18013ProximityPresenter(
                 transport = transport,
                 eDeviceKey = eDevicePrivate,
                 deviceEngagement = Cbor.decode(deviceEngagementCbor),
-                handover = Simple.NULL,
+                handover = handover,
                 source = presentmentSource,
                 keyAgreementPossible = listOf(eDevicePrivate.curve),
                 walletDocType = docType,
