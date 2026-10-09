@@ -110,10 +110,10 @@ export const NfcShareModal: React.FC = () => {
 
   const share = () => {
     const chosen = selectedKey ? myVcs[selectedKey] : null;
-    const nfcEngagementId = takeNfcEngagement();
     if (!chosen) {
       return;
     }
+    const nfcEngagementId = takeNfcEngagement();
     if (!nfcEngagementId) {
       // Took too long: the reader has given up on Bluetooth by now.
       setReaderGone(true);

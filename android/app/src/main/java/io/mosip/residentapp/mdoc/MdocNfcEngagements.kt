@@ -62,7 +62,7 @@ object MdocNfcEngagements {
             connectionMethods = connectionMethods,
             receivedAtMillis = System.currentTimeMillis(),
         )
-        pending = engagement
+        synchronized(this) { pending = engagement }
         Log.i(TAG, "Tap ready as ${engagement.id}; methods=$connectionMethods")
         listener?.onEngaged(engagement) ?: Log.i(TAG, "No listener yet; JS will ask on start")
         return engagement

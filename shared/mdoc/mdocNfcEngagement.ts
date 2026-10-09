@@ -34,6 +34,7 @@ function native(): NfcNative | undefined {
 }
 
 let pendingId: string | null = null;
+const settledIds = new Set<string>();
 let expiry: ReturnType<typeof setTimeout> | null = null;
 const listeners = new Set<(id: string | null) => void>();
 
@@ -58,6 +59,7 @@ export function pendingNfcEngagementId(): string | null {
 export function takeNfcEngagement(): string | null {
   const id = pendingId;
   if (id) {
+    settledIds.add(id);
     setPending(null);
   }
   return id;
@@ -67,6 +69,7 @@ export function takeNfcEngagement(): string | null {
 export function dismissNfcEngagement(): void {
   const id = pendingId;
   if (id) {
+    settledIds.add(id);
     native()?.discardNfcEngagement?.(id);
     setPending(null);
   }
@@ -93,7 +96,7 @@ export function startListeningForNfcEngagement(): void {
     native()
       ?.getPendingNfcEngagement?.()
       .then(id => {
-        if (id && id !== pendingId) {
+        if (id && id !== pendingId && !settledIds.has(id)) {
           setPending(id);
         }
       })

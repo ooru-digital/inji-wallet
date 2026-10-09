@@ -57,6 +57,21 @@ describe('a reader tapping the phone', () => {
     expect(nfc.takeNfcEngagement()).toBe('tap-2');
   });
 
+  it('a late answer from native does not bring back a tap already taken', async () => {
+    const nfc = load();
+    DeviceEventEmitter.emit('MdocNfcEngaged', {id: 'tap-1'});
+    nfc.takeNfcEngagement();
+    getPendingNfcEngagement.mockResolvedValueOnce('tap-1' as never);
+    const {AppState} = require('react-native');
+    const handler = (AppState.addEventListener as jest.Mock).mock.calls.at(
+      -1,
+    )?.[1];
+    handler?.('active');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(nfc.pendingNfcEngagementId()).toBeNull();
+  });
+
   it('cancelling tells native to forget the tap', () => {
     const nfc = load();
     DeviceEventEmitter.emit('MdocNfcEngaged', {id: 'tap-1'});

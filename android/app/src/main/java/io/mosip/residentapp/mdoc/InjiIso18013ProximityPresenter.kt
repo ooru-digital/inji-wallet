@@ -1229,8 +1229,11 @@ class InjiIso18013ProximityPresenter(
             )
 
             val de = DeviceEngagement.fromDataItem(Cbor.decode(deviceEngagementCbor))
-            val eDevicePrivate = nfc?.eDeviceKey as? EcPrivateKeyDoubleCoordinate
-                ?: buildEphemeralPrivate(de, ephemeralPrivateKey32)
+            val eDevicePrivate = if (nfc != null) {
+                nfc.eDeviceKey as EcPrivateKeyDoubleCoordinate
+            } else {
+                buildEphemeralPrivate(de, ephemeralPrivateKey32)
+            }
             // In an NFC static handover the methods travel in the handover itself, not in the
             // engagement, so take them from the tap.
             val connectionMethods = nfc?.connectionMethods ?: de.connectionMethods
