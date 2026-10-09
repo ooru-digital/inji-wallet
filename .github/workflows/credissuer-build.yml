@@ -1,0 +1,229 @@
+name: CredIssuer Wallet Build
+
+# Builds CredIssuer Wallet on GitHub and attaches the result to the run as a download.
+# Nothing is uploaded to the Play Store or TestFlight from here.
+#
+# Run it from the Actions tab: choose this workflow, press "Run workflow", then pick the branch
+# and what to build. The button only appears once this file is on the default branch.
+#
+# Repository secrets it needs (Settings > Secrets and variables > Actions):
+#   Both      CREDISSUER_API_TOKEN
+#   Android   CREDISSUER_ANDROID_KEYSTORE_BASE64, CREDISSUER_ANDROID_KEYSTORE_ALIAS,
+#             CREDISSUER_ANDROID_KEYSTORE_PASSWORD, ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD
+#   iOS       CREDISSUER_IOS_DIST_P12_BASE64, CREDISSUER_IOS_DIST_P12_PASSWORD,
+#             CREDISSUER_IOS_APPSTORE_PROFILE_BASE64
+# Files are stored base64-encoded: base64 -i <file> | pbcopy
+#
+# Optional repository variable CREDISSUER_IOS_RUNNER: the runner for the iOS job, for example
+# "self-hosted" when GitHub's hosted macOS runners don't have the Xcode version below yet.
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: What to build
+        type: choice
+        options:
+          - both
+          - android
+          - ios
+        default: both
+      android_output:
+        description: 'Android output: aab (Play Store upload) or apk (installs directly on a phone)'
+        type: choice
+        options:
+          - aab
+          - apk
+        default: aab
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  # The Xcode major version the app is built with locally.
+  XCODE_MAJOR_VERSION: '27'
+
+jobs:
+  android:
+    name: Android (${{ inputs.android_output }})
+    if: inputs.platform != 'ios'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      # A missing secret is an empty string, which otherwise only shows up much later as an
+      # unrelated-looking signing or download error. Secrets are passed only to the steps that
+      # use them, not to the whole job.
+      - name: Check required secrets
+        env:
+          CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
+          KEYSTORE_BASE64: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_ALIAS: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_ALIAS }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_PASSWORD }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: |
+          missing=()
+          [ -n "$CREDISSUER_API_TOKEN" ] || missing+=(CREDISSUER_API_TOKEN)
+          [ -n "$KEYSTORE_BASE64" ] || missing+=(CREDISSUER_ANDROID_KEYSTORE_BASE64)
+          [ -n "$RELEASE_KEYSTORE_ALIAS" ] || missing+=(CREDISSUER_ANDROID_KEYSTORE_ALIAS)
+          [ -n "$RELEASE_KEYSTORE_PASSWORD" ] || missing+=(CREDISSUER_ANDROID_KEYSTORE_PASSWORD)
+          [ -n "$ARTIFACTORY_USERNAME" ] || missing+=(ARTIFACTORY_USERNAME)
+          [ -n "$ARTIFACTORY_PASSWORD" ] || missing+=(ARTIFACTORY_PASSWORD)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}. Add them under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # package-lock.json pins six dependencies by git+ssh URL. They are public repositories,
+      # and the runner has no SSH key, so fetch them over HTTPS instead.
+      - name: Install JS dependencies
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          npm ci
+
+      - name: Write the files the build reads but git ignores
+        env:
+          CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
+          KEYSTORE_BASE64: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+
+      - name: Build
+        env:
+          # android/app/build.gradle and android/build.gradle read these four from the environment.
+          RELEASE_KEYSTORE_ALIAS: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_ALIAS }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_PASSWORD }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          ANDROID_OUTPUT: ${{ inputs.android_output }}
+        run: bash scripts/build-android.sh "$ANDROID_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: credissuer-wallet-android-${{ inputs.android_output }}
+          path: |
+            android/app/build/outputs/bundle/residentappRelease/app-residentapp-release.aab
+            android/app/build/outputs/apk/residentapp/release/CredIssuerWallet_universal.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  ios:
+    name: iOS (signed IPA)
+    if: inputs.platform != 'android'
+    runs-on: ${{ vars.CREDISSUER_IOS_RUNNER || 'macos-26' }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        env:
+          CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
+          P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
+          CREDISSUER_IOS_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
+        run: |
+          missing=()
+          [ -n "$CREDISSUER_API_TOKEN" ] || missing+=(CREDISSUER_API_TOKEN)
+          [ -n "$P12_BASE64" ] || missing+=(CREDISSUER_IOS_DIST_P12_BASE64)
+          [ -n "$CREDISSUER_IOS_P12_PASSWORD" ] || missing+=(CREDISSUER_IOS_DIST_P12_PASSWORD)
+          [ -n "$PROFILE_BASE64" ] || missing+=(CREDISSUER_IOS_APPSTORE_PROFILE_BASE64)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}. Add them under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      # DEVELOPER_DIR is what xcodebuild and fastlane follow, and unlike xcode-select it needs
+      # no sudo and changes nothing outside this job.
+      - name: Select Xcode ${{ env.XCODE_MAJOR_VERSION }}
+        run: |
+          current="$(xcodebuild -version 2>/dev/null | sed -n 's/^Xcode \([0-9]*\).*/\1/p' || true)"
+          if [ "$current" = "$XCODE_MAJOR_VERSION" ]; then
+            developer_dir="$(xcode-select -p)"
+          else
+            xcode_app="$(ls -d /Applications/Xcode_"$XCODE_MAJOR_VERSION"*.app 2>/dev/null | sort | tail -1 || true)"
+            if [ -z "$xcode_app" ]; then
+              installed="$(ls /Applications | grep -i '^Xcode' | tr '\n' ' ' || true)"
+              echo "::error::Xcode $XCODE_MAJOR_VERSION is not installed on this runner (installed: ${installed:-none}). Set the repository variable CREDISSUER_IOS_RUNNER to a runner that has it, for example a self-hosted Mac."
+              exit 1
+            fi
+            developer_dir="$xcode_app/Contents/Developer"
+          fi
+          echo "DEVELOPER_DIR=$developer_dir" >> "$GITHUB_ENV"
+          DEVELOPER_DIR="$developer_dir" xcodebuild -version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # Installs the CocoaPods version pinned in ios/Gemfile.lock.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: ios
+
+      # ios/Gemfile has no fastlane (upstream's shared workflows brought their own).
+      - name: Install fastlane
+        run: gem install fastlane --no-document
+
+      - name: Install JS dependencies
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          npm ci
+
+      - uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+
+      - name: Install pods
+        working-directory: ios
+        run: bundle exec pod install
+
+      - name: Write the files the build reads but git ignores
+        env:
+          CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
+          P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
+          PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
+        run: |
+          printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
+          mkdir -p "$RUNNER_TEMP/signing"
+          printf '%s' "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/distribution.p12"
+          printf '%s' "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/appstore.mobileprovision"
+          echo "CREDISSUER_IOS_P12_PATH=$RUNNER_TEMP/signing/distribution.p12" >> "$GITHUB_ENV"
+          echo "CREDISSUER_IOS_PROFILE_PATH=$RUNNER_TEMP/signing/appstore.mobileprovision" >> "$GITHUB_ENV"
+
+      - name: Build
+        working-directory: ios
+        env:
+          CREDISSUER_IOS_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
+        run: fastlane ios credissuer_build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: credissuer-wallet-ios-ipa
+          path: ios/build/credissuer/CredIssuerWallet.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      # A hosted runner is thrown away after the job; a self-hosted Mac is not.
+      - name: Remove signing files
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/signing"
