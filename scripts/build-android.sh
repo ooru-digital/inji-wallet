@@ -60,6 +60,39 @@ if [ "${#problems[@]}" -gt 0 ]; then
   exit 1
 fi
 
+# A wrong alias or password otherwise only fails at the signing task, after the whole build.
+if command -v keytool >/dev/null 2>&1; then
+  if ! keytool_output="$(keytool -list -keystore android/app/release.keystore \
+    -alias "$RELEASE_KEYSTORE_ALIAS" -storepass:env RELEASE_KEYSTORE_PASSWORD 2>&1)"; then
+    echo "❌ Cannot sign with android/app/release.keystore:" >&2
+    case "$keytool_output" in
+      *"password was incorrect"*)
+        if command -v shasum >/dev/null 2>&1; then
+          KEYSTORE_SHA="$(shasum -a 256 android/app/release.keystore | cut -c1-16)"
+        else
+          KEYSTORE_SHA="$(sha256sum android/app/release.keystore | cut -c1-16)"
+        fi
+        echo "   - RELEASE_KEYSTORE_PASSWORD does not open this keystore." >&2
+        echo "   - Keystore SHA-256 starts with $KEYSTORE_SHA. Compare it with the file you meant to use:" >&2
+        echo "       shasum -a 256 android/app/release.keystore" >&2
+        case "$RELEASE_KEYSTORE_PASSWORD" in
+          [[:space:]]* | *[[:space:]])
+            echo "   - The password starts or ends with a space or a newline. Copy it without one." >&2
+            ;;
+        esac
+        ;;
+      *"does not exist"*)
+        echo "   - The password is right, but the keystore has no key named RELEASE_KEYSTORE_ALIAS." >&2
+        echo "     List the names with: keytool -list -keystore android/app/release.keystore" >&2
+        ;;
+      *)
+        echo "   - $keytool_output" >&2
+        ;;
+    esac
+    exit 1
+  fi
+fi
+
 # Not a hard stop: once Gradle has cached the BioChq AARs it never contacts the Nexus again.
 if [ ! -f android/artifactory.local.properties ] && [ -z "${ARTIFACTORY_USERNAME:-}" ]; then
   echo "⚠️  No Nexus credentials found (android/artifactory.local.properties or ARTIFACTORY_USERNAME)."
