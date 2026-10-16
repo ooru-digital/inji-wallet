@@ -1207,5 +1207,12 @@
     "description": "Tiyaking kilala mo o pinagkakatiwalaan ang issuer na ito. Kapag pinagkatiwalaan na:",
     "title": "Mabilis na Pagsusuri",
     "subTitle": "Bago magpatuloy, kumpirmahin na kilala mo ang issuer na ito"
+  },
+  "NfcShareModal": {
+    "title": "Ibahagi sa reader",
+    "noCards": "May reader na tumapik sa iyong telepono, pero wala kang card na mababasa nito.",
+    "readerGone": "Huminto na sa paghihintay ang reader. Itapat muli ang mga telepono.",
+    "connecting": "Kumokonekta sa reader…",
+    "close": "Isara"
   }
 }

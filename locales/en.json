@@ -1315,5 +1315,12 @@
     "description": "You're about to download a credential from {{name}} issuer.",
     "title": "Quick Check",
     "subTitle": "Before proceeding, confirm you recognize this issuer"
+  },
+  "NfcShareModal": {
+    "title": "Share with the reader",
+    "noCards": "A reader tapped your phone, but you have no card it can read.",
+    "readerGone": "The reader stopped waiting. Tap the phones together again.",
+    "connecting": "Connecting to the reader…",
+    "close": "Close"
   }
 }

@@ -5,11 +5,14 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Base64
 import android.util.Log
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import kotlinx.coroutines.Dispatchers
 
 /**
@@ -43,6 +46,45 @@ class MdocIso18013PresentmentModule(
     }
 
     override fun getName(): String = "MdocIso18013Presentment"
+
+    init {
+        // Only stores a callback; nothing here touches Multipaz, see the class comment.
+        MdocNfcEngagements.listener = MdocNfcEngagements.Listener { engagement ->
+            emitNfcEngaged(engagement.id)
+        }
+    }
+
+    private fun emitNfcEngaged(id: String) {
+        if (!reactContext.hasActiveReactInstance()) {
+            Log.i(TAG, "Tap $id waiting for JS to start; it will ask with getPendingNfcEngagement")
+            return
+        }
+        reactContext.runOnUiQueueThread {
+            try {
+                val payload: WritableMap = Arguments.createMap().apply { putString("id", id) }
+                reactContext
+                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                    .emit(EVENT_NFC_ENGAGED, payload)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to emit $EVENT_NFC_ENGAGED", e)
+            }
+        }
+    }
+
+    /**
+     * The id of a reader that tapped and is still waiting, or null. For a tap that arrived before
+     * JS was listening - typically one that launched the app.
+     */
+    @ReactMethod
+    fun getPendingNfcEngagement(promise: Promise) {
+        promise.resolve(MdocNfcEngagements.peek()?.id)
+    }
+
+    /** The holder closed the card picker: let the waiting reader time out. */
+    @ReactMethod
+    fun discardNfcEngagement(id: String) {
+        MdocNfcEngagements.discard(id)
+    }
 
     private fun completePromise(promise: Promise, error: Throwable?) {
         reactContext.runOnUiQueueThread {
@@ -102,9 +144,18 @@ class MdocIso18013PresentmentModule(
         try {
             val issuerSigned = config.getString("issuerSignedCompact")
                 ?: throw IllegalArgumentException("issuerSignedCompact required")
-            val engagementB64 = config.getString("deviceEngagementCborBase64")
+            // A tap brings its own engagement and key; the card's QR ones are not used.
+            val nfc = if (config.hasKey("nfcEngagementId")) {
+                val id = config.getString("nfcEngagementId")
+                    ?: throw IllegalArgumentException("nfcEngagementId is null")
+                MdocNfcEngagements.take(id)
+                    ?: throw IllegalStateException("The reader that tapped is no longer waiting")
+            } else {
+                null
+            }
+            val engagementB64 = if (nfc != null) "" else config.getString("deviceEngagementCborBase64")
                 ?: throw IllegalArgumentException("deviceEngagementCborBase64 required")
-            val ephemeralB64 = config.getString("ephemeralPrivateKeyBase64")
+            val ephemeralB64 = if (nfc != null) "" else config.getString("ephemeralPrivateKeyBase64")
                 ?: throw IllegalArgumentException("ephemeralPrivateKeyBase64 required")
             val useSoftware = config.hasKey("useSoftwareDeviceKey") && config.getBoolean("useSoftwareDeviceKey")
             val softwareD32: ByteArray? = if (config.hasKey("deviceKeyPrivateBase64")) {
@@ -113,8 +164,9 @@ class MdocIso18013PresentmentModule(
                 null
             }
 
-            val engagementCbor = Base64.decode(engagementB64, Base64.DEFAULT)
-            val ephemeralD32 = Base64.decode(ephemeralB64, Base64.DEFAULT)
+            val engagementCbor = nfc?.encodedDeviceEngagement?.toByteArray()
+                ?: Base64.decode(engagementB64, Base64.DEFAULT)
+            val ephemeralD32 = if (nfc != null) ByteArray(0) else Base64.decode(ephemeralB64, Base64.DEFAULT)
 
             missingBlePermissionsForMdocAdvertising()?.let { perm ->
                 Log.w(TAG, "startPresentment blocked: missing permission $perm")
@@ -129,7 +181,7 @@ class MdocIso18013PresentmentModule(
 
             Log.i(
                 TAG,
-                "startPresentment from JS (issuerSigned chars=${issuerSigned.length}, engagement bytes=${engagementCbor.size}, softwareKey=$useSoftware)",
+                "startPresentment from JS (issuerSigned chars=${issuerSigned.length}, engagement bytes=${engagementCbor.size}, softwareKey=$useSoftware, nfc=${nfc?.id})",
             )
 
             // Serialize with Multipaz-style main-thread BLE + avoid cancel/start races with the FG service.
@@ -141,6 +193,7 @@ class MdocIso18013PresentmentModule(
                         ephemeralPrivateKey32 = ephemeralD32,
                         useSoftwareDeviceKey = useSoftware,
                         softwareDeviceKeyPrivate32 = softwareD32,
+                        nfc = nfc,
                     ) { err ->
                         completePromise(promise, err)
                     }
@@ -204,7 +257,10 @@ class MdocIso18013PresentmentModule(
         super.invalidate()
     }
 
+    override fun getConstants(): Map<String, Any> = mapOf("EVENT_NFC_ENGAGED" to EVENT_NFC_ENGAGED)
+
     companion object {
         private const val TAG = "MdocIso18013Presentment"
+        const val EVENT_NFC_ENGAGED = "MdocNfcEngaged"
     }
 }

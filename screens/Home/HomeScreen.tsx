@@ -18,6 +18,7 @@ import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/V
 import {VerifiableCredential} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
 import {useTranslation} from 'react-i18next';
 import {Copilot} from '../../components/ui/Copilot';
+import {NfcShareModal} from './NfcShareModal';
 
 export const HomeScreen: React.FC<HomeRouteProps> = props => {
   const controller = useHomeScreen(props);
@@ -104,6 +105,8 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
         error={'errors.storageLimitReached'}
         onDismiss={controller.DISMISS}
       />
+      {/* A reader tapped the phone: choose the card to share with it. */}
+      <NfcShareModal />
       {controller.selectedVc && (
         <ViewVcModal
           isVisible={controller.isViewingVc}

@@ -19,6 +19,9 @@
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.NFC" />
+    <!-- A tap is an extra way to share; phones without NFC still share by QR code. -->
+    <uses-feature android:name="android.hardware.nfc.hce" android:required="false" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
@@ -93,6 +96,20 @@
             </intent-filter>
         </activity>
         <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" />
+
+        <!-- Answers an mdoc reader tapped against the phone (ISO 18013-5 NFC engagement). -->
+        <service
+            android:name=".mdoc.MdocNfcEngagementService"
+            android:exported="true"
+            android:label="@string/mdoc_nfc_service_label"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.cardemulation.host_apdu_service"
+                android:resource="@xml/mdoc_nfc_engagement_service" />
+        </service>
 
         <service
             android:name=".mdoc.MdocProximityPresentmentForegroundService"

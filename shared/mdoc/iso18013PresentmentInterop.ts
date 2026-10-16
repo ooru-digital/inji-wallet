@@ -71,6 +71,11 @@ export interface Iso18013PresentmentParams {
   useSoftwareDeviceKey?: boolean;
   /** Standard base64 of raw P-256 device private key (32 bytes) for software path. */
   deviceKeyPrivateBase64?: string;
+  /**
+   * Set when a reader tapped the phone rather than scanning the QR code (Android). Native then
+   * uses the engagement, key and handover from the tap; the QR ones above are ignored.
+   */
+  nfcEngagementId?: string;
 }
 
 export interface Iso18013PresentmentCallbacks {
@@ -380,7 +385,10 @@ export async function startIso18013ProximityPresentment(
 ): Promise<void> {
   const nm = getNativeModule();
   const useCommonEngine = usesCommonEngine();
-  if (!useCommonEngine && (Platform.OS !== 'android' || !nm?.startPresentment)) {
+  if (
+    !useCommonEngine &&
+    (Platform.OS !== 'android' || !nm?.startPresentment)
+  ) {
     throw new Iso18013PresentmentNotImplementedError();
   }
 
@@ -413,6 +421,9 @@ export async function startIso18013ProximityPresentment(
         ).toString('base64'),
         useSoftwareDeviceKey: !!params.useSoftwareDeviceKey,
         deviceKeyPrivateBase64: params.deviceKeyPrivateBase64,
+        ...(params.nfcEngagementId
+          ? {nfcEngagementId: params.nfcEngagementId}
+          : {}),
       });
       callbacks?.onPhase?.('completed');
     }
