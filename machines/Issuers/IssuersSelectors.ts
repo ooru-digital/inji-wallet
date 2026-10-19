@@ -90,6 +90,11 @@ export function selectStoring(state: State) {
   return state.matches('storing');
 }
 
+/** The metadata of the credential being saved; set on entering `storing`. */
+export function selectDownloadedVcMetadata(state: State) {
+  return state.context.vcMetadata;
+}
+
 export function selectIsError(state: State) {
   return state.matches('error');
 }
