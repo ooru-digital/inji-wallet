@@ -1,4 +1,10 @@
-import React, {Fragment, useCallback, useEffect, useLayoutEffect} from 'react';
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useFocusEffect} from '@react-navigation/native';
 import {Header} from '../../components/ui/Header';
@@ -25,6 +31,8 @@ import {AUTH_ROUTES} from '../../routes/routesConstants';
 import {TransactionCodeModal} from './TransactionCodeScreen';
 import {ScanToAddScreen} from '../../components/addCredential/ScanToAddScreen';
 import {TrustIssuerSheet} from '../../components/addCredential/TrustIssuerSheet';
+import {AddedToWalletScreen} from '../../components/addCredential/AddedToWalletScreen';
+import {VCMetadata} from '../../shared/VCMetadata';
 import {SendVPScreen} from '../Scan/SendVPScreen';
 
 import {AuthorizationType} from '../../shared/constants';
@@ -43,6 +51,12 @@ export const IssuersScreen: React.FC<
   const showFullScreenError = controller.isError;
   const [successDownloadRedirectTimer, initiateSuccessDownloadRedirectTimer] =
     useTimer({initialValue: 5});
+
+  // The credential just saved. The machine leaves `storing`, and finishes, moments after saving,
+  // so the success screen keeps its own copy rather than following that state.
+  const [addedVcMetadata, setAddedVcMetadata] = useState<VCMetadata | null>(
+    null,
+  );
 
   const isVerificationFailed = controller.verificationErrorMessage !== '';
 
@@ -86,7 +100,12 @@ export const IssuersScreen: React.FC<
   }, [controller.isSelectingIssuer]);
 
   useLayoutEffect(() => {
-    if (controller.loadingReason || showFullScreenError || isInScanFlow) {
+    if (
+      addedVcMetadata ||
+      controller.loadingReason ||
+      showFullScreenError ||
+      isInScanFlow
+    ) {
       props.navigation.setOptions({
         headerShown: false,
       });
@@ -102,7 +121,12 @@ export const IssuersScreen: React.FC<
         ),
       });
     }
-  }, [controller.loadingReason, controller.errorMessageType, isInScanFlow]);
+  }, [
+    addedVcMetadata,
+    controller.loadingReason,
+    controller.errorMessageType,
+    isInScanFlow,
+  ]);
 
   useLayoutEffect(() => {
     if (controller.loadingReason && controller.isPresentationAuthorization) {
@@ -120,14 +144,30 @@ export const IssuersScreen: React.FC<
   }, [controller.loadingReason, controller.isPresentationAuthorization]);
 
   useEffect(() => {
-    if (controller.isDownloadSuccess) {
-      if (controller.authorizationType === AuthorizationType.IMPLICIT) {
-        props.navigation.goBack();
-      } else {
-        initiateSuccessDownloadRedirectTimer();
-      }
+    if (!controller.isDownloadSuccess) {
+      return;
+    }
+    // Sharing to a verifier and downloading in one go keeps its combined progress screen, which
+    // returns home on a timer.
+    if (
+      controller.authorizationType === AuthorizationType.OPENID4VP_PRESENTATION
+    ) {
+      initiateSuccessDownloadRedirectTimer();
+    } else {
+      setAddedVcMetadata(new VCMetadata(controller.downloadedVcMetadata));
     }
   }, [controller.isDownloadSuccess]);
+
+  // Back to the wallet, which brings the new card to the front and marks it as new.
+  const viewInWallet = useCallback(() => {
+    if (!addedVcMetadata) {
+      return;
+    }
+    // HomeScreen is the screen below this one in the home stack, so this goes back to it.
+    (props.navigation as any).navigate('HomeScreen', {
+      highlightVcKey: addedVcMetadata.getVcKey(),
+    });
+  }, [addedVcMetadata, props.navigation]);
 
   useEffect(() => {
     if (successDownloadRedirectTimer === 0) {
@@ -248,6 +288,15 @@ export const IssuersScreen: React.FC<
             disabled={!controller.isDownloadSuccess}
           />
         }
+      />
+    );
+  }
+
+  if (addedVcMetadata) {
+    return (
+      <AddedToWalletScreen
+        vcMetadata={addedVcMetadata}
+        onViewInWallet={viewInWallet}
       />
     );
   }

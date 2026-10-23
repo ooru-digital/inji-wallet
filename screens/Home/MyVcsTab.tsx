@@ -413,10 +413,9 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
             onStackView={() => setStackView(true)}
             refreshing={controller.isRefreshingVcs}
             onRefresh={controller.REFRESH}
-            isCardTourStep={
-              controller.isInitialDownloading || controller.isTourGuide
-            }
-            startCardTour={controller.isInitialDownloading}
+            isCardTourStep={controller.isTourGuide}
+            highlightVcKey={props.highlightVcKey}
+            onHighlightTaken={props.onHighlightTaken}
           />
         ) : (
           <WalletHeader

@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 import {ScaledText} from './ScaledText';
+import {NewCardDot} from './NewCardDot';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
-import {useCopilot} from 'react-native-copilot';
 import {Copilot} from '../ui/Copilot';
 import {COPILOT_FINAL_STEP} from '../../shared/constants';
 import {VCMetadata} from '../../shared/VCMetadata';
@@ -68,8 +68,6 @@ const pluralCredentials = (n: number) =>
  * on top with the rest in a rail), the active card's status, actions and information, search and
  * a details page per card.
  */
-const CARD_TOUR_START_DELAY_MS = 500;
-
 export const WalletHome: React.FC<{
   vcMetadatas: VCMetadata[];
   /** Lowercased searchable text of each credential's claims, by credential key. */
@@ -78,10 +76,12 @@ export const WalletHome: React.FC<{
   onStackView: () => void;
   refreshing: boolean;
   onRefresh: () => void;
-  /** The cards are a tour step: after the first download, or while the tour is replayed. */
+  /** The shown card is a tour step: while the tour is replayed from Settings. */
   isCardTourStep?: boolean;
-  /** Start the tour at the card step once the card shows: after the first download. */
-  startCardTour?: boolean;
+  /** A just-downloaded card: brought to the front and marked with a dot until it is opened. */
+  highlightVcKey?: string;
+  /** Called once the card is taken up, so returning here doesn't repeat it. */
+  onHighlightTaken?: () => void;
 }> = ({
   vcMetadatas,
   searchIndex,
@@ -90,10 +90,10 @@ export const WalletHome: React.FC<{
   refreshing,
   onRefresh,
   isCardTourStep = false,
-  startCardTour = false,
+  highlightVcKey,
+  onHighlightTaken,
 }) => {
   const {t} = useTranslation();
-  const {start: startTour} = useCopilot();
   const insets = useSafeAreaInsets();
   const {c, reduceMotion} = useRevampTheme();
   const navigation = useNavigation<any>();
@@ -199,6 +199,7 @@ export const WalletHome: React.FC<{
   const openDetails = (key: string) => {
     setFlipped(false);
     setDetailKey(key);
+    markSeen(key);
   };
 
   // The card the actions act on: the open details page's, else the carousel's active one.
@@ -223,22 +224,26 @@ export const WalletHome: React.FC<{
 
   const showPinned = !!pinnedEntry && !searching;
 
-  // After the first download the tour opens on the card, once it has loaded and the
-  // carousel has settled, so the highlight lands on it. A pinned card replaces the
-  // carousel, and then it is the card the tour step points at.
-  const hasStartedCardTour = useRef(false);
-  const tourCardEntry = showPinned ? pinnedEntry : activeEntry;
-  const isActiveCardLoaded = !!(tourCardEntry && cards[tourCardEntry.key]);
+  /**
+   * The most recently added card, marked with a dot until it is opened or flipped. Set by View
+   * in Wallet on the "Added to your wallet" screen; the route param is cleared at once so coming
+   * back here doesn't set it again.
+   */
+  const [newCardKey, setNewCardKey] = useState<string | null>(null);
   useEffect(() => {
-    if (!startCardTour || !isActiveCardLoaded || hasStartedCardTour.current) {
+    if (!highlightVcKey) {
       return;
     }
-    const timer = setTimeout(() => {
-      hasStartedCardTour.current = true;
-      startTour(t('copilot:cardTitle'));
-    }, CARD_TOUR_START_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [startCardTour, isActiveCardLoaded]);
+    setNewCardKey(highlightVcKey);
+    onHighlightTaken?.();
+    // Brings the new card to the front of the carousel, face up.
+    setActiveKey(highlightVcKey);
+    setFlipped(false);
+    setDetailKey(null);
+  }, [highlightVcKey]);
+  const markSeen = (key?: string) => {
+    if (key && key === newCardKey) setNewCardKey(null);
+  };
 
   const [qrFor, setQrFor] = useState<string | null>(null);
   const qrCard = qrFor ? loaded[qrFor] : undefined;
@@ -368,8 +373,9 @@ export const WalletHome: React.FC<{
               onOpen={() => openDetails(pinnedEntry.key)}
               reduceMotion={reduceMotion}
               isCardTourStep={isCardTourStep}
+              isNew={pinnedEntry.key === newCardKey}
             />
-            <Rail entries={rail} onOpen={openDetails} />
+            <Rail entries={rail} onOpen={openDetails} newCardKey={newCardKey} />
           </>
         ) : visible.length > 0 ? (
           <>
@@ -379,8 +385,12 @@ export const WalletHome: React.FC<{
                 index={index}
                 onIndexChange={select}
                 flipped={flipped}
-                onFlip={() => setFlipped(f => !f)}
+                onFlip={() => {
+                  setFlipped(f => !f);
+                  markSeen(activeEntry?.key);
+                }}
                 reduceMotion={reduceMotion}
+                newCardKey={newCardKey}
               />
               {isCardTourStep ? (
                 // An invisible box over the centre card, so the tour highlights the card
@@ -554,7 +564,9 @@ const PinnedCard: React.FC<{
   reduceMotion: boolean;
   /** Registers the card as the tour's card step; the carousel isn't shown to take it. */
   isCardTourStep: boolean;
-}> = ({entry, width, actions, onOpen, reduceMotion, isCardTourStep}) => {
+  /** The most recently added card, marked with a dot. */
+  isNew: boolean;
+}> = ({entry, width, actions, onOpen, reduceMotion, isCardTourStep, isNew}) => {
   const {c} = useRevampTheme();
   const {t} = useTranslation();
   const rise = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
@@ -579,6 +591,7 @@ const PinnedCard: React.FC<{
       <ScaledCard width={width}>
         <CredentialCardFront data={entry.data} />
       </ScaledCard>
+      {isNew ? <NewCardDot /> : null}
     </Pressable>
   );
   return (
@@ -665,7 +678,9 @@ const PinnedCard: React.FC<{
 const Rail: React.FC<{
   entries: {key: string; data?: LoadedCard['data']}[];
   onOpen: (key: string) => void;
-}> = ({entries, onOpen}) => {
+  /** The most recently added card, marked with a dot. */
+  newCardKey?: string | null;
+}> = ({entries, onOpen, newCardKey}) => {
   const {c} = useRevampTheme();
   return (
     <View style={styles.rail}>
@@ -697,6 +712,7 @@ const Rail: React.FC<{
                 <ScaledCard width={RAIL_CARD_WIDTH}>
                   <CredentialCardFront data={e.data} />
                 </ScaledCard>
+                {e.key === newCardKey ? <NewCardDot size={16} /> : null}
               </View>
               <View style={{gap: 2, paddingHorizontal: 2}}>
                 <ScaledText
@@ -948,7 +964,8 @@ const styles = StyleSheet.create({
   },
   railTitle: {fontFamily: fonts.medium, fontSize: 18, lineHeight: 22},
   railCount: {fontFamily: fonts.regular, fontSize: 12, lineHeight: 14.4},
-  railList: {gap: 12, paddingTop: 4, paddingBottom: 10, paddingHorizontal: 24},
+  // The top padding leaves room for the new-card dot, which sits over a card's top edge.
+  railList: {gap: 12, paddingTop: 8, paddingBottom: 10, paddingHorizontal: 24},
   railCardTitle: {fontFamily: fonts.medium, fontSize: 14, lineHeight: 17},
   railHint: {
     paddingHorizontal: 24,
