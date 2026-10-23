@@ -239,6 +239,14 @@ target 'Inji' do
     end
   end
 
+  # Face liveness for the "share with selfie" flows (RNSnapKycLivenessModule). This is the DUMMY
+  # BioChqFaceLiveness SDK, a sibling checkout of this repo (Projects/BioChqFaceLivenessDummy; run
+  # its ./build-xcframework.sh first): it shows "Hello World" and a Proceed button that always
+  # passes. Swap in the real SDK, which has the same API, once it is ready:
+  #   pod 'BioChqFaceLiveness', :git => 'https://github.com/ooru-digital/biochq-verifier-web.git'
+  # (the real one also needs NSCameraUsageDescription, which Info.plist already has).
+  pod 'BioChqFaceLiveness', :path => '../../BioChqFaceLivenessDummy'
+
   permissions_path = '../node_modules/react-native-permissions/ios'
 
   pod 'Permission-BluetoothPeripheral', :path => "#{permissions_path}/BluetoothPeripheral"

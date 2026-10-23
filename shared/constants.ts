@@ -23,11 +23,11 @@ export const LIVENESS_CHECK = LIVENESS_DETECTION === 'true';
 export const LIVENESS_THRESHOLD = 0.4;
 
 /**
- * SnapKYC native liveness (Android only) — gates the face check that runs after the user taps
- * Share on the mDOC proximity consent overlay. Explicit opt-in: a missing .env key leaves it off.
+ * SnapKYC native liveness — gates the face check of the "share with selfie" flows. Android runs the
+ * SnapKYC SDK; iOS runs BioChqFaceLiveness (a dummy for now, see ios/Podfile). Explicit opt-in: a
+ * missing .env key leaves it off.
  */
-export const SNAPKYC_LIVENESS_ENABLED =
-  isAndroid() && SNAPKYC_LIVENESS === 'true';
+export const SNAPKYC_LIVENESS_ENABLED = SNAPKYC_LIVENESS === 'true';
 export const SNAPKYC_RELAYING_PARTY_NAME_VALUE =
   (SNAPKYC_RELAYING_PARTY_NAME || '').trim().replace(/\s+/g, ' ') ||
   'YourRelyingPartyName';

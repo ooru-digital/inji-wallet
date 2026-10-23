@@ -5,6 +5,7 @@ PODS:
   - AppAuth/Core (1.7.6)
   - AppAuth/ExternalUserAgent (1.7.6):
     - AppAuth/Core
+  - BioChqFaceLiveness (1.0.0)
   - biometric-sdk-react-native (0.2.6):
     - BiometricSdk (= 0.5.9)
     - React-Core
@@ -2111,6 +2112,7 @@ PODS:
     - ZXingObjC/Core
 
 DEPENDENCIES:
+  - BioChqFaceLiveness (from `../../BioChqFaceLivenessDummy`)
   - "biometric-sdk-react-native (from `../node_modules/@iriscan/biometric-sdk-react-native`)"
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - BVLinearGradient (from `../node_modules/react-native-linear-gradient`)
@@ -2274,6 +2276,8 @@ SPEC REPOS:
     - ZXingObjC
 
 EXTERNAL SOURCES:
+  BioChqFaceLiveness:
+    :path: "../../BioChqFaceLivenessDummy"
   biometric-sdk-react-native:
     :path: "../node_modules/@iriscan/biometric-sdk-react-native"
   boost:
@@ -2532,6 +2536,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
+  BioChqFaceLiveness: 04b4d51f8be0845aaf12b1ffe8382c92072482cf
   biometric-sdk-react-native: 11925e3af28eecd733efc43670c5d8b4f014cddc
   BiometricSdk: 303e7329404ea4d922dc14108449d10d21574f77
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
@@ -2688,6 +2693,6 @@ SPEC CHECKSUMS:
   Yoga: dc7c21200195acacb62fa920c588e7c2106de45e
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: d61e6f21d330e2d363661c6a404249ad62c8d64f
+PODFILE CHECKSUM: e949511b2a344d0bafce24e86b896f38af0e292c
 
 COCOAPODS: 1.17.0

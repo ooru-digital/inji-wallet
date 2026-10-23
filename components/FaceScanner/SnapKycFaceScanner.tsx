@@ -7,6 +7,7 @@ import {Column, Text, Button} from '../ui';
 import {Theme} from '../ui/styleUtils';
 import {Loader} from '../ui/Loader';
 import {
+  isIOS,
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED,
   SNAPKYC_RELAYING_PARTY_NAME_VALUE,
 } from '../../shared/constants';
@@ -15,8 +16,9 @@ import {compareProbeWithVcFace} from '../../shared/snapKyc/compareProbeWithVcFac
 import {extractReferenceFaceBase64} from '../../shared/snapKyc/compressFaceImage';
 
 /**
- * Runs the SnapKYC native liveness activity, then matches the live probe against the credential
- * portrait. Renders almost nothing itself — the SDK takes over with its own full-screen Activity.
+ * Runs the native liveness SDK (SnapKYC on Android, BioChqFaceLiveness on iOS), then on Android
+ * matches the live probe against the credential portrait. Renders almost nothing itself — the SDK
+ * takes over with its own full-screen screen.
  */
 export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
   const {t} = useTranslation('FaceScanner');
@@ -54,6 +56,14 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
       if (!result.probeImageBase64) {
         console.warn('[SnapKYC] Liveness passed but probe image is missing');
         props.onInvalid();
+        return;
+      }
+
+      // iOS has no face matching yet (as in machines/faceScanner.ts verifyImage), and the iOS
+      // liveness SDK is still a dummy whose capture has no face in it, so a match could never
+      // pass. There, a genuine liveness verdict is accepted on its own.
+      if (isIOS()) {
+        props.onValid();
         return;
       }
 
