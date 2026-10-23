@@ -41,12 +41,15 @@ export const VCItemActions = model => {
   return {
     setIsVerified: assign((context: any, event: any) => {
       const previous = context.vcMetadata;
+      const now = new Date().toISOString();
+      const isRevoked = event.data.isRevoked === RevocationStatus.TRUE;
       const next = new VCMetadata({
         ...previous,
         isVerified: true,
         isRevoked: event.data.isRevoked,
         isExpired: event.data.verificationErrorCode == EXPIRED_VC_ERROR_CODE,
-        lastKnownStatusTimestamp: new Date().toISOString(),
+        lastKnownStatusTimestamp: now,
+        revokedOn: isRevoked ? previous.revokedOn || now : '',
       });
 
       const statusChanged =
@@ -119,6 +122,14 @@ export const VCItemActions = model => {
 
     resetStatusChangedFlag: assign({
       statusChangedDuringVerification: () => false,
+    }),
+
+    setReverifyingInBackground: assign({
+      isReverifyingInBackground: () => true,
+    }),
+
+    resetReverifyingInBackground: assign({
+      isReverifyingInBackground: () => false,
     }),
 
     sendReverificationFailureToVcMeta: send(
@@ -239,6 +250,7 @@ export const VCItemActions = model => {
           isMachineInKebabPopupState,
           verificationStatus,
           showVerificationStatusBanner,
+          isReverifyingInBackground,
           ...data
         } = context;
         data.credentialRegistry = MIMOTO_BASE_URL;

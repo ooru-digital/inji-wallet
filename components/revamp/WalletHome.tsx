@@ -26,8 +26,14 @@ import {QrCodeOverlay} from '../QrCodeOverlay';
 import {CardCarousel} from './CardCarousel';
 import {frontCardFrame} from './carouselLayout';
 import {CardLoader, LoadedCard} from './CardLoader';
-import {CredentialCardFront, ScaledCard} from './CredentialCard';
-import {Action, CredentialInformation, StatusPill} from './CredentialParts';
+import {CredentialCardFront, isInactive, ScaledCard} from './CredentialCard';
+import {
+  Action,
+  CredentialInformation,
+  StatusNotice,
+  StatusPill,
+  StatusRow,
+} from './CredentialParts';
 import {CardActions, CredentialDetails} from './CredentialDetails';
 import {
   ActivityIcon,
@@ -82,6 +88,9 @@ export const WalletHome: React.FC<{
   isCardTourStep?: boolean;
   /** Start the tour at the card step once the card shows: after the first download. */
   startCardTour?: boolean;
+  /** A card to open the details page of once it has loaded, e.g. from a notification. */
+  openVcKey?: string;
+  onVcOpened?: () => void;
 }> = ({
   vcMetadatas,
   searchIndex,
@@ -91,6 +100,8 @@ export const WalletHome: React.FC<{
   onRefresh,
   isCardTourStep = false,
   startCardTour = false,
+  openVcKey,
+  onVcOpened,
 }) => {
   const {t} = useTranslation();
   const {start: startTour} = useCopilot();
@@ -200,6 +211,14 @@ export const WalletHome: React.FC<{
     setFlipped(false);
     setDetailKey(key);
   };
+
+  const isOpenVcLoaded = !!(openVcKey && loaded[openVcKey]);
+  useEffect(() => {
+    if (!openVcKey || !isOpenVcLoaded) return;
+    setActiveKey(openVcKey);
+    openDetails(openVcKey);
+    onVcOpened?.();
+  }, [openVcKey, isOpenVcLoaded]);
 
   // The card the actions act on: the open details page's, else the carousel's active one.
   const targetEntry =
@@ -493,29 +512,38 @@ const ActiveDetails: React.FC<{
           ],
         },
       ]}>
-      <View style={styles.titleRow}>
-        <View style={{flex: 1, minWidth: 0, gap: 4}}>
-          <ScaledText style={[styles.title, {color: c.ink}]}>
-            {data.title}
-          </ScaledText>
-          {data.issuerName ? (
-            <ScaledText style={[styles.sub, {color: c.inkMuted}]}>
-              {data.issuerName}
+      {isInactive(data.status) ? (
+        <>
+          <StatusRow data={data} />
+          <StatusNotice data={data} />
+        </>
+      ) : (
+        <View style={styles.titleRow}>
+          <View style={{flex: 1, minWidth: 0, gap: 4}}>
+            <ScaledText style={[styles.title, {color: c.ink}]}>
+              {data.title}
             </ScaledText>
-          ) : null}
+            {data.issuerName ? (
+              <ScaledText style={[styles.sub, {color: c.inkMuted}]}>
+                {data.issuerName}
+              </ScaledText>
+            ) : null}
+          </View>
+          <StatusPill status={data.status} />
         </View>
-        <StatusPill status={data.status} />
-      </View>
+      )}
 
       <View style={styles.actions}>
         <Action
           label="Share"
           primary
+          disabled={isInactive(data.status)}
           onPress={actions.share}
           icon={col => <ShareIcon color={col} />}
         />
         <Action
           label="Show QR"
+          disabled={isInactive(data.status)}
           onPress={actions.showQr}
           icon={col => <QrIcon color={col} />}
         />
