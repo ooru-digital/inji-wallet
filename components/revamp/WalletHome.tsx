@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 import {ScaledText} from './ScaledText';
+import {NewCardDot} from './NewCardDot';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
-import {useCopilot} from 'react-native-copilot';
 import {Copilot} from '../ui/Copilot';
 import {COPILOT_FINAL_STEP} from '../../shared/constants';
 import {VCMetadata} from '../../shared/VCMetadata';
@@ -68,8 +68,6 @@ const pluralCredentials = (n: number) =>
  * on top with the rest in a rail), the active card's status, actions and information, search and
  * a details page per card.
  */
-const CARD_TOUR_START_DELAY_MS = 500;
-
 export const WalletHome: React.FC<{
   vcMetadatas: VCMetadata[];
   /** Lowercased searchable text of each credential's claims, by credential key. */
@@ -80,9 +78,9 @@ export const WalletHome: React.FC<{
   onRefresh: () => void;
   /** The shown card is a tour step: while the tour is replayed from Settings. */
   isCardTourStep?: boolean;
-  /** A just-downloaded card to highlight on its own, as the tour's card step. */
+  /** A just-downloaded card: brought to the front and marked with a dot until it is opened. */
   highlightVcKey?: string;
-  /** Called once the highlight is taken up, so returning here doesn't repeat it. */
+  /** Called once the card is taken up, so returning here doesn't repeat it. */
   onHighlightTaken?: () => void;
 }> = ({
   vcMetadatas,
@@ -96,7 +94,6 @@ export const WalletHome: React.FC<{
   onHighlightTaken,
 }) => {
   const {t} = useTranslation();
-  const {start: startTour, copilotEvents} = useCopilot();
   const insets = useSafeAreaInsets();
   const {c, reduceMotion} = useRevampTheme();
   const navigation = useNavigation<any>();
@@ -202,6 +199,7 @@ export const WalletHome: React.FC<{
   const openDetails = (key: string) => {
     setFlipped(false);
     setDetailKey(key);
+    markSeen(key);
   };
 
   // The card the actions act on: the open details page's, else the carousel's active one.
@@ -227,49 +225,25 @@ export const WalletHome: React.FC<{
   const showPinned = !!pinnedEntry && !searching;
 
   /**
-   * The just-downloaded card that the tour highlights on its own, after View in Wallet on the
-   * "Added to your wallet" screen. Kept until that tour stops, because the step's target has to
-   * stay registered while it shows; the route param is cleared at once so coming back here
-   * doesn't repeat it.
+   * The most recently added card, marked with a dot until it is opened or flipped. Set by View
+   * in Wallet on the "Added to your wallet" screen; the route param is cleared at once so coming
+   * back here doesn't set it again.
    */
-  const [spotlightKey, setSpotlightKey] = useState<string | null>(null);
+  const [newCardKey, setNewCardKey] = useState<string | null>(null);
   useEffect(() => {
     if (!highlightVcKey) {
       return;
     }
-    setSpotlightKey(highlightVcKey);
+    setNewCardKey(highlightVcKey);
     onHighlightTaken?.();
     // Brings the new card to the front of the carousel, face up.
     setActiveKey(highlightVcKey);
     setFlipped(false);
     setDetailKey(null);
   }, [highlightVcKey]);
-  useEffect(() => {
-    const clearSpotlight = () => setSpotlightKey(null);
-    copilotEvents.on('stop', clearSpotlight);
-    return () => copilotEvents.off('stop', clearSpotlight);
-  }, [copilotEvents]);
-
-  // A pinned card replaces the carousel; the new card then sits in the rail below it.
-  const isSpotlightPinned = !!spotlightKey && pinnedEntry?.key === spotlightKey;
-  const isSpotlightInRail =
-    !!spotlightKey && showPinned && rail.some(e => e.key === spotlightKey);
-  const isSpotlightOnScreen = showPinned
-    ? isSpotlightPinned || isSpotlightInRail
-    : !!spotlightKey && activeEntry?.key === spotlightKey;
-  const isSpotlightLoaded = !!spotlightKey && !!cards[spotlightKey];
-
-  // Starts once the card has loaded and the carousel has settled, so the highlight lands on it.
-  useEffect(() => {
-    if (!isSpotlightOnScreen || !isSpotlightLoaded) {
-      return;
-    }
-    const timer = setTimeout(
-      () => startTour(t('copilot:cardTitle')),
-      CARD_TOUR_START_DELAY_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [spotlightKey, isSpotlightOnScreen, isSpotlightLoaded]);
+  const markSeen = (key?: string) => {
+    if (key && key === newCardKey) setNewCardKey(null);
+  };
 
   const [qrFor, setQrFor] = useState<string | null>(null);
   const qrCard = qrFor ? loaded[qrFor] : undefined;
@@ -398,15 +372,10 @@ export const WalletHome: React.FC<{
               actions={actionsFor(pinnedEntry.key)}
               onOpen={() => openDetails(pinnedEntry.key)}
               reduceMotion={reduceMotion}
-              isCardTourStep={
-                isSpotlightPinned || (isCardTourStep && !spotlightKey)
-              }
+              isCardTourStep={isCardTourStep}
+              isNew={pinnedEntry.key === newCardKey}
             />
-            <Rail
-              entries={rail}
-              onOpen={openDetails}
-              tourStepKey={isSpotlightInRail ? spotlightKey : null}
-            />
+            <Rail entries={rail} onOpen={openDetails} newCardKey={newCardKey} />
           </>
         ) : visible.length > 0 ? (
           <>
@@ -416,10 +385,14 @@ export const WalletHome: React.FC<{
                 index={index}
                 onIndexChange={select}
                 flipped={flipped}
-                onFlip={() => setFlipped(f => !f)}
+                onFlip={() => {
+                  setFlipped(f => !f);
+                  markSeen(activeEntry?.key);
+                }}
                 reduceMotion={reduceMotion}
+                newCardKey={newCardKey}
               />
-              {isCardTourStep || spotlightKey ? (
+              {isCardTourStep ? (
                 // An invisible box over the centre card, so the tour highlights the card
                 // itself rather than the whole carousel strip.
                 <Copilot
@@ -591,7 +564,9 @@ const PinnedCard: React.FC<{
   reduceMotion: boolean;
   /** Registers the card as the tour's card step; the carousel isn't shown to take it. */
   isCardTourStep: boolean;
-}> = ({entry, width, actions, onOpen, reduceMotion, isCardTourStep}) => {
+  /** The most recently added card, marked with a dot. */
+  isNew: boolean;
+}> = ({entry, width, actions, onOpen, reduceMotion, isCardTourStep, isNew}) => {
   const {c} = useRevampTheme();
   const {t} = useTranslation();
   const rise = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
@@ -616,6 +591,7 @@ const PinnedCard: React.FC<{
       <ScaledCard width={width}>
         <CredentialCardFront data={entry.data} />
       </ScaledCard>
+      {isNew ? <NewCardDot /> : null}
     </Pressable>
   );
   return (
@@ -699,22 +675,13 @@ const PinnedCard: React.FC<{
   );
 };
 
-const railCard = (data: NonNullable<LoadedCard['data']>) => (
-  <View style={[shadows.raised, {borderRadius: 10}]}>
-    <ScaledCard width={RAIL_CARD_WIDTH}>
-      <CredentialCardFront data={data} />
-    </ScaledCard>
-  </View>
-);
-
 const Rail: React.FC<{
   entries: {key: string; data?: LoadedCard['data']}[];
   onOpen: (key: string) => void;
-  /** The card that is the tour's card step: a new card shown in the rail under a pinned one. */
-  tourStepKey?: string | null;
-}> = ({entries, onOpen, tourStepKey}) => {
+  /** The most recently added card, marked with a dot. */
+  newCardKey?: string | null;
+}> = ({entries, onOpen, newCardKey}) => {
   const {c} = useRevampTheme();
-  const {t} = useTranslation();
   return (
     <View style={styles.rail}>
       <View style={styles.railHead}>
@@ -741,16 +708,12 @@ const Rail: React.FC<{
                 {width: RAIL_CARD_WIDTH, gap: 8},
                 pressed && {transform: [{scale: 0.98}]},
               ]}>
-              {e.key === tourStepKey ? (
-                <Copilot
-                  title={t('copilot:cardTitle')}
-                  description={t('copilot:cardMessage')}
-                  order={COPILOT_FINAL_STEP}>
-                  {railCard(e.data)}
-                </Copilot>
-              ) : (
-                railCard(e.data)
-              )}
+              <View style={[shadows.raised, {borderRadius: 10}]}>
+                <ScaledCard width={RAIL_CARD_WIDTH}>
+                  <CredentialCardFront data={e.data} />
+                </ScaledCard>
+                {e.key === newCardKey ? <NewCardDot size={16} /> : null}
+              </View>
               <View style={{gap: 2, paddingHorizontal: 2}}>
                 <ScaledText
                   numberOfLines={1}
@@ -1001,7 +964,8 @@ const styles = StyleSheet.create({
   },
   railTitle: {fontFamily: fonts.medium, fontSize: 18, lineHeight: 22},
   railCount: {fontFamily: fonts.regular, fontSize: 12, lineHeight: 14.4},
-  railList: {gap: 12, paddingTop: 4, paddingBottom: 10, paddingHorizontal: 24},
+  // The top padding leaves room for the new-card dot, which sits over a card's top edge.
+  railList: {gap: 12, paddingTop: 8, paddingBottom: 10, paddingHorizontal: 24},
   railCardTitle: {fontFamily: fonts.medium, fontSize: 14, lineHeight: 17},
   railHint: {
     paddingHorizontal: 24,
