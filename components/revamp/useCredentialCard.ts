@@ -16,6 +16,8 @@ import {documentNumber, flatClaims, holderName} from './credentialClaims';
 import {msoValidity} from './msoValidity';
 import {claimLabels} from './cardFields';
 import {VCFormat} from '../../shared/VCFormat';
+import {useIssuerQrCode} from '../IssuerQrCodeImage';
+import {VCItemEvents} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
 
 export type CardStatus = 'verified' | 'pending' | 'expired' | 'revoked';
 
@@ -38,6 +40,17 @@ export interface CredentialCardData {
   vcMetadata?: VCMetadata;
   /** The stored credential, for building its QR. */
   credential: any;
+  /**
+   * CredIssuer's own QR image for this credential (its Claim 169 QR), which a verifier must be
+   * shown instead of the wallet-generated QR. `url` is null when there is none or it failed to
+   * load; while `isFetching`, no QR should be shown. See `useIssuerQrCode`. Absent on the
+   * built-in sample cards.
+   */
+  issuerQr?: {
+    url: string | null;
+    isFetching: boolean;
+    onLoadError: (url: string) => void;
+  };
 }
 
 /**
@@ -54,6 +67,18 @@ export function useCredentialCard(
   const [wellknown, setWellknown] = useState<any>(null);
   const [issuerDisplay, setIssuerDisplay] = useState<any>(null);
   const loaded = isVCLoaded(controller.credential as any);
+  // An mdoc's QR is a live Bluetooth engagement, never an issued image.
+  const issuerQrSource =
+    vcMetadata.format === VCFormat.mso_mdoc ? null : controller.credential;
+  const {
+    url: issuerQrUrl,
+    isFetching: isFetchingIssuerQr,
+    onLoadError: onIssuerQrLoadError,
+  } = useIssuerQrCode(issuerQrSource as any, (issuerQrCode, credentialId) =>
+    controller.VCItemService.send(
+      VCItemEvents.STORE_ISSUER_QR_CODE(issuerQrCode, credentialId),
+    ),
+  );
   const configurationId = verifiableCredentialData?.credentialConfigurationId;
 
   useEffect(() => {
@@ -144,8 +169,15 @@ export function useCredentialCard(
       labels: claimLabels(wellknown),
       vcMetadata,
       credential: controller.credential,
+      issuerQr: {
+        url: issuerQrUrl,
+        isFetching: isFetchingIssuerQr,
+        onLoadError: onIssuerQrLoadError,
+      },
     };
   }, [
+    issuerQrUrl,
+    isFetchingIssuerQr,
     ready,
     vc,
     wellknown,
