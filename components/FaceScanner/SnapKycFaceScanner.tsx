@@ -7,18 +7,20 @@ import {Column, Text, Button} from '../ui';
 import {Theme} from '../ui/styleUtils';
 import {Loader} from '../ui/Loader';
 import {
-  isIOS,
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED,
   SNAPKYC_RELAYING_PARTY_NAME_VALUE,
 } from '../../shared/constants';
 import {startSnapKycLiveness} from '../../shared/snapKyc/SnapKycLiveness';
 import {compareProbeWithVcFace} from '../../shared/snapKyc/compareProbeWithVcFace';
-import {extractReferenceFaceBase64} from '../../shared/snapKyc/compressFaceImage';
+import {
+  extractReferenceFaceBase64,
+  resolvePortraitImages,
+} from '../../shared/snapKyc/compressFaceImage';
 
 /**
- * Runs the native liveness SDK (SnapKYC on Android, BioChqFaceLiveness on iOS), then on Android
- * matches the live probe against the credential portrait. Renders almost nothing itself — the SDK
- * takes over with its own full-screen screen.
+ * Runs the native liveness SDK (SnapKYC on Android, BioChqFaceLiveness on iOS), then matches the
+ * live probe against the credential portrait with the @iriscan face-match SDK, on both platforms.
+ * Renders almost nothing itself — the liveness SDK takes over with its own full-screen screen.
  */
 export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
   const {t} = useTranslation('FaceScanner');
@@ -31,9 +33,19 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
     setIsLaunching(true);
 
     try {
+      // Photos given as a link are downloaded first, so they can be compared at all.
+      const vcImages = await resolvePortraitImages(props.vcImages);
+      // The credential has a photo but it could not be fetched (offline, expired link): the face
+      // cannot be verified, and accepting liveness alone would let any face through.
+      if (props.vcImages.length > 0 && vcImages.length === 0) {
+        console.warn('[SnapKYC] Credential portrait could not be loaded');
+        props.onInvalid();
+        return;
+      }
+
       const referenceFaceBase64 = SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED
         ? undefined
-        : extractReferenceFaceBase64(props.vcImages);
+        : extractReferenceFaceBase64(vcImages);
 
       const result = await startSnapKycLiveness(
         SNAPKYC_RELAYING_PARTY_NAME_VALUE,
@@ -59,17 +71,9 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
         return;
       }
 
-      // iOS has no face matching yet (as in machines/faceScanner.ts verifyImage), and the iOS
-      // liveness SDK is still a dummy whose capture has no face in it, so a match could never
-      // pass. There, a genuine liveness verdict is accepted on its own.
-      if (isIOS()) {
-        props.onValid();
-        return;
-      }
-
       const outcome = await compareProbeWithVcFace(
         result.probeImageBase64,
-        props.vcImages,
+        vcImages,
       );
 
       if (outcome === 'mismatch') {

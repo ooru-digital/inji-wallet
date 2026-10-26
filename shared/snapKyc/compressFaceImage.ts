@@ -67,6 +67,70 @@ export function toDecodableImageBase64(value: unknown): string | undefined {
   return bytes.toString('base64');
 }
 
+const PORTRAIT_DOWNLOAD_TIMEOUT_MS = 15000;
+const MAX_PORTRAIT_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Credential portraits ready for the face check. Some issuers (CredIssuer) put the photo's address
+ * in the credential rather than the image itself; those are downloaded here. A portrait that is
+ * already image data passes through unchanged, and a link that cannot be downloaded is left out.
+ */
+export async function resolvePortraitImages(
+  vcImages: string[],
+): Promise<string[]> {
+  const resolved = await Promise.all(
+    vcImages.map(async image => {
+      if (!/^https:\/\//i.test(image.trim())) {
+        return image;
+      }
+      try {
+        return await downloadImageAsBase64(image.trim());
+      } catch (error) {
+        console.warn('[SnapKYC] Could not download the credential portrait', {
+          message: (error as Error)?.message,
+        });
+        return undefined;
+      }
+    }),
+  );
+  return resolved.filter((image): image is string => !!image);
+}
+
+async function downloadImageAsBase64(url: string): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    PORTRAIT_DOWNLOAD_TIMEOUT_MS,
+  );
+  try {
+    const response = await fetch(url, {signal: controller.signal});
+    if (!response.ok) {
+      throw new Error(`Portrait download returned HTTP ${response.status}`);
+    }
+    const blob = await response.blob();
+    if (blob.size > MAX_PORTRAIT_BYTES) {
+      throw new Error(`Portrait is too large (${blob.size} bytes)`);
+    }
+    const dataUri = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () =>
+        typeof reader.result === 'string'
+          ? resolve(reader.result)
+          : reject(new Error('Could not read the portrait'));
+      reader.onerror = () =>
+        reject(reader.error ?? new Error('Could not read the portrait'));
+      reader.readAsDataURL(blob);
+    });
+    const base64 = extractBase64FromDataUri(dataUri);
+    if (!base64) {
+      throw new Error('Portrait download returned no data');
+    }
+    return base64;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export function extractReferenceFaceBase64(
   vcImages: string[],
 ): string | undefined {

@@ -1,7 +1,10 @@
 import {StateFrom} from 'xstate';
 import {openID4VPMachine} from './openID4VPMachine';
 import {VCMetadata} from '../../shared/VCMetadata';
-import {getMosipLogo} from '../../components/VC/common/VCUtils';
+import {
+  getFaceAttribute,
+  getMosipLogo,
+} from '../../components/VC/common/VCUtils';
 import {
   Credential,
   VerifiableCredentialData,
@@ -86,8 +89,12 @@ export function selectVerifiableCredentialsData(state: State) {
       vcMetadata: vcMetadata,
       issuer: vcMetadata.issuer,
       issuerLogo: vcData?.verifiableCredential?.issuerLogo || getMosipLogo(),
+      // Found the same way as everywhere else (`face`, `photo`, `portrait`, …). Looking only at
+      // `face` gave the face check no portrait for credentials that use `photo`, such as
+      // CredIssuer's, and it then accepted any live face.
       face:
-        vcData?.verifiableCredential?.credential?.credentialSubject?.face ||
+        getFaceAttribute(vcData?.verifiableCredential, vcData?.format) ??
+        vcData?.verifiableCredential?.credential?.credentialSubject?.face ??
         vcData?.credential?.biometrics?.face,
       wellKnown: vcData?.verifiableCredential?.wellKnown,
       credentialTypes: vcData?.verifiableCredential?.credentialTypes,

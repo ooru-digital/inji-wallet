@@ -2,6 +2,7 @@ import {faceCompare} from '@iriscan/biometric-sdk-react-native';
 import {Buffer} from 'buffer';
 
 import {detectImageFormat, toDecodableImageBase64} from './compressFaceImage';
+import {ensureFaceModelReady} from '../api';
 
 /** Dev-only: says what a value actually is, so a bad portrait is diagnosable from one log line. */
 function describeImageValue(label: string, value: unknown) {
@@ -56,6 +57,12 @@ export async function compareProbeWithVcFace(
       '[SnapKYC] Live probe is not a decodable image — cannot run face match',
     );
     return 'unusable';
+  }
+
+  // The native compare crashes the app (iOS) when the model isn't set up, so this must not reach
+  // it without one. Throwing makes the caller reject the check rather than share unverified.
+  if (!(await ensureFaceModelReady())) {
+    throw new Error('Face matching model could not be set up');
   }
 
   let comparedAny = false;

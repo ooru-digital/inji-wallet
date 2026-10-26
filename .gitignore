@@ -139,3 +139,6 @@ injitest/target/
 
 ## runtime bundles / assets
 android/app/src/main/assets/faceModel.tflite
+## Nexus login for the BioChq face liveness Swift package. ~/.netrc links here, since Xcode only
+## reads ~/.netrc. Never commit.
+.netrc

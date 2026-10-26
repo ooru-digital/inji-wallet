@@ -7,9 +7,9 @@ import BioChqFaceLiveness
 /// selfie" flows. Same JS name, method and result shape, so `shared/snapKyc/SnapKycLiveness.ts`
 /// drives both platforms.
 ///
-/// It runs the BioChqFaceLiveness SDK. Until the real iOS SDK is ready the Podfile links a dummy
-/// with the same API (`BioChqFaceLivenessDummy`): it shows "Hello World" and a Proceed button, and
-/// Proceed always passes. Switching to the real SDK is a Podfile change only.
+/// It runs the BioChq face liveness SDK, a binary Swift package downloaded from the BioChq Nexus
+/// (ios/Packages/BioChqFaceLivenessBinary; Xcode logs in to Nexus through ~/.netrc). The check
+/// runs on the device and returns a verdict and, when one could be taken, the face image.
 @objc(SnapKycLivenessModule)
 class RNSnapKycLivenessModule: NSObject, RCTBridgeModule {
   static func moduleName() -> String {

@@ -304,7 +304,27 @@ export default async function getAllConfigurations(
   return await CACHED_API.getAllProperties(isCachePreferred);
 }
 
-export async function initializeFaceModel() {
+/** The latest face-match model setup; resolves to whether it succeeded. */
+let faceModelSetup: Promise<boolean> | null = null;
+
+export function initializeFaceModel(): Promise<boolean> {
+  faceModelSetup = configureFaceModel();
+  return faceModelSetup;
+}
+
+/**
+ * Whether the face-match model is set up, waiting for a setup still in progress and trying once
+ * more if the last one failed. Call before any face compare: the native compare force-unwraps
+ * the SDK instance and crashes the app (iOS) when the model was never set up.
+ */
+export async function ensureFaceModelReady(): Promise<boolean> {
+  if (faceModelSetup && (await faceModelSetup)) {
+    return true;
+  }
+  return initializeFaceModel();
+}
+
+async function configureFaceModel(): Promise<boolean> {
   const config = faceMatchConfig();
   const result = await configure(config);
   if (result) {
@@ -324,6 +344,7 @@ export async function initializeFaceModel() {
       ),
     );
   }
+  return result;
 }
 
 type Api_Params = {

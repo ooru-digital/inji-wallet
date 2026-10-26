@@ -250,6 +250,35 @@ describe('openID4VPSelectors', () => {
       expect(result[0].issuer).toBe('TestIssuer');
       expect(result[0].face).toBe('faceData');
     });
+
+    it('finds a portrait stored as photo, as CredIssuer credentials do', () => {
+      const state = {
+        context: {
+          selectedVCs: {
+            key1: {
+              inner1: [
+                {
+                  format: 'ldp_vc',
+                  vcMetadata: {issuer: 'CredIssuer'},
+                  verifiableCredential: {
+                    credential: {
+                      credentialSubject: {
+                        fullName: 'Holder',
+                        photo: 'https://storage.example/photo.png',
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      } as any;
+
+      expect(selectVerifiableCredentialsData(state)[0].face).toBe(
+        'https://storage.example/photo.png',
+      );
+    });
   });
 
   describe('selectPurpose', () => {

@@ -1,5 +1,5 @@
 {
-  "originHash" : "9a6d644e84bc97a0d6467ec99ae0e07a7805e6cafdba8c4767c20d63e6aaa6a1",
+  "originHash" : "214ebad3ce1459f4eb9d7a80df466bcdde181ed332d76800f4490ad2e989aa3f",
   "pins" : [
     {
       "identity" : "aexml",
@@ -150,7 +150,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/abhip2565/SwiftCBOR",
       "state" : {
-        "revision" : "04ccff117f6549121d5721ec84fdf0162122b90e",
+        "revision" : "cc4e195a0ea2dce88f2fd6c6d73b2504e3c884fd",
         "version" : "0.5.0"
       }
     },

@@ -24,8 +24,8 @@ export const LIVENESS_THRESHOLD = 0.4;
 
 /**
  * SnapKYC native liveness — gates the face check of the "share with selfie" flows. Android runs the
- * SnapKYC SDK; iOS runs BioChqFaceLiveness (a dummy for now, see ios/Podfile). Explicit opt-in: a
- * missing .env key leaves it off.
+ * SnapKYC SDK; iOS runs the BioChq face liveness SDK (ios/Packages/BioChqFaceLivenessBinary).
+ * Explicit opt-in: a missing .env key leaves it off.
  */
 export const SNAPKYC_LIVENESS_ENABLED = SNAPKYC_LIVENESS === 'true';
 export const SNAPKYC_RELAYING_PARTY_NAME_VALUE =
