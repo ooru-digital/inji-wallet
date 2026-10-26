@@ -142,3 +142,6 @@ android/app/src/main/assets/faceModel.tflite
 ## Nexus login for the BioChq face liveness Swift package. ~/.netrc links here, since Xcode only
 ## reads ~/.netrc. Never commit.
 .netrc
+
+## Swift Package Manager / SourceKit-LSP build cache of the local packages in ios/Packages.
+ios/Packages/**/.build/
