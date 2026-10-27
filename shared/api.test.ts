@@ -1,4 +1,13 @@
-import {API_URLS} from './api';
+import {configure} from '@iriscan/biometric-sdk-react-native';
+
+import {API_URLS, ensureFaceModelReady, initializeFaceModel} from './api';
+
+jest.mock('./telemetry/TelemetryUtils', () => ({
+  getErrorEventData: jest.fn(),
+  getImpressionEventData: jest.fn(),
+  sendErrorEvent: jest.fn(),
+  sendImpressionEvent: jest.fn(),
+}));
 
 describe('API_URLS configuration', () => {
   describe('trustedVerifiersList', () => {
@@ -202,5 +211,37 @@ describe('API_URLS configuration', () => {
         `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${accessToken}`,
       );
     });
+  });
+});
+
+describe('face model setup', () => {
+  const configureMock = configure as jest.Mock;
+
+  beforeEach(() => {
+    configureMock.mockReset();
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  it('treats a setup that throws as failed instead of rejecting', async () => {
+    configureMock.mockRejectedValue(new Error('model file missing'));
+
+    await expect(initializeFaceModel()).resolves.toBe(false);
+  });
+
+  it('retries after a setup that threw', async () => {
+    configureMock.mockRejectedValueOnce(new Error('model file missing'));
+    await initializeFaceModel();
+
+    configureMock.mockResolvedValueOnce(true);
+    await expect(ensureFaceModelReady()).resolves.toBe(true);
+    expect(configureMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not set up again once a setup succeeded', async () => {
+    configureMock.mockResolvedValue(true);
+    await initializeFaceModel();
+
+    await expect(ensureFaceModelReady()).resolves.toBe(true);
+    expect(configureMock).toHaveBeenCalledTimes(1);
   });
 });

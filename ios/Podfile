@@ -239,6 +239,9 @@ target 'Inji' do
     end
   end
 
+  # Face liveness (BioChqFaceLiveness, used by RNSnapKycLivenessModule) is not a pod: it is the
+  # Swift package in ios/Packages/BioChqFaceLivenessBinary, linked to the Inji target in Xcode.
+
   permissions_path = '../node_modules/react-native-permissions/ios'
 
   pod 'Permission-BluetoothPeripheral', :path => "#{permissions_path}/BluetoothPeripheral"

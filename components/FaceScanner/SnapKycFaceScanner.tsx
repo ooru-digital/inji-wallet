@@ -10,13 +10,20 @@ import {
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED,
   SNAPKYC_RELAYING_PARTY_NAME_VALUE,
 } from '../../shared/constants';
-import {startSnapKycLiveness} from '../../shared/snapKyc/SnapKycLiveness';
+import {
+  closeSdkFaceMatch,
+  startSnapKycLiveness,
+} from '../../shared/snapKyc/SnapKycLiveness';
 import {compareProbeWithVcFace} from '../../shared/snapKyc/compareProbeWithVcFace';
-import {extractReferenceFaceBase64} from '../../shared/snapKyc/compressFaceImage';
+import {
+  extractReferenceFaceBase64,
+  resolvePortraitImages,
+} from '../../shared/snapKyc/compressFaceImage';
 
 /**
- * Runs the SnapKYC native liveness activity, then matches the live probe against the credential
- * portrait. Renders almost nothing itself — the SDK takes over with its own full-screen Activity.
+ * Runs the BioChq face SDK's liveness check (Android and iOS), then matches the live probe against
+ * the credential portrait with the same SDK's face match.
+ * Renders almost nothing itself — the liveness SDK takes over with its own full-screen screen.
  */
 export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
   const {t} = useTranslation('FaceScanner');
@@ -29,9 +36,19 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
     setIsLaunching(true);
 
     try {
+      // Photos given as a link are downloaded first, so they can be compared at all.
+      const vcImages = await resolvePortraitImages(props.vcImages);
+      // The credential has a photo but it could not be fetched (offline, expired link): the face
+      // cannot be verified, and accepting liveness alone would let any face through.
+      if (props.vcImages.length > 0 && vcImages.length === 0) {
+        console.warn('[SnapKYC] Credential portrait could not be loaded');
+        props.onInvalid();
+        return;
+      }
+
       const referenceFaceBase64 = SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED
         ? undefined
-        : extractReferenceFaceBase64(props.vcImages);
+        : extractReferenceFaceBase64(vcImages);
 
       const result = await startSnapKycLiveness(
         SNAPKYC_RELAYING_PARTY_NAME_VALUE,
@@ -59,7 +76,7 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
 
       const outcome = await compareProbeWithVcFace(
         result.probeImageBase64,
-        props.vcImages,
+        vcImages,
       );
 
       if (outcome === 'mismatch') {
@@ -93,6 +110,8 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
       }
       props.onInvalid();
     } finally {
+      // The SDK's matcher starts loading with the liveness check; free it however it ended.
+      closeSdkFaceMatch();
       setIsLaunching(false);
     }
   }, [props]);

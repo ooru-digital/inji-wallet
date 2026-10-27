@@ -41,9 +41,10 @@ import {SnapKycFaceScanner} from './SnapKycFaceScanner';
  * Face verification step of the share flows (Share tab -> select credential -> share with
  * liveness, plus OpenID4VP and QR login).
  *
- * On Android with SNAPKYC_LIVENESS enabled this hands off to the SnapKYC native liveness SDK,
- * which runs its own full-screen Activity and then matches the live capture against the
- * credential portrait. Everywhere else the legacy expo-camera flow below is used unchanged.
+ * With SNAPKYC_LIVENESS enabled this hands off to the native liveness SDK, which runs its own
+ * full-screen screen (SnapKYC on Android, the BioChq face liveness SDK on iOS), and then matches
+ * the live capture against the credential portrait. Otherwise the legacy expo-camera flow below
+ * is used unchanged.
  */
 export const FaceScanner: React.FC<FaceScannerProps> = props => {
   if (SNAPKYC_LIVENESS_ENABLED) {

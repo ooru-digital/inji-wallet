@@ -1,7 +1,7 @@
-import {faceCompare} from '@iriscan/biometric-sdk-react-native';
 import {Buffer} from 'buffer';
 
 import {detectImageFormat, toDecodableImageBase64} from './compressFaceImage';
+import {hasSdkFaceMatch, matchFaceWithSdk} from './SnapKycLiveness';
 
 /** Dev-only: says what a value actually is, so a bad portrait is diagnosable from one log line. */
 function describeImageValue(label: string, value: unknown) {
@@ -58,6 +58,12 @@ export async function compareProbeWithVcFace(
     return 'unusable';
   }
 
+  // Fail closed: without the SDK's matcher (a native wiring mistake) the check is rejected, never
+  // run on some other engine with different thresholds.
+  if (!hasSdkFaceMatch()) {
+    throw new Error('The liveness SDK face match is not available');
+  }
+
   let comparedAny = false;
 
   for (const vcImage of vcImages) {
@@ -71,16 +77,22 @@ export async function compareProbeWithVcFace(
       continue;
     }
 
+    // A comparison that errors (no face found, model failed) counts as tried, not as no photo:
+    // it ends in `mismatch` unless another portrait matches, so liveness alone never lets it pass.
+    comparedAny = true;
     try {
-      comparedAny = true;
-      if (await faceCompare(probe, vcFaceBase64)) {
+      const result = await matchFaceWithSdk(probe, vcFaceBase64);
+      if (__DEV__) {
+        console.log('[SnapKYC] SDK face match', result);
+      }
+      if (result.isMatch) {
         return 'match';
       }
-    } catch (error) {
-      console.warn(
-        '[SnapKYC] faceCompare failed for credential portrait',
-        error,
-      );
+    } catch (error: any) {
+      console.warn('[SnapKYC] Face match failed for credential portrait', {
+        code: error?.code,
+        message: error?.message,
+      });
     }
   }
 
