@@ -225,7 +225,13 @@ const FaceVerifyingView: React.FC<{onCancel: () => void}> = ({onCancel}) => {
     <FaceVerificationLayout
       testID="faceVerifying"
       onBack={onCancel}
-      actions={<TextAction label={t('cancel')} onPress={onCancel} />}>
+      actions={
+        <TextAction
+          testID="faceVerifyingCancel"
+          label={t('cancel')}
+          onPress={onCancel}
+        />
+      }>
       <SpinnerBadge />
       <ScaledText
         accessibilityRole="header"
@@ -273,12 +279,12 @@ export const FaceVerificationFailedView: React.FC<{
           {backgroundColor: c.canvas, paddingBottom: insets.bottom},
         ]}>
         <FaceVerificationLayout
-          testID="shareWithSelfieError"
+          testID="faceVerificationFailed"
           onBack={onCancel}
           actions={
             <>
               <Pressable
-                {...testIDProps('retry')}
+                {...testIDProps('faceVerificationRetry')}
                 onPress={onRetry}
                 accessibilityRole="button"
                 style={({pressed}) => [
@@ -290,7 +296,7 @@ export const FaceVerificationFailedView: React.FC<{
                 </ScaledText>
               </Pressable>
               <TextAction
-                testID="home"
+                testID="faceVerificationCancel"
                 label={t('cancel')}
                 onPress={onCancel}
               />
@@ -360,7 +366,14 @@ export const FaceVerificationFailedView: React.FC<{
   );
 };
 
-/** The header with a back arrow, the page's actions at the bottom and the BioChq footer. */
+/**
+ * The header with a back arrow, the page's actions at the bottom and the BioChq footer.
+ *
+ * Test IDs (own names, so they never match the legacy `shareWithSelfieError` sheet's):
+ * - Verifying: `faceVerifying`, `faceVerifyingBack`, `faceVerifyingCancel`
+ * - Failed: `faceVerificationFailed`, `faceVerificationFailedBack`, `faceVerificationRetry`,
+ *   `faceVerificationCancel`
+ */
 const FaceVerificationLayout: React.FC<{
   testID: string;
   onBack: () => void;
@@ -381,7 +394,7 @@ const FaceVerificationLayout: React.FC<{
       ]}>
       <View style={styles.header}>
         <Pressable
-          {...testIDProps('back')}
+          {...testIDProps(`${testID}Back`)}
           onPress={onBack}
           hitSlop={12}
           accessibilityRole="button"
@@ -419,10 +432,10 @@ const FaceVerificationLayout: React.FC<{
 };
 
 const TextAction: React.FC<{
-  testID?: string;
+  testID: string;
   label: string;
   onPress: () => void;
-}> = ({testID = 'cancel', label, onPress}) => {
+}> = ({testID, label, onPress}) => {
   const {c} = useRevampTheme();
   return (
     <Pressable
