@@ -46,8 +46,8 @@ const {SnapKycLivenessModule} = NativeModules as {
 };
 
 /**
- * Whether the native module has the SDK's face match. It does on both platforms; false only for a
- * native build older than this JS, which then falls back to @iriscan.
+ * Whether the native module has the SDK's face match. It does on both platforms; false means the
+ * native module is miswired, and the face check then fails rather than match some other way.
  */
 export function hasSdkFaceMatch(): boolean {
   return typeof SnapKycLivenessModule?.matchFace === 'function';

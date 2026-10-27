@@ -1,13 +1,6 @@
-import {faceCompare} from '@iriscan/biometric-sdk-react-native';
-
 import {compareProbeWithVcFace} from './compareProbeWithVcFace';
 import {hasSdkFaceMatch, matchFaceWithSdk} from './SnapKycLiveness';
-import {ensureFaceModelReady} from '../api';
 
-jest.mock('@iriscan/biometric-sdk-react-native', () => ({
-  faceCompare: jest.fn(),
-}));
-jest.mock('../api', () => ({ensureFaceModelReady: jest.fn()}));
 jest.mock('./SnapKycLiveness', () => ({
   hasSdkFaceMatch: jest.fn(),
   matchFaceWithSdk: jest.fn(),
@@ -38,14 +31,12 @@ describe('compareProbeWithVcFace', () => {
       (hasSdkFaceMatch as jest.Mock).mockReturnValue(true);
     });
 
-    it('matches through the SDK, without setting up @iriscan', async () => {
+    it('matches through the SDK', async () => {
       (matchFaceWithSdk as jest.Mock).mockResolvedValue(sdkResult(true));
 
       await expect(compareProbeWithVcFace(JPEG, [PNG])).resolves.toBe('match');
 
       expect(matchFaceWithSdk).toHaveBeenCalledWith(JPEG, PNG);
-      expect(ensureFaceModelReady).not.toHaveBeenCalled();
-      expect(faceCompare).not.toHaveBeenCalled();
     });
 
     it('reports a different person as a mismatch', async () => {
@@ -85,27 +76,12 @@ describe('compareProbeWithVcFace', () => {
     });
   });
 
-  describe('with @iriscan (native build without the SDK match)', () => {
-    beforeEach(() => {
-      (hasSdkFaceMatch as jest.Mock).mockReturnValue(false);
-    });
+  it('fails closed when the native module has no SDK face match', async () => {
+    (hasSdkFaceMatch as jest.Mock).mockReturnValue(false);
 
-    it('sets up the model and compares with @iriscan', async () => {
-      (ensureFaceModelReady as jest.Mock).mockResolvedValue(true);
-      (faceCompare as jest.Mock).mockResolvedValue(true);
-
-      await expect(compareProbeWithVcFace(JPEG, [PNG])).resolves.toBe('match');
-      expect(faceCompare).toHaveBeenCalledWith(JPEG, PNG);
-      expect(matchFaceWithSdk).not.toHaveBeenCalled();
-    });
-
-    it('throws when the model cannot be set up', async () => {
-      (ensureFaceModelReady as jest.Mock).mockResolvedValue(false);
-
-      await expect(compareProbeWithVcFace(JPEG, [PNG])).rejects.toThrow(
-        'Face matching model could not be set up',
-      );
-      expect(faceCompare).not.toHaveBeenCalled();
-    });
+    await expect(compareProbeWithVcFace(JPEG, [PNG])).rejects.toThrow(
+      'The liveness SDK face match is not available',
+    );
+    expect(matchFaceWithSdk).not.toHaveBeenCalled();
   });
 });
