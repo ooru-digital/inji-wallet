@@ -1,7 +1,9 @@
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   Modal,
   Pressable,
   StyleProp,
@@ -13,6 +15,7 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import Svg, {Circle} from 'react-native-svg';
 import {BottomSheet} from '../ui/BottomSheet';
 import {BackIcon, CheckIcon, CloseIcon} from './Icons';
 import {ScaledText} from './ScaledText';
@@ -184,6 +187,78 @@ export function toneColours(
 }
 
 const FAIL_TINT = '#fbe9e7';
+
+const SPINNER_RING = 4;
+
+/** An icon in a tinted circle with a quarter arc running round it: work in progress. */
+export const SpinnerGlyph: React.FC<{
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+  children: (colour: string) => React.ReactNode;
+}> = ({size = 120, style, children}) => {
+  const {c, reduceMotion} = useRevampTheme();
+  const rotation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (reduceMotion) {
+      return;
+    }
+    const spin = Animated.loop(
+      Animated.timing(rotation, {
+        toValue: 1,
+        duration: 1100,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    spin.start();
+    return () => spin.stop();
+  }, [reduceMotion, rotation]);
+
+  const center = size / 2;
+  const radius = (size - SPINNER_RING) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const rotate = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <View
+      style={[{width: size, height: size}, style]}
+      accessibilityRole="progressbar"
+      importantForAccessibility="no-hide-descendants">
+      <Svg width={size} height={size}>
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill={c.tintAzure}
+          stroke={c.azureInk}
+          strokeOpacity={0.12}
+          strokeWidth={SPINNER_RING}
+        />
+      </Svg>
+      <Animated.View style={[StyleSheet.absoluteFill, {transform: [{rotate}]}]}>
+        <Svg width={size} height={size}>
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            fill="none"
+            stroke={c.ink}
+            strokeWidth={SPINNER_RING}
+            strokeLinecap="round"
+            strokeDasharray={`${circumference / 4} ${circumference}`}
+          />
+        </Svg>
+      </Animated.View>
+      <View style={[StyleSheet.absoluteFill, styles.glyph]}>
+        {children(c.ink)}
+      </View>
+    </View>
+  );
+};
 
 /** Centred heading with an optional line of text under it. */
 export const PageHeading: React.FC<{
