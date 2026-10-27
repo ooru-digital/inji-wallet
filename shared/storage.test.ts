@@ -151,7 +151,9 @@ describe('Storage: saving a card', () => {
 
     it('keeps the previous card if killed before the HMAC is stored', async () => {
       mockFileOps.failStoringHmac = true;
-      await expect(Storage.setItem(KEY, 'v2', ENCRYPTION_KEY)).rejects.toThrow();
+      await expect(
+        Storage.setItem(KEY, 'v2', ENCRYPTION_KEY),
+      ).rejects.toThrow();
       mockFileOps.failStoringHmac = false;
 
       expect(await Storage.getItem(KEY, ENCRYPTION_KEY)).toBe('v1');
@@ -160,7 +162,9 @@ describe('Storage: saving a card', () => {
 
     it('finishes the save if killed after the HMAC is stored', async () => {
       mockFileOps.failMoveFile = true;
-      await expect(Storage.setItem(KEY, 'v2', ENCRYPTION_KEY)).rejects.toThrow();
+      await expect(
+        Storage.setItem(KEY, 'v2', ENCRYPTION_KEY),
+      ).rejects.toThrow();
       mockFileOps.failMoveFile = false;
 
       expect(await Storage.getItem(KEY, ENCRYPTION_KEY)).toBe('v2');
@@ -176,7 +180,9 @@ describe('Storage: saving a card', () => {
     it('keeps the pending file and finishes the save if the iOS move fails after the old file was removed', async () => {
       mockIsIOS = true;
       mockFileOps.failMoveFile = true;
-      await expect(Storage.setItem(KEY, 'v2', ENCRYPTION_KEY)).rejects.toThrow();
+      await expect(
+        Storage.setItem(KEY, 'v2', ENCRYPTION_KEY),
+      ).rejects.toThrow();
       mockFileOps.failMoveFile = false;
 
       expect(mockFiles.has(FILE)).toBe(false);

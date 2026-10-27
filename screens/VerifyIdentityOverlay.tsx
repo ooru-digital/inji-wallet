@@ -1,5 +1,9 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {FaceScanner} from '../components/FaceScanner/FaceScanner';
+import {
+  FaceFailureReason,
+  FaceVerificationFailedView,
+} from '../components/FaceScanner/SnapKycFaceScanner';
 import {Column} from '../components/ui';
 import {Theme} from '../components/ui/styleUtils';
 import {VerifiableCredential} from '../machines/VerifiableCredential/VCMetaMachine/vc';
@@ -11,12 +15,21 @@ import {ScaledText} from '../components/revamp/ScaledText';
 import {fonts} from '../components/revamp/tokens';
 import {useRevampTheme} from '../components/revamp/useRevampTheme';
 import {StyleSheet, View} from 'react-native';
+import {SNAPKYC_LIVENESS_ENABLED} from '../shared/constants';
 
 export const VerifyIdentityOverlay: React.FC<
   VerifyIdentityOverlayProps
 > = props => {
   const {t} = useTranslation('VerifyIdentityOverlay');
   const credential = props.credential;
+  // Kept here, not in the share machines: this overlay shows both the scanner and the failure
+  // page, so it knows why the last check failed.
+  const [failureReason, setFailureReason] =
+    useState<FaceFailureReason>('notVerified');
+  const onFaceInvalid = (reason?: FaceFailureReason) => {
+    setFailureReason(reason ?? 'notVerified');
+    props.onFaceInvalid();
+  };
 
   const modalProps = {
     isVisible: props.isVerifyingIdentity,
@@ -29,7 +42,8 @@ export const VerifyIdentityOverlay: React.FC<
     showHeader: true,
   };
 
-  if (props.isLivenessEnabled) {
+  // The SnapKYC face verification page draws its own header.
+  if (props.isLivenessEnabled || SNAPKYC_LIVENESS_ENABLED) {
     modalProps.arrowLeft = false;
     modalProps.headerTitle = '';
     modalProps.showClose = false;
@@ -41,7 +55,12 @@ export const VerifyIdentityOverlay: React.FC<
       <Modal {...modalProps}>
         <Column
           fill
-          style={Theme.VerifyIdentityOverlayStyles.content}
+          style={[
+            Theme.VerifyIdentityOverlayStyles.content,
+            // A box the size of the whole screen would push the SnapKYC page's Cancel button
+            // under Android's navigation bar; that page lays itself out.
+            SNAPKYC_LIVENESS_ENABLED && {height: undefined},
+          ]}
           align="center">
           {credential != null && (
             <FaceScanner
@@ -49,7 +68,7 @@ export const VerifyIdentityOverlay: React.FC<
                 .map(data => data.face)
                 .filter(face => face !== undefined)}
               onValid={props.onFaceValid}
-              onInvalid={props.onFaceInvalid}
+              onInvalid={onFaceInvalid}
               isLiveness={props.isLivenessEnabled}
               onCancel={props.onCancel}
             />
@@ -57,27 +76,36 @@ export const VerifyIdentityOverlay: React.FC<
         </Column>
       </Modal>
 
-      <AlertSheet
-        testID="shareWithSelfieError"
-        isVisible={props.isInvalidIdentity}
-        tone="warn"
-        icon={colour => <WarningIcon color={colour} />}
-        title={t('ScanScreen:postFaceCapture.captureFailureTitle')}
-        message={t('ScanScreen:postFaceCapture.captureFailureMessage')}
-        primary={{
-          testID: 'retry',
-          title: t('ScanScreen:postFaceCapture.retakeSelfie'),
-          onPress: props.onRetryVerification,
-        }}
-        secondary={{
-          testID: 'home',
-          title: t('ScanScreen:postFaceCapture.cancelSharing'),
-          onPress: props.onNavigateHome,
-        }}
-        dismissOnBackdropPress={false}
-        onRequestClose={props.onNavigateHome}>
-        <FaceTips />
-      </AlertSheet>
+      {SNAPKYC_LIVENESS_ENABLED ? (
+        <FaceVerificationFailedView
+          isVisible={props.isInvalidIdentity}
+          reason={failureReason}
+          onRetry={props.onRetryVerification}
+          onCancel={props.onNavigateHome}
+        />
+      ) : (
+        <AlertSheet
+          testID="shareWithSelfieError"
+          isVisible={props.isInvalidIdentity}
+          tone="warn"
+          icon={colour => <WarningIcon color={colour} />}
+          title={t('ScanScreen:postFaceCapture.captureFailureTitle')}
+          message={t('ScanScreen:postFaceCapture.captureFailureMessage')}
+          primary={{
+            testID: 'retry',
+            title: t('ScanScreen:postFaceCapture.retakeSelfie'),
+            onPress: props.onRetryVerification,
+          }}
+          secondary={{
+            testID: 'home',
+            title: t('ScanScreen:postFaceCapture.cancelSharing'),
+            onPress: props.onNavigateHome,
+          }}
+          dismissOnBackdropPress={false}
+          onRequestClose={props.onNavigateHome}>
+          <FaceTips />
+        </AlertSheet>
+      )}
     </>
   );
 };

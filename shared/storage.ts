@@ -1,20 +1,20 @@
-import { NativeModules } from 'react-native';
+import {NativeModules} from 'react-native';
 import {
   getFreeDiskStorageOldSync,
   getFreeDiskStorageSync,
 } from 'react-native-device-info';
-import { MMKVLoader } from 'react-native-mmkv-storage';
+import {MMKVLoader} from 'react-native-mmkv-storage';
 import getAllConfigurations from './api';
-import { exportData } from './backupUtils/backupData';
-import { loadBackupData } from './backupUtils/restoreData';
-import { BYTES_IN_MEGABYTE } from './commonUtil';
+import {exportData} from './backupUtils/backupData';
+import {loadBackupData} from './backupUtils/restoreData';
+import {BYTES_IN_MEGABYTE} from './commonUtil';
 import {
   androidVersion,
   API_CACHED_STORAGE_KEYS,
   ENOENT,
   isAndroid,
   isIOS,
-  SETTINGS_STORE_KEY
+  SETTINGS_STORE_KEY,
 } from './constants';
 import {
   decryptJson,
@@ -29,13 +29,13 @@ import FileStorage, {
   getPendingFilePath,
   vcDirectoryPath,
 } from './fileStorage';
-import { __AppId } from './GlobalVariables';
-import { TelemetryConstants } from './telemetry/TelemetryConstants';
-import { getErrorEventData, sendErrorEvent } from './telemetry/TelemetryUtils';
-import { VCMetadata } from './VCMetadata';
+import {__AppId} from './GlobalVariables';
+import {TelemetryConstants} from './telemetry/TelemetryConstants';
+import {getErrorEventData, sendErrorEvent} from './telemetry/TelemetryUtils';
+import {VCMetadata} from './VCMetadata';
 
 export const MMKV = new MMKVLoader().initialize();
-const { RNSecureKeystoreModule } = NativeModules;
+const {RNSecureKeystoreModule} = NativeModules;
 
 async function generateHmac(
   encryptionKey: string,
@@ -65,13 +65,15 @@ function withVcKeyLock<T>(key: string, task: () => Promise<T>): Promise<T> {
 }
 
 class Storage {
-
   static backupData = async (encryptionKey: string) => {
-    return await exportData(encryptionKey)
+    return await exportData(encryptionKey);
   };
 
-  static async restoreBackUpData(data: string, encryptionKey: string): Promise<any> {
-    return await loadBackupData(data, encryptionKey)
+  static async restoreBackUpData(
+    data: string,
+    encryptionKey: string,
+  ): Promise<any> {
+    return await loadBackupData(data, encryptionKey);
   }
 
   static fetchAllWellknownConfig = async (encryptionKey: string) => {
@@ -183,7 +185,7 @@ class Storage {
       const appId = JSON.parse(settings).appId;
       __AppId.setValue(appId);
       MMKV.clearStore();
-      await MMKV.setItem(SETTINGS_STORE_KEY, JSON.stringify({ appId: appId }));
+      await MMKV.setItem(SETTINGS_STORE_KEY, JSON.stringify({appId: appId}));
     } catch (e) {
       console.error('Error Occurred while Clearing Storage.', e);
     }
@@ -376,4 +378,4 @@ export async function isMinimumStorageLimitReached(limitInMB: string) {
       : getFreeDiskStorageSync();
 
   return freeDiskStorageInBytes <= minimumStorageLimitInBytes;
-};
+}

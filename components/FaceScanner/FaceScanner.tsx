@@ -35,7 +35,7 @@ import LivenessDetection from './LivenessDetection';
 import FaceCompare from './FaceCompare';
 import {LIVENESS_CHECK, SNAPKYC_LIVENESS_ENABLED} from '../../shared/constants';
 import {CameraPosition} from '../../shared/Utils';
-import {SnapKycFaceScanner} from './SnapKycFaceScanner';
+import {FaceFailureReason, SnapKycFaceScanner} from './SnapKycFaceScanner';
 
 /**
  * Face verification step of the share flows (Share tab -> select credential -> share with
@@ -232,6 +232,7 @@ const LegacyFaceScanner: React.FC<FaceScannerProps> = props => {
 interface FaceScannerProps {
   vcImages: string[];
   onValid: () => void;
-  onInvalid: () => void;
+  /** The SnapKYC flow says why; the legacy flow doesn't. */
+  onInvalid: (reason?: FaceFailureReason) => void;
   onCancel: () => void;
 }
