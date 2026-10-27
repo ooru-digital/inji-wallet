@@ -216,6 +216,9 @@ interface SnapKycFaceScannerProps {
 
 const BADGE_SIZE = 120;
 
+/** The face SDK's brand line: names, so the same in every language. */
+const BIOCHQ_BRAND_LINE = 'BioChq · powered by Ooru Digital';
+
 /** "Verifying your face": shown before the camera opens and while the face is matched. */
 const FaceVerifyingView: React.FC<{onCancel: () => void}> = ({onCancel}) => {
   const {t} = useTranslation('FaceScanner');
@@ -234,7 +237,7 @@ const FaceVerifyingView: React.FC<{onCancel: () => void}> = ({onCancel}) => {
       }>
       <SpinnerBadge />
       <ScaledText
-        accessibilityRole="header"
+        accessibilityLiveRegion="polite"
         style={[styles.heading, {color: c.ink}]}>
         {t('verifyingTitle')}
       </ScaledText>
@@ -322,7 +325,7 @@ export const FaceVerificationFailedView: React.FC<{
             </Svg>
           </View>
           <ScaledText
-            accessibilityRole="header"
+            accessibilityLiveRegion="polite"
             style={[styles.heading, {color: c.ink}]}>
             {t('notMatchedTitle')}
           </ScaledText>
@@ -407,6 +410,7 @@ const FaceVerificationLayout: React.FC<{
           />
         </Pressable>
         <ScaledText
+          accessibilityRole="header"
           numberOfLines={1}
           maxFontSizeMultiplier={1.3}
           style={[styles.title, {color: c.ink}]}>
@@ -425,7 +429,7 @@ const FaceVerificationLayout: React.FC<{
       <ScaledText
         maxFontSizeMultiplier={1.3}
         style={[styles.footer, {color: c.inkMuted}]}>
-        {t('poweredBy')}
+        {BIOCHQ_BRAND_LINE}
       </ScaledText>
     </View>
   );
