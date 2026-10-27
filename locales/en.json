@@ -66,6 +66,8 @@
     "poweredBy": "BioChq · powered by Ooru Digital",
     "notMatchedTitle": "We couldn’t verify your face",
     "notMatchedMessage": "Your face didn’t match. Try again with these tips.",
+    "notVerifiedMessage": "We couldn’t confirm it’s you. Try again with these tips.",
+    "portraitUnavailableMessage": "We couldn’t load the photo on your card. Check your internet connection and try again.",
     "tipLighting": "Face a light source, not a window behind you",
     "tipCoverings": "Remove glasses, a mask or a cap",
     "tipSteady": "Keep your face in the centre and hold steady",

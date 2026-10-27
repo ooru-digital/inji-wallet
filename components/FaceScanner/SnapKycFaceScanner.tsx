@@ -74,7 +74,7 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
       // cannot be verified, and accepting liveness alone would let any face through.
       if (props.vcImages.length > 0 && vcImages.length === 0) {
         console.warn('[SnapKYC] Credential portrait could not be loaded');
-        settle(props.onInvalid);
+        settle(() => props.onInvalid('portraitUnavailable'));
         return;
       }
 
@@ -96,13 +96,13 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
           timedOut: result.timedOut,
           errorMessage: result.errorMessage ?? null,
         });
-        settle(props.onInvalid);
+        settle(() => props.onInvalid('notVerified'));
         return;
       }
 
       if (!result.probeImageBase64) {
         console.warn('[SnapKYC] Liveness passed but probe image is missing');
-        settle(props.onInvalid);
+        settle(() => props.onInvalid('notVerified'));
         return;
       }
 
@@ -113,7 +113,7 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
 
       if (outcome === 'mismatch') {
         console.warn('[SnapKYC] Face did not match credential portrait');
-        settle(props.onInvalid);
+        settle(() => props.onInvalid('mismatch'));
         return;
       }
 
@@ -140,7 +140,7 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
         settle(props.onCancel);
         return;
       }
-      settle(props.onInvalid);
+      settle(() => props.onInvalid('notVerified'));
     } finally {
       // The SDK's matcher starts loading with the liveness check; free it however it ended.
       closeSdkFaceMatch();
@@ -197,10 +197,20 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
   return <Column fill />;
 };
 
+/**
+ * Why the face check failed, so the failure page can say what to do: `mismatch` (the face is not
+ * the credential holder's), `notVerified` (liveness failed or timed out, or the check itself
+ * errored) or `portraitUnavailable` (the credential's photo could not be loaded, e.g. offline).
+ */
+export type FaceFailureReason =
+  | 'mismatch'
+  | 'notVerified'
+  | 'portraitUnavailable';
+
 interface SnapKycFaceScannerProps {
   vcImages: string[];
   onValid: () => void;
-  onInvalid: () => void;
+  onInvalid: (reason: FaceFailureReason) => void;
   onCancel: () => void;
 }
 
@@ -232,13 +242,24 @@ const FaceVerifyingView: React.FC<{onCancel: () => void}> = ({onCancel}) => {
 /** "We couldn't verify your face": tips, then a retry. Shown full screen over the share flow. */
 export const FaceVerificationFailedView: React.FC<{
   isVisible: boolean;
+  reason: FaceFailureReason;
   onRetry: () => void;
   onCancel: () => void;
-}> = ({isVisible, onRetry, onCancel}) => {
+}> = ({isVisible, reason, onRetry, onCancel}) => {
   const {t} = useTranslation('FaceScanner');
   const {c} = useRevampTheme();
   const insets = useSafeAreaInsets();
-  const tips = [t('tipLighting'), t('tipCoverings'), t('tipSteady')];
+  // The tips are about the selfie; they don't help when the card's photo could not be loaded.
+  const tips =
+    reason === 'portraitUnavailable'
+      ? []
+      : [t('tipLighting'), t('tipCoverings'), t('tipSteady')];
+  const message =
+    reason === 'mismatch'
+      ? t('notMatchedMessage')
+      : reason === 'portraitUnavailable'
+      ? t('portraitUnavailableMessage')
+      : t('notVerifiedMessage');
 
   return (
     <RNModal
@@ -300,37 +321,39 @@ export const FaceVerificationFailedView: React.FC<{
             {t('notMatchedTitle')}
           </ScaledText>
           <ScaledText style={[styles.message, {color: c.inkMuted}]}>
-            {t('notMatchedMessage')}
+            {message}
           </ScaledText>
-          <View
-            style={[
-              styles.tips,
-              {backgroundColor: c.card, borderColor: c.line},
-            ]}>
-            {tips.map((tip, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.tip,
-                  index > 0 && {
-                    borderTopWidth: StyleSheet.hairlineWidth,
-                    borderTopColor: c.line,
-                  },
-                ]}>
+          {tips.length > 0 && (
+            <View
+              style={[
+                styles.tips,
+                {backgroundColor: c.card, borderColor: c.line},
+              ]}>
+              {tips.map((tip, index) => (
                 <View
-                  style={[styles.tipNumber, {backgroundColor: c.tintAzure}]}>
-                  <ScaledText
-                    maxFontSizeMultiplier={1.3}
-                    style={[styles.tipNumberText, {color: c.ink}]}>
-                    {index + 1}
+                  key={index}
+                  style={[
+                    styles.tip,
+                    index > 0 && {
+                      borderTopWidth: StyleSheet.hairlineWidth,
+                      borderTopColor: c.line,
+                    },
+                  ]}>
+                  <View
+                    style={[styles.tipNumber, {backgroundColor: c.tintAzure}]}>
+                    <ScaledText
+                      maxFontSizeMultiplier={1.3}
+                      style={[styles.tipNumberText, {color: c.ink}]}>
+                      {index + 1}
+                    </ScaledText>
+                  </View>
+                  <ScaledText style={[styles.tipText, {color: c.ink}]}>
+                    {tip}
                   </ScaledText>
                 </View>
-                <ScaledText style={[styles.tipText, {color: c.ink}]}>
-                  {tip}
-                </ScaledText>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </FaceVerificationLayout>
       </View>
     </RNModal>

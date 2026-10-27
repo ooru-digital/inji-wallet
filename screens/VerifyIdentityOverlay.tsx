@@ -1,6 +1,9 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {FaceScanner} from '../components/FaceScanner/FaceScanner';
-import {FaceVerificationFailedView} from '../components/FaceScanner/SnapKycFaceScanner';
+import {
+  FaceFailureReason,
+  FaceVerificationFailedView,
+} from '../components/FaceScanner/SnapKycFaceScanner';
 import {Column} from '../components/ui';
 import {Theme} from '../components/ui/styleUtils';
 import {VerifiableCredential} from '../machines/VerifiableCredential/VCMetaMachine/vc';
@@ -19,6 +22,14 @@ export const VerifyIdentityOverlay: React.FC<
 > = props => {
   const {t} = useTranslation('VerifyIdentityOverlay');
   const credential = props.credential;
+  // Kept here, not in the share machines: this overlay shows both the scanner and the failure
+  // page, so it knows why the last check failed.
+  const [failureReason, setFailureReason] =
+    useState<FaceFailureReason>('notVerified');
+  const onFaceInvalid = (reason?: FaceFailureReason) => {
+    setFailureReason(reason ?? 'notVerified');
+    props.onFaceInvalid();
+  };
 
   const modalProps = {
     isVisible: props.isVerifyingIdentity,
@@ -57,7 +68,7 @@ export const VerifyIdentityOverlay: React.FC<
                 .map(data => data.face)
                 .filter(face => face !== undefined)}
               onValid={props.onFaceValid}
-              onInvalid={props.onFaceInvalid}
+              onInvalid={onFaceInvalid}
               isLiveness={props.isLivenessEnabled}
               onCancel={props.onCancel}
             />
@@ -68,6 +79,7 @@ export const VerifyIdentityOverlay: React.FC<
       {SNAPKYC_LIVENESS_ENABLED ? (
         <FaceVerificationFailedView
           isVisible={props.isInvalidIdentity}
+          reason={failureReason}
           onRetry={props.onRetryVerification}
           onCancel={props.onNavigateHome}
         />

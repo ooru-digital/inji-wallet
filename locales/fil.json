@@ -69,6 +69,8 @@
     "poweredBy": "BioChq · powered by Ooru Digital",
     "notMatchedTitle": "Hindi namin ma-verify ang iyong mukha",
     "notMatchedMessage": "Hindi tumugma ang iyong mukha. Subukang muli gamit ang mga tip na ito.",
+    "notVerifiedMessage": "Hindi namin makumpirma na ikaw ito. Subukang muli gamit ang mga tip na ito.",
+    "portraitUnavailableMessage": "Hindi namin ma-load ang larawan sa iyong card. Tingnan ang iyong koneksyon sa internet at subukang muli.",
     "tipLighting": "Humarap sa ilaw at iwasang may bintana sa likod mo",
     "tipCoverings": "Tanggalin ang salamin, mask o sombrero",
     "tipSteady": "Panatilihin ang mukha sa gitna at huwag gumalaw",
