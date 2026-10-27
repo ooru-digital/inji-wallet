@@ -324,9 +324,14 @@ export async function ensureFaceModelReady(): Promise<boolean> {
   return initializeFaceModel();
 }
 
+/** Never rejects: a setup that throws counts as failed, so `ensureFaceModelReady` tries again. */
 async function configureFaceModel(): Promise<boolean> {
-  const config = faceMatchConfig();
-  const result = await configure(config);
+  let result = false;
+  try {
+    result = await configure(faceMatchConfig());
+  } catch (error) {
+    console.warn('Face model setup threw', error);
+  }
   if (result) {
     sendImpressionEvent(
       getImpressionEventData(
