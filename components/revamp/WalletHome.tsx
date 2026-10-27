@@ -46,12 +46,9 @@ import {
   PinIcon,
   QrIcon,
   ShareIcon,
-  StackIcon,
-  SparkIcon,
   TrashIcon,
 } from './Icons';
 import {Chip, WalletHeader} from './WalletHeader';
-import {SAMPLE_CARDS, useShowSampleCards} from './sampleCards';
 import {CARD_WIDTH, fonts, motion, radii, shadows} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
 import {TAB_BAR_SPACE} from './RevampTabBar';
@@ -62,8 +59,7 @@ const ALL = 'all';
 
 interface HomeEntry {
   key: string;
-  /** Absent for a sample card. */
-  vcMetadata?: VCMetadata;
+  vcMetadata: VCMetadata;
   data?: LoadedCard['data'];
 }
 
@@ -80,7 +76,6 @@ export const WalletHome: React.FC<{
   /** Lowercased searchable text of each credential's claims, by credential key. */
   searchIndex: Record<string, string>;
   onAdd: () => void;
-  onStackView: () => void;
   refreshing: boolean;
   onRefresh: () => void;
   /** The shown card is a tour step: while the tour is replayed from Settings. */
@@ -96,7 +91,6 @@ export const WalletHome: React.FC<{
   vcMetadatas,
   searchIndex,
   onAdd,
-  onStackView,
   refreshing,
   onRefresh,
   isCardTourStep = false,
@@ -129,35 +123,16 @@ export const WalletHome: React.FC<{
     setChip(ALL);
   };
 
-  const [showSamples, setShowSamples] = useShowSampleCards();
-  const [samplePinned, setSamplePinned] = useState<string | null>(null);
-  const samples = showSamples ? SAMPLE_CARDS : [];
-  const cards = useMemo<Record<string, LoadedCard>>(
-    () => ({
-      ...loaded,
-      ...Object.fromEntries(
-        samples.map(s => [
-          s.key,
-          {data: s.data, service: null, controller: null},
-        ]),
-      ),
-    }),
-    [loaded, samples],
-  );
-
   const all = useMemo<HomeEntry[]>(
-    () => [
-      ...vcMetadatas.map(m => ({
+    () =>
+      vcMetadatas.map(m => ({
         key: m.getVcKey(),
         vcMetadata: m,
         data: loaded[m.getVcKey()]?.data,
       })),
-      ...samples.map(s => ({key: s.key, data: s.data})),
-    ],
-    [vcMetadatas, loaded, samples],
+    [vcMetadatas, loaded],
   );
-  const isPinned = (e: HomeEntry) =>
-    e.vcMetadata ? !!e.vcMetadata.isPinned : e.key === samplePinned;
+  const isPinned = (e: HomeEntry) => !!e.vcMetadata.isPinned;
 
   const chips: Chip[] = useMemo(() => {
     const byIssuer = new Map<string, number>();
@@ -225,7 +200,7 @@ export const WalletHome: React.FC<{
   // The card the actions act on: the open details page's, else the carousel's active one.
   const targetEntry =
     detailEntry ?? (pinnedEntry && !searching ? pinnedEntry : activeEntry);
-  const target = targetEntry?.vcMetadata ? loaded[targetEntry.key] : undefined;
+  const target = targetEntry ? loaded[targetEntry.key] : undefined;
 
   useEffect(() => {
     navigation
@@ -288,24 +263,8 @@ export const WalletHome: React.FC<{
   const qrCard = qrFor ? loaded[qrFor] : undefined;
   const qrEntry = qrFor ? all.find(e => e.key === qrFor) : undefined;
 
-  const actionsFor = (key: string): CardActions => {
-    const card = cards[key];
-    const entry = all.find(e => e.key === key);
-    if (!entry?.vcMetadata) {
-      const off = () => flash('Sample card: nothing to share or show');
-      return {
-        share: off,
-        showQr: off,
-        activity: off,
-        remove: off,
-        togglePin: () => {
-          const pinning = samplePinned !== key;
-          setSamplePinned(pinning ? key : null);
-          flash(pinning ? `${card?.data.title} pinned to top` : 'Unpinned');
-        },
-      };
-    }
-    const vcMetadata = entry.vcMetadata;
+  const actionsFor = ({key, vcMetadata}: HomeEntry): CardActions => {
+    const card = loaded[key];
     return {
       share: () => {
         if (!card) return;
@@ -369,26 +328,6 @@ export const WalletHome: React.FC<{
             icon: col => <BellIcon color={col} />,
             onPress: () => navigation.navigate(BOTTOM_TAB_ROUTES.history),
           },
-          {
-            label: 'Stack view',
-            icon: col => <StackIcon color={col} />,
-            onPress: onStackView,
-            separated: true,
-          },
-          ...(SAMPLE_CARDS.length
-            ? [
-                {
-                  label: showSamples
-                    ? 'Hide sample cards'
-                    : 'Show sample cards',
-                  icon: (col: string) => <SparkIcon color={col} />,
-                  onPress: () => {
-                    setShowSamples(!showSamples);
-                    setSamplePinned(null);
-                  },
-                },
-              ]
-            : []),
         ]}
       />
 
@@ -414,7 +353,7 @@ export const WalletHome: React.FC<{
             <PinnedCard
               entry={pinnedEntry}
               width={Math.min(CARD_WIDTH, width - 48)}
-              actions={actionsFor(pinnedEntry.key)}
+              actions={actionsFor(pinnedEntry)}
               onOpen={() => openDetails(pinnedEntry.key)}
               reduceMotion={reduceMotion}
               isCardTourStep={isCardTourStep}
@@ -458,12 +397,12 @@ export const WalletHome: React.FC<{
                   : 'Tap the card to flip it'}
               </ScaledText>
             </View>
-            {activeEntry && cards[activeEntry.key] ? (
+            {activeEntry && loaded[activeEntry.key] ? (
               <ActiveDetails
                 cardKey={activeEntry.key}
-                card={cards[activeEntry.key]}
+                card={loaded[activeEntry.key]}
                 pinned={isPinned(activeEntry)}
-                actions={actionsFor(activeEntry.key)}
+                actions={actionsFor(activeEntry)}
                 reduceMotion={reduceMotion}
               />
             ) : null}
@@ -473,12 +412,12 @@ export const WalletHome: React.FC<{
 
       {toast ? <Toast message={toast} /> : null}
 
-      {detailEntry && cards[detailEntry.key] ? (
+      {detailEntry && loaded[detailEntry.key] ? (
         <CredentialDetails
           key={detailEntry.key}
-          data={cards[detailEntry.key].data}
+          data={loaded[detailEntry.key].data}
           pinned={isPinned(detailEntry)}
-          actions={actionsFor(detailEntry.key)}
+          actions={actionsFor(detailEntry)}
           onClosed={() => {
             setDetailKey(null);
             setIsDetailFlipped(false);
@@ -487,7 +426,7 @@ export const WalletHome: React.FC<{
         />
       ) : null}
 
-      {target && targetEntry?.vcMetadata ? (
+      {target && targetEntry ? (
         <>
           <RemoveVcWarningOverlay
             testID="removeVcWarningOverlay"
@@ -501,7 +440,7 @@ export const WalletHome: React.FC<{
           />
         </>
       ) : null}
-      {qrCard && qrEntry?.vcMetadata ? (
+      {qrCard && qrEntry ? (
         // CredIssuer's own QR (its Claim 169 QR) when the card has one, since that is what
         // verifiers read; the wallet-generated QR otherwise, or if that image fails to load.
         qrInIssuerDialog ? (

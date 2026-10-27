@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Platform, Pressable, ScrollView, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {MessageOverlay} from '../../components/MessageOverlay';
@@ -21,11 +21,14 @@ import {AUTO_LOCK_OPTIONS, useAutoLockSetting} from './autoLock';
 import {
   ChoiceList,
   ChoiceRow,
+  Dialog,
   Page,
   PageHeader,
   PageModal,
+  Snackbar,
 } from '../../components/revamp/Page';
 import {ScaledText} from '../../components/revamp/ScaledText';
+import {CheckIcon} from '../../components/revamp/Icons';
 import {
   SettingsRow,
   SettingsSection,
@@ -72,7 +75,15 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
     'changePin' | 'autoLock' | 'help' | 'privacy' | null
   >(null);
   const [autoLockMinutes, setAutoLockMinutes] = useAutoLockSetting();
-  const [notice, setNotice] = useState('');
+  const [showPinChanged, setShowPinChanged] = useState(false);
+  // iOS drops a modal presented while another is still sliding away, so there the PIN changed
+  // dialog waits until Change PIN's page has gone. Android can open it at once.
+  const pinChangedPending = useRef(false);
+  const [snackbar, setSnackbar] = useState({message: '', id: 0});
+  const closePinChanged = () => {
+    setShowPinChanged(false);
+    setSnackbar(s => ({message: t('pinChanged'), id: s.id + 1}));
+  };
 
   // Off only when the phone has no fingerprint or face hardware, or none is enrolled.
   const [biometricsAvailable, setBiometricsAvailable] = useState(true);
@@ -114,13 +125,6 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
             {paddingBottom: TAB_BAR_SPACE + insets.bottom},
           ]}
           showsVerticalScrollIndicator={false}>
-          <MessageOverlay
-            isVisible={notice !== ''}
-            onBackdropPress={() => setNotice('')}
-            title={notice}
-            buttonText="ok"
-            onButtonPress={() => setNotice('')}
-          />
           <MessageOverlay
             isVisible={controller.alertMsg != ''}
             onBackdropPress={controller.hideAlert}
@@ -269,13 +273,41 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
             {t('footer')}
           </ScaledText>
         </ScrollView>
+        <Snackbar
+          key={snackbar.id}
+          testID="settingsSnackbar"
+          message={snackbar.message}
+          onHide={() => setSnackbar(s => ({...s, message: ''}))}
+        />
       </View>
       <ChangePin
         isVisible={page === 'changePin'}
         onDone={changed => {
           setPage(null);
-          if (changed) setNotice(t('pinChanged'));
+          if (!changed) return;
+          if (Platform.OS === 'ios') pinChangedPending.current = true;
+          else setShowPinChanged(true);
         }}
+        onDismissed={() => {
+          if (!pinChangedPending.current) return;
+          pinChangedPending.current = false;
+          setShowPinChanged(true);
+        }}
+      />
+      <Dialog
+        testID="pinChangedDialog"
+        isVisible={showPinChanged}
+        icon={colour => (
+          <CheckIcon color={colour} size={30} strokeWidth={2.5} />
+        )}
+        title={t('pinChanged')}
+        message={t('pinChangedMessage')}
+        button={{
+          title: t('done'),
+          onPress: closePinChanged,
+          testID: 'pinChangedDone',
+        }}
+        onRequestClose={closePinChanged}
       />
       <PageModal
         visible={page === 'autoLock'}

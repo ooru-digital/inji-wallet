@@ -2,6 +2,7 @@ import {
   DocumentDirectoryPath,
   exists,
   mkdir,
+  moveFile,
   readDir,
   ReadDirItem,
   readFile,
@@ -55,6 +56,10 @@ class FileStorage {
     return res && (await unlink(path));
   }
 
+  async moveFile(fromPath: string, toPath: string) {
+    return await moveFile(fromPath, toPath);
+  }
+
   async getInfo(path: string) {
     return await stat(path);
   }
@@ -75,6 +80,11 @@ export const zipFilePath = (filename: string) =>
 
 export const getFilePath = (key: string) => {
   return `${vcDirectoryPath}/${key}.txt`;
+};
+
+/** Holds a VC's new data until its HMAC is saved, so an interrupted save can't leave the two out of step. */
+export const getPendingFilePath = (key: string) => {
+  return `${getFilePath(key)}.tmp`;
 };
 
 export const getBackupFilePath = (
@@ -148,11 +158,11 @@ export async function writeToBackupFile(data: any): Promise<string> {
   return fileName;
 }
 
-export async function isVCStorageInitialised() : Promise<boolean> {
+export async function isVCStorageInitialised(): Promise<boolean> {
   try {
     const res = await new FileStorage().getInfo(vcDirectoryPath);
     return res.isDirectory();
   } catch (_) {
     return false;
   }
-};
+}

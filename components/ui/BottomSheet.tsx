@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Theme} from './styleUtils';
-import {ColorTokens, withAlpha} from './themes/designTokens';
+import {SCRIM} from './themes/designTokens';
 import testIDProps from '../../shared/commonUtil';
 
 const {colors: C} = Theme.Tokens;
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: withAlpha(ColorTokens.dark.canvas, 0.55),
+    backgroundColor: SCRIM,
   },
   sheet: {
     maxHeight: '92%',

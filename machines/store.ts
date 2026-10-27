@@ -760,7 +760,12 @@ export async function getVCsData(key: string, encryptionKey: string) {
         }
       }
     }
-    return {vcsData, vcsMetadata, tamperedVcsList};
+    // getItem has already dropped tampered VCs from the stored list; returning them would let the
+    // next metadata save write them back, reporting them again as missing on the next launch.
+    const validVcsMetadata = (vcsMetadata || []).filter(
+      vcMetadata => !tamperedVcsList.includes(vcMetadata),
+    );
+    return {vcsData, vcsMetadata: validVcsMetadata, tamperedVcsList};
   } catch (e) {
     throw e;
   }
