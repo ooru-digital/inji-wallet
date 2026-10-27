@@ -28,7 +28,9 @@ type Step = (typeof STEPS)[number];
 export const ChangePin: React.FC<{
   isVisible: boolean;
   onDone: (changed: boolean) => void;
-}> = ({isVisible, onDone}) => {
+  /** iOS only: called once the page has finished sliding away after `onDone`. */
+  onDismissed?: () => void;
+}> = ({isVisible, onDone, onDismissed}) => {
   const {t} = useTranslation('SettingScreen');
   const {appService} = useContext(GlobalContext);
   const authService = appService.children.get('auth')!;
@@ -98,6 +100,7 @@ export const ChangePin: React.FC<{
     <PageModal
       visible={isVisible}
       onShow={() => setShown(true)}
+      onDismiss={onDismissed}
       onRequestClose={() => close(false)}>
       <Page
         testID="changePin"

@@ -438,8 +438,6 @@ fileignoreconfig:
     checksum: e3f13e7181efc6e6ad5896102bac1309bd8147ba711ff71f64a600a0dffc1364
   - filename: components/revamp/tokens.ts
     checksum: 8d440cfb36c14d64164e3ad11391a444cee21e2f37b5a01329093656cc0b65f2
-  - filename: components/revamp/sampleCards.ts
-    checksum: ddc220dbbb258ab83386d1558e315e70a363d96107a7d1f6cd0aa6ec9e0b1925
   - filename: components/revamp/credentialClaims.ts
     checksum: a8b98f7f3bfcba7e9199ef40360dac1ef7efe17e59e3b3376751d4df5468a141
   - filename: components/revamp/CardLoader.tsx

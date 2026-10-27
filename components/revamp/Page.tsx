@@ -2,6 +2,7 @@ import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {
   ActivityIndicator,
+  Animated,
   Modal,
   Pressable,
   StyleProp,
@@ -14,10 +15,12 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import {BottomSheet} from '../ui/BottomSheet';
+import {SCRIM} from '../ui/themes/designTokens';
 import {BackIcon, CheckIcon, CloseIcon} from './Icons';
 import {ScaledText} from './ScaledText';
-import {fonts, radii} from './tokens';
+import {fonts, motion, radii, shadows} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
+import {TAB_BAR_SPACE} from './RevampTabBar';
 import {Theme} from '../ui/styleUtils';
 import testIDProps from '../../shared/commonUtil';
 
@@ -63,13 +66,16 @@ export const PageModal: React.FC<{
   visible: boolean;
   onRequestClose: () => void;
   onShow?: () => void;
+  /** iOS only: called once the page has finished sliding away. */
+  onDismiss?: () => void;
   children: React.ReactNode;
-}> = ({visible, onRequestClose, onShow, children}) => (
+}> = ({visible, onRequestClose, onShow, onDismiss, children}) => (
   <Modal
     visible={visible}
     animationType="slide"
     statusBarTranslucent
     onShow={onShow}
+    onDismiss={onDismiss}
     onRequestClose={onRequestClose}>
     <SafeAreaProvider>{children}</SafeAreaProvider>
   </Modal>
@@ -504,6 +510,136 @@ export const AlertSheet: React.FC<{
   );
 };
 
+/**
+ * A centred dialog for a short confirmation: a tinted icon, a title, a line of text and one
+ * button that dismisses it. A backdrop tap and the hardware back button call `onRequestClose`,
+ * which must hide the dialog; it is usually the button's own handler.
+ */
+export const Dialog: React.FC<{
+  isVisible: boolean;
+  tone?: Tone;
+  icon: (colour: string) => React.ReactNode;
+  title: string;
+  message?: string;
+  button: {title: string; onPress: () => void; testID?: string};
+  onRequestClose: () => void;
+  testID?: string;
+}> = props => {
+  const {c} = useRevampTheme();
+  return (
+    <Modal
+      transparent
+      visible={props.isVisible}
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={props.onRequestClose}>
+      <View style={styles.dialogBackdrop}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          accessible={false}
+          onPress={props.onRequestClose}
+        />
+        <View
+          {...(props.testID ? testIDProps(props.testID) : {})}
+          accessibilityViewIsModal
+          style={[styles.dialog, {backgroundColor: c.card}]}>
+          <Glyph tone={props.tone ?? 'pass'} size={72}>
+            {props.icon}
+          </Glyph>
+          <ScaledText
+            accessibilityRole="header"
+            style={[styles.dialogTitle, {color: c.ink}]}>
+            {props.title}
+          </ScaledText>
+          {props.message ? (
+            <ScaledText style={[styles.dialogMessage, {color: c.inkMuted}]}>
+              {props.message}
+            </ScaledText>
+          ) : null}
+          <View style={styles.dialogButton}>
+            <PageButton
+              testID={props.button.testID}
+              title={props.button.title}
+              onPress={props.button.onPress}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+/**
+ * A short confirmation above the tab bar that hides itself. Shown while `message` is set;
+ * `onHide` is called when its time is up so the screen can clear it. Give it a new `key` each
+ * time it is shown, so the same message shown again starts its time over.
+ */
+export const Snackbar: React.FC<{
+  message: string;
+  onHide: () => void;
+  duration?: number;
+  testID?: string;
+}> = ({message, onHide, duration = 3000, testID}) => {
+  const {c, reduceMotion} = useRevampTheme();
+  const insets = useSafeAreaInsets();
+  const progress = React.useRef(new Animated.Value(0)).current;
+  const onHideRef = React.useRef(onHide);
+  onHideRef.current = onHide;
+
+  React.useEffect(() => {
+    if (!message) return;
+    progress.setValue(reduceMotion ? 1 : 0);
+    Animated.timing(progress, {
+      toValue: 1,
+      ...motion.rise,
+      useNativeDriver: true,
+    }).start();
+    const timer = setTimeout(() => {
+      Animated.timing(progress, {
+        toValue: 0,
+        duration: reduceMotion ? 0 : 200,
+        useNativeDriver: true,
+      }).start(({finished}) => finished && onHideRef.current());
+    }, duration);
+    return () => {
+      clearTimeout(timer);
+      progress.stopAnimation();
+    };
+  }, [message, duration, reduceMotion, progress]);
+
+  if (!message) return null;
+  return (
+    <Animated.View
+      {...(testID ? testIDProps(testID) : {})}
+      accessibilityLiveRegion="polite"
+      accessibilityRole="alert"
+      pointerEvents="none"
+      style={[
+        styles.snackbar,
+        {
+          backgroundColor: c.primary,
+          bottom: TAB_BAR_SPACE + insets.bottom - 16,
+          opacity: progress,
+          transform: [
+            {
+              translateY: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 0],
+              }),
+            },
+          ],
+        },
+      ]}>
+      <View style={[styles.snackbarGlyph, {backgroundColor: c.tintPass}]}>
+        <CheckIcon color={c.pass} size={16} strokeWidth={2.5} />
+      </View>
+      <ScaledText style={[styles.snackbarText, {color: c.onPrimary}]}>
+        {message}
+      </ScaledText>
+    </Animated.View>
+  );
+};
+
 const styles = StyleSheet.create({
   step: {fontFamily: fonts.regular, fontSize: 13, textAlign: 'center'},
   page: {flex: 1},
@@ -639,4 +775,54 @@ const styles = StyleSheet.create({
   },
   sheetMessage: {fontFamily: fonts.regular, fontSize: 15, lineHeight: 22},
   sheetActions: {gap: 6, marginTop: 4},
+  dialogBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    backgroundColor: SCRIM,
+  },
+  dialog: {
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+    alignItems: 'center',
+  },
+  dialogTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 22,
+    lineHeight: 27,
+    letterSpacing: -0.3,
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  dialogMessage: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  dialogButton: {alignSelf: 'stretch', marginTop: 24},
+  snackbar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    minHeight: 60,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: radii.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    ...shadows.card,
+  },
+  snackbarGlyph: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snackbarText: {flex: 1, fontFamily: fonts.semibold, fontSize: 16},
 });
