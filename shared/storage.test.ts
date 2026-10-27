@@ -98,6 +98,8 @@ jest.mock('./telemetry/TelemetryUtils', () => ({
 }));
 
 import Storage from './storage';
+import {TelemetryConstants} from './telemetry/TelemetryConstants';
+import {getErrorEventData} from './telemetry/TelemetryUtils';
 
 const KEY = 'VC_card-1';
 const ENCRYPTION_KEY = 'secret';
@@ -114,6 +116,7 @@ describe('Storage: saving a card', () => {
     mockFileOps.failStoringHmac = false;
     mockFileOps.writeDelayMs.clear();
     mockIsIOS = false;
+    (getErrorEventData as jest.Mock).mockClear();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     jest.spyOn(console, 'debug').mockImplementation(() => undefined);
     jest.spyOn(console, 'info').mockImplementation(() => undefined);
@@ -163,6 +166,25 @@ describe('Storage: saving a card', () => {
       expect(await Storage.getItem(KEY, ENCRYPTION_KEY)).toBe('v2');
       expect(mockFiles.get(FILE)).toBe('v2');
       expect(mockFiles.has(PENDING_FILE)).toBe(false);
+      expect(getErrorEventData).toHaveBeenCalledWith(
+        TelemetryConstants.FlowType.fetchData,
+        TelemetryConstants.ErrorId.dataRetrieval,
+        'Recovered an interrupted VC save',
+      );
+    });
+
+    it('keeps the pending file and finishes the save if the iOS move fails after the old file was removed', async () => {
+      mockIsIOS = true;
+      mockFileOps.failMoveFile = true;
+      await expect(Storage.setItem(KEY, 'v2', ENCRYPTION_KEY)).rejects.toThrow();
+      mockFileOps.failMoveFile = false;
+
+      expect(mockFiles.has(FILE)).toBe(false);
+      expect(mockFiles.get(PENDING_FILE)).toBe('v2');
+
+      expect(await Storage.getItem(KEY, ENCRYPTION_KEY)).toBe('v2');
+      expect(mockFiles.get(FILE)).toBe('v2');
+      expect(mockFiles.has(PENDING_FILE)).toBe(false);
     });
 
     it('finishes the save if killed after iOS removed the old file', async () => {
@@ -179,6 +201,11 @@ describe('Storage: saving a card', () => {
 
       expect(await Storage.getItem(KEY, ENCRYPTION_KEY)).toBe('v1');
       expect(mockFiles.has(PENDING_FILE)).toBe(false);
+      expect(getErrorEventData).toHaveBeenCalledWith(
+        TelemetryConstants.FlowType.fetchData,
+        TelemetryConstants.ErrorId.dataRetrieval,
+        'Discarded an unfinished VC save',
+      );
     });
   });
 

@@ -208,10 +208,25 @@ class Storage {
         HMACofPendingVC === storedHMACofCurrentVC
       ) {
         await this.replaceWithPendingFile(pendingPath, path);
+        sendErrorEvent(
+          getErrorEventData(
+            TelemetryConstants.FlowType.fetchData,
+            TelemetryConstants.ErrorId.dataRetrieval,
+            'Recovered an interrupted VC save',
+          ),
+        );
         console.info(`Completed an interrupted save of VC - ${key}`);
         return pendingData;
       }
       await FileStorage.removeItem(pendingPath);
+      sendErrorEvent(
+        getErrorEventData(
+          TelemetryConstants.FlowType.fetchData,
+          TelemetryConstants.ErrorId.dataRetrieval,
+          'Discarded an unfinished VC save',
+        ),
+      );
+      console.info(`Discarded an unfinished save of VC - ${key}`);
     }
 
     const data = await this.readVCFromFile(key);
@@ -295,11 +310,16 @@ class Storage {
     await this.replaceWithPendingFile(pendingPath, getFilePath(key));
   }
 
+  /**
+   * Android's rename replaces the card file in one step. iOS refuses to move onto an existing
+   * file, so the old file is removed first, and an interruption in between leaves only the
+   * pending file. Every read of a card file must go through readVC, which finishes an
+   * interrupted replace; reading getFilePath(key) directly can find no file at all.
+   */
   private static async replaceWithPendingFile(
     pendingPath: string,
     path: string,
   ) {
-    // Android's rename replaces the file in one step; iOS refuses to move onto an existing file.
     if (isIOS()) {
       await FileStorage.removeItemIfExist(path);
     }
