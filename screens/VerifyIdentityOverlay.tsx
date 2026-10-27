@@ -11,6 +11,7 @@ import {ScaledText} from '../components/revamp/ScaledText';
 import {fonts} from '../components/revamp/tokens';
 import {useRevampTheme} from '../components/revamp/useRevampTheme';
 import {StyleSheet, View} from 'react-native';
+import {SNAPKYC_LIVENESS_ENABLED} from '../shared/constants';
 
 export const VerifyIdentityOverlay: React.FC<
   VerifyIdentityOverlayProps
@@ -29,7 +30,8 @@ export const VerifyIdentityOverlay: React.FC<
     showHeader: true,
   };
 
-  if (props.isLivenessEnabled) {
+  // The SnapKYC face verification page draws its own header.
+  if (props.isLivenessEnabled || SNAPKYC_LIVENESS_ENABLED) {
     modalProps.arrowLeft = false;
     modalProps.headerTitle = '';
     modalProps.showClose = false;
@@ -41,7 +43,12 @@ export const VerifyIdentityOverlay: React.FC<
       <Modal {...modalProps}>
         <Column
           fill
-          style={Theme.VerifyIdentityOverlayStyles.content}
+          style={[
+            Theme.VerifyIdentityOverlayStyles.content,
+            // A box the size of the whole screen would push the SnapKYC page's Cancel button
+            // under Android's navigation bar; that page lays itself out.
+            SNAPKYC_LIVENESS_ENABLED && {height: undefined},
+          ]}
           align="center">
           {credential != null && (
             <FaceScanner

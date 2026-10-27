@@ -62,6 +62,11 @@
   "FaceScanner": {
     "livenessCaptureGuide": "Hawakan nang matatag ang telepono, panatilihing nakatutok ang iyong mukha sa gitna.",
     "faceProcessingInfo": "Mangyaring maghintay habang pinoproseso namin ang data.",
+    "faceVerificationTitle": "Pag-verify ng mukha",
+    "verifyingTitle": "Vine-verify ang iyong mukha",
+    "verifyingMessage": "Ilang segundo lang ito. Huwag isara ang app.",
+    "back": "Bumalik",
+    "poweredBy": "BioChq · powered by Ooru Digital",
     "faceOutGuide": "Panatilihin ang iyong mukha sa loob ng oval!",
     "faceInGuide": "Kasalukuyang kumukuha!",
     "cancel": "Kanselahin",

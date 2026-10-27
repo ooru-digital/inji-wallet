@@ -62,6 +62,11 @@
   "FaceScanner": {
     "livenessCaptureGuide": "மொபைலை நிலையாகப் பிடித்து, உங்கள் முகத்தை மையமாக வைத்துக்கொள்ளவும்.",
     "faceProcessingInfo": "நாங்கள் தரவைச் செயலாக்கும் வரை காத்திருக்கவும்.",
+    "faceVerificationTitle": "முக சரிபார்ப்பு",
+    "verifyingTitle": "உங்கள் முகம் சரிபார்க்கப்படுகிறது",
+    "verifyingMessage": "இதற்கு சில விநாடிகள் ஆகும். தயவுசெய்து செயலியை மூட வேண்டாம்.",
+    "back": "பின்செல்",
+    "poweredBy": "BioChq · powered by Ooru Digital",
     "faceOutGuide": "உங்கள் முகத்தை ஓவலின் உள்ளே வைத்திருங்கள்!",
     "faceInGuide": "பிடிப்பு நடைபெறுகிறது!",
     "cancel": "ரத்து செய்",

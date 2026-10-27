@@ -62,6 +62,11 @@
   "FaceScanner": {
     "livenessCaptureGuide": "फ़ोन को स्थिर रखें, अपना चेहरा केंद्र में रखें।",
     "faceProcessingInfo": "जब तक हम डेटा संसाधित कर रहे हैं कृपया प्रतीक्षा करें।",
+    "faceVerificationTitle": "चेहरा सत्यापन",
+    "verifyingTitle": "आपके चेहरे का सत्यापन हो रहा है",
+    "verifyingMessage": "इसमें कुछ सेकंड लगते हैं। कृपया ऐप बंद न करें।",
+    "back": "वापस",
+    "poweredBy": "BioChq · powered by Ooru Digital",
     "faceOutGuide": "अपना चेहरा अंडाकार के अंदर रखें!",
     "faceInGuide": "कैप्चरिंग प्रगति पर है!",
     "cancel": "रद्द करना",

@@ -59,6 +59,11 @@
   "FaceScanner": {
     "livenessCaptureGuide": "أمسك الهاتف بثبات، وحافظ على تركيز وجهك في المنتصف.",
     "faceProcessingInfo": "يرجى الانتظار بينما نقوم بمعالجة البيانات.",
+    "faceVerificationTitle": "التحقق من الوجه",
+    "verifyingTitle": "جارٍ التحقق من وجهك",
+    "verifyingMessage": "يستغرق هذا بضع ثوانٍ. يرجى عدم إغلاق التطبيق.",
+    "back": "رجوع",
+    "poweredBy": "BioChq · powered by Ooru Digital",
     "faceOutGuide": "أبقِ وجهك داخل الشكل البيضاوي!",
     "faceInGuide": "جاري الالتقاط!",
     "cancel": "يلغي",

@@ -59,6 +59,11 @@
   "FaceScanner": {
     "livenessCaptureGuide": "Hold the phone steady, keep your face focused in the centre.",
     "faceProcessingInfo": "Please wait while we process the data.",
+    "faceVerificationTitle": "Face verification",
+    "verifyingTitle": "Verifying your face",
+    "verifyingMessage": "This takes a few seconds. Please don’t close the app.",
+    "back": "Back",
+    "poweredBy": "BioChq · powered by Ooru Digital",
     "faceOutGuide": "Keep your face inside the oval!",
     "faceInGuide": "Capturing in progress!",
     "imageCaptureGuide": "Hold the phone steady, keep your face focused in the centre and click on Capture.",
