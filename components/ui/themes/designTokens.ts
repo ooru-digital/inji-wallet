@@ -76,6 +76,9 @@ export function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** The dimmed screen behind sheets and dialogs; the same in both themes. */
+export const SCRIM = withAlpha(ColorTokens.dark.canvas, 0.55);
+
 const NAVY = '#0A3970';
 const ON_NAVY = '#FCFCFA';
 const CYAN = '#2ED9E8';

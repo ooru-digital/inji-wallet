@@ -48,8 +48,7 @@ export interface CredentialCardData {
   /**
    * CredIssuer's own QR image for this credential (its Claim 169 QR), which a verifier must be
    * shown instead of the wallet-generated QR. `url` is null when there is none or it failed to
-   * load; while `isFetching`, no QR should be shown. See `useIssuerQrCode`. Absent on the
-   * built-in sample cards.
+   * load; while `isFetching`, no QR should be shown. See `useIssuerQrCode`.
    */
   issuerQr?: {
     url: string | null;

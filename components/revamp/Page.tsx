@@ -15,6 +15,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import {BottomSheet} from '../ui/BottomSheet';
+import {SCRIM} from '../ui/themes/designTokens';
 import {BackIcon, CheckIcon, CloseIcon} from './Icons';
 import {ScaledText} from './ScaledText';
 import {fonts, motion, radii, shadows} from './tokens';
@@ -65,13 +66,16 @@ export const PageModal: React.FC<{
   visible: boolean;
   onRequestClose: () => void;
   onShow?: () => void;
+  /** iOS only: called once the page has finished sliding away. */
+  onDismiss?: () => void;
   children: React.ReactNode;
-}> = ({visible, onRequestClose, onShow, children}) => (
+}> = ({visible, onRequestClose, onShow, onDismiss, children}) => (
   <Modal
     visible={visible}
     animationType="slide"
     statusBarTranslucent
     onShow={onShow}
+    onDismiss={onDismiss}
     onRequestClose={onRequestClose}>
     <SafeAreaProvider>{children}</SafeAreaProvider>
   </Modal>
@@ -508,7 +512,8 @@ export const AlertSheet: React.FC<{
 
 /**
  * A centred dialog for a short confirmation: a tinted icon, a title, a line of text and one
- * button that dismisses it.
+ * button that dismisses it. A backdrop tap and the hardware back button call `onRequestClose`,
+ * which must hide the dialog; it is usually the button's own handler.
  */
 export const Dialog: React.FC<{
   isVisible: boolean;
@@ -566,7 +571,8 @@ export const Dialog: React.FC<{
 
 /**
  * A short confirmation above the tab bar that hides itself. Shown while `message` is set;
- * `onHide` is called when its time is up so the screen can clear it.
+ * `onHide` is called when its time is up so the screen can clear it. Give it a new `key` each
+ * time it is shown, so the same message shown again starts its time over.
  */
 export const Snackbar: React.FC<{
   message: string;
@@ -593,10 +599,13 @@ export const Snackbar: React.FC<{
         toValue: 0,
         duration: reduceMotion ? 0 : 200,
         useNativeDriver: true,
-      }).start(() => onHideRef.current());
+      }).start(({finished}) => finished && onHideRef.current());
     }, duration);
-    return () => clearTimeout(timer);
-  }, [message]);
+    return () => {
+      clearTimeout(timer);
+      progress.stopAnimation();
+    };
+  }, [message, duration, reduceMotion, progress]);
 
   if (!message) return null;
   return (
@@ -770,7 +779,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 32,
-    backgroundColor: 'rgba(8,13,19,0.55)',
+    backgroundColor: SCRIM,
   },
   dialog: {
     borderRadius: 24,

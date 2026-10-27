@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Platform, Pressable, ScrollView, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {MessageOverlay} from '../../components/MessageOverlay';
@@ -76,10 +76,13 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
   >(null);
   const [autoLockMinutes, setAutoLockMinutes] = useAutoLockSetting();
   const [showPinChanged, setShowPinChanged] = useState(false);
-  const [snackbar, setSnackbar] = useState('');
+  // iOS drops a modal presented while another is still sliding away, so there the PIN changed
+  // dialog waits until Change PIN's page has gone. Android can open it at once.
+  const pinChangedPending = useRef(false);
+  const [snackbar, setSnackbar] = useState({message: '', id: 0});
   const closePinChanged = () => {
     setShowPinChanged(false);
-    setSnackbar(t('pinChanged'));
+    setSnackbar(s => ({message: t('pinChanged'), id: s.id + 1}));
   };
 
   // Off only when the phone has no fingerprint or face hardware, or none is enrolled.
@@ -271,16 +274,24 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
           </ScaledText>
         </ScrollView>
         <Snackbar
+          key={snackbar.id}
           testID="settingsSnackbar"
-          message={snackbar}
-          onHide={() => setSnackbar('')}
+          message={snackbar.message}
+          onHide={() => setSnackbar(s => ({...s, message: ''}))}
         />
       </View>
       <ChangePin
         isVisible={page === 'changePin'}
         onDone={changed => {
           setPage(null);
-          if (changed) setShowPinChanged(true);
+          if (!changed) return;
+          if (Platform.OS === 'ios') pinChangedPending.current = true;
+          else setShowPinChanged(true);
+        }}
+        onDismissed={() => {
+          if (!pinChangedPending.current) return;
+          pinChangedPending.current = false;
+          setShowPinChanged(true);
         }}
       />
       <Dialog
