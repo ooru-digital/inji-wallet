@@ -21,6 +21,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import io.ooru.biochq.liveness.BioChqFaceMatch
+import io.ooru.biochq.liveness.BioChqLivenessActivity
 import io.ooru.biochq.liveness.BioChqLivenessConfiguration
 import io.ooru.biochq.liveness.BioChqLivenessContract
 import io.ooru.biochq.liveness.BioChqLivenessError
@@ -126,6 +127,13 @@ class RNSnapKycLivenessModule(reactContext: ReactApplicationContext) :
       BioChqLivenessContract.Outcome.Cancelled ->
         promise.reject("E_CANCELLED", "Liveness session cancelled")
     }
+    // The SDK leaves the selfie in its cache until the next check starts. It has been read into
+    // memory above, so delete it now rather than leave a biometric image on the device.
+    try {
+      BioChqLivenessActivity.deleteProbeImages(reactApplicationContext)
+    } catch (e: Exception) {
+      Log.w(TAG, "Could not delete the probe image", e)
+    }
   }
 
   override fun onNewIntent(intent: Intent) {}
@@ -207,7 +215,7 @@ class RNSnapKycLivenessModule(reactContext: ReactApplicationContext) :
       BioChqLivenessResult.Status.OTHER -> result.rawStatus
     }
 
-  /** The probe JPEG, readable until the next check starts. */
+  /** The probe JPEG; `onActivityResult` deletes the file once this has read it. */
   private fun readUriAsBase64(uri: Uri): String? =
     try {
       reactApplicationContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
