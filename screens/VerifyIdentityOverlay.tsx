@@ -1,5 +1,6 @@
 import React from 'react';
 import {FaceScanner} from '../components/FaceScanner/FaceScanner';
+import {FaceVerificationFailedView} from '../components/FaceScanner/SnapKycFaceScanner';
 import {Column} from '../components/ui';
 import {Theme} from '../components/ui/styleUtils';
 import {VerifiableCredential} from '../machines/VerifiableCredential/VCMetaMachine/vc';
@@ -64,27 +65,35 @@ export const VerifyIdentityOverlay: React.FC<
         </Column>
       </Modal>
 
-      <AlertSheet
-        testID="shareWithSelfieError"
-        isVisible={props.isInvalidIdentity}
-        tone="warn"
-        icon={colour => <WarningIcon color={colour} />}
-        title={t('ScanScreen:postFaceCapture.captureFailureTitle')}
-        message={t('ScanScreen:postFaceCapture.captureFailureMessage')}
-        primary={{
-          testID: 'retry',
-          title: t('ScanScreen:postFaceCapture.retakeSelfie'),
-          onPress: props.onRetryVerification,
-        }}
-        secondary={{
-          testID: 'home',
-          title: t('ScanScreen:postFaceCapture.cancelSharing'),
-          onPress: props.onNavigateHome,
-        }}
-        dismissOnBackdropPress={false}
-        onRequestClose={props.onNavigateHome}>
-        <FaceTips />
-      </AlertSheet>
+      {SNAPKYC_LIVENESS_ENABLED ? (
+        <FaceVerificationFailedView
+          isVisible={props.isInvalidIdentity}
+          onRetry={props.onRetryVerification}
+          onCancel={props.onNavigateHome}
+        />
+      ) : (
+        <AlertSheet
+          testID="shareWithSelfieError"
+          isVisible={props.isInvalidIdentity}
+          tone="warn"
+          icon={colour => <WarningIcon color={colour} />}
+          title={t('ScanScreen:postFaceCapture.captureFailureTitle')}
+          message={t('ScanScreen:postFaceCapture.captureFailureMessage')}
+          primary={{
+            testID: 'retry',
+            title: t('ScanScreen:postFaceCapture.retakeSelfie'),
+            onPress: props.onRetryVerification,
+          }}
+          secondary={{
+            testID: 'home',
+            title: t('ScanScreen:postFaceCapture.cancelSharing'),
+            onPress: props.onNavigateHome,
+          }}
+          dismissOnBackdropPress={false}
+          onRequestClose={props.onNavigateHome}>
+          <FaceTips />
+        </AlertSheet>
+      )}
     </>
   );
 };

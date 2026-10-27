@@ -5,7 +5,9 @@ import {
   Easing,
   I18nManager,
   Linking,
+  Modal as RNModal,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -17,7 +19,7 @@ import {Column, Text, Button} from '../ui';
 import {Theme} from '../ui/styleUtils';
 import {ScaledText} from '../revamp/ScaledText';
 import {ChevronIcon} from '../revamp/Icons';
-import {fonts} from '../revamp/tokens';
+import {fonts, radii} from '../revamp/tokens';
 import {useRevampTheme} from '../revamp/useRevampTheme';
 import testIDProps from '../../shared/commonUtil';
 import {
@@ -210,19 +212,156 @@ const RING_WIDTH = 4;
 const FaceVerifyingView: React.FC<{onCancel: () => void}> = ({onCancel}) => {
   const {t} = useTranslation('FaceScanner');
   const {c} = useRevampTheme();
+
+  return (
+    <FaceVerificationLayout
+      testID="faceVerifying"
+      onBack={onCancel}
+      actions={<TextAction label={t('cancel')} onPress={onCancel} />}>
+      <SpinnerBadge />
+      <ScaledText
+        accessibilityRole="header"
+        style={[styles.heading, {color: c.ink}]}>
+        {t('verifyingTitle')}
+      </ScaledText>
+      <ScaledText style={[styles.message, {color: c.inkMuted}]}>
+        {t('verifyingMessage')}
+      </ScaledText>
+    </FaceVerificationLayout>
+  );
+};
+
+/** "We couldn't verify your face": tips, then a retry. Shown full screen over the share flow. */
+export const FaceVerificationFailedView: React.FC<{
+  isVisible: boolean;
+  onRetry: () => void;
+  onCancel: () => void;
+}> = ({isVisible, onRetry, onCancel}) => {
+  const {t} = useTranslation('FaceScanner');
+  const {c} = useRevampTheme();
+  const insets = useSafeAreaInsets();
+  const tips = [t('tipLighting'), t('tipCoverings'), t('tipSteady')];
+
+  return (
+    <RNModal
+      visible={isVisible}
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onCancel}>
+      <View
+        style={[
+          styles.fill,
+          {backgroundColor: c.canvas, paddingBottom: insets.bottom},
+        ]}>
+        <FaceVerificationLayout
+          testID="shareWithSelfieError"
+          onBack={onCancel}
+          actions={
+            <>
+              <Pressable
+                {...testIDProps('retry')}
+                onPress={onRetry}
+                accessibilityRole="button"
+                style={({pressed}) => [
+                  styles.primary,
+                  {backgroundColor: c.primary, opacity: pressed ? 0.85 : 1},
+                ]}>
+                <ScaledText style={[styles.primaryLabel, {color: c.onPrimary}]}>
+                  {t('tryAgain')}
+                </ScaledText>
+              </Pressable>
+              <TextAction
+                testID="home"
+                label={t('cancel')}
+                onPress={onCancel}
+              />
+            </>
+          }>
+          <View
+            style={[
+              styles.badge,
+              styles.badgeCenter,
+              {backgroundColor: c.tintFail},
+            ]}
+            importantForAccessibility="no-hide-descendants">
+            <Svg
+              width={44}
+              height={44}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={c.fail}
+              strokeWidth={2}
+              strokeLinecap="round">
+              <Circle cx={12} cy={12} r={10} />
+              <Path d="M12 7v6M12 16.5v.5" />
+            </Svg>
+          </View>
+          <ScaledText
+            accessibilityRole="header"
+            style={[styles.heading, {color: c.ink}]}>
+            {t('notMatchedTitle')}
+          </ScaledText>
+          <ScaledText style={[styles.message, {color: c.inkMuted}]}>
+            {t('notMatchedMessage')}
+          </ScaledText>
+          <View
+            style={[
+              styles.tips,
+              {backgroundColor: c.card, borderColor: c.line},
+            ]}>
+            {tips.map((tip, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.tip,
+                  index > 0 && {
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: c.line,
+                  },
+                ]}>
+                <View
+                  style={[styles.tipNumber, {backgroundColor: c.tintAzure}]}>
+                  <ScaledText
+                    maxFontSizeMultiplier={1.3}
+                    style={[styles.tipNumberText, {color: c.ink}]}>
+                    {index + 1}
+                  </ScaledText>
+                </View>
+                <ScaledText style={[styles.tipText, {color: c.ink}]}>
+                  {tip}
+                </ScaledText>
+              </View>
+            ))}
+          </View>
+        </FaceVerificationLayout>
+      </View>
+    </RNModal>
+  );
+};
+
+/** The header with a back arrow, the page's actions at the bottom and the BioChq footer. */
+const FaceVerificationLayout: React.FC<{
+  testID: string;
+  onBack: () => void;
+  actions: React.ReactNode;
+  children: React.ReactNode;
+}> = ({testID, onBack, actions, children}) => {
+  const {t} = useTranslation('FaceScanner');
+  const {c} = useRevampTheme();
   const insets = useSafeAreaInsets();
 
   return (
     <View
-      {...testIDProps('faceVerifying')}
+      {...testIDProps(testID)}
       style={[
+        styles.fill,
         styles.screen,
         {backgroundColor: c.canvas, paddingTop: Math.max(insets.top, 24)},
       ]}>
       <View style={styles.header}>
         <Pressable
           {...testIDProps('back')}
-          onPress={onCancel}
+          onPress={onBack}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={t('back')}
@@ -241,33 +380,39 @@ const FaceVerifyingView: React.FC<{onCancel: () => void}> = ({onCancel}) => {
         </ScaledText>
       </View>
 
-      <View style={styles.body}>
-        <SpinnerBadge />
-        <ScaledText
-          accessibilityRole="header"
-          style={[styles.heading, {color: c.ink}]}>
-          {t('verifyingTitle')}
-        </ScaledText>
-        <ScaledText style={[styles.message, {color: c.inkMuted}]}>
-          {t('verifyingMessage')}
-        </ScaledText>
-      </View>
+      <ScrollView
+        style={styles.fill}
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}>
+        {children}
+      </ScrollView>
 
-      <Pressable
-        {...testIDProps('cancel')}
-        onPress={onCancel}
-        accessibilityRole="button"
-        style={({pressed}) => [styles.cancel, {opacity: pressed ? 0.6 : 1}]}>
-        <ScaledText style={[styles.cancelLabel, {color: c.ink}]}>
-          {t('cancel')}
-        </ScaledText>
-      </Pressable>
+      <View style={styles.actions}>{actions}</View>
       <ScaledText
         maxFontSizeMultiplier={1.3}
         style={[styles.footer, {color: c.inkMuted}]}>
         {t('poweredBy')}
       </ScaledText>
     </View>
+  );
+};
+
+const TextAction: React.FC<{
+  testID?: string;
+  label: string;
+  onPress: () => void;
+}> = ({testID = 'cancel', label, onPress}) => {
+  const {c} = useRevampTheme();
+  return (
+    <Pressable
+      {...testIDProps(testID)}
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({pressed}) => [styles.cancel, {opacity: pressed ? 0.6 : 1}]}>
+      <ScaledText style={[styles.cancelLabel, {color: c.ink}]}>
+        {label}
+      </ScaledText>
+    </Pressable>
   );
 };
 
@@ -349,7 +494,8 @@ const SpinnerBadge: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  screen: {flex: 1, alignSelf: 'stretch', paddingBottom: 16},
+  fill: {flex: 1, alignSelf: 'stretch'},
+  screen: {paddingBottom: 16},
   header: {height: 56, justifyContent: 'center', paddingHorizontal: 56},
   back: {
     position: 'absolute',
@@ -366,10 +512,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   body: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    padding: 24,
   },
   badge: {
     width: BADGE_SIZE,
@@ -392,6 +538,37 @@ const styles = StyleSheet.create({
     marginTop: 12,
     maxWidth: 320,
   },
+  tips: {
+    alignSelf: 'stretch',
+    marginTop: 28,
+    borderWidth: 1,
+    borderRadius: radii.surface,
+    paddingHorizontal: 16,
+  },
+  tip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+  },
+  tipNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipNumberText: {fontFamily: fonts.semibold, fontSize: 13},
+  tipText: {flex: 1, fontFamily: fonts.medium, fontSize: 15, lineHeight: 21},
+  actions: {paddingHorizontal: 24, gap: 4},
+  primary: {
+    minHeight: 52,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  primaryLabel: {fontFamily: fonts.semibold, fontSize: 16},
   cancel: {minHeight: 48, alignItems: 'center', justifyContent: 'center'},
   cancelLabel: {fontFamily: fonts.semibold, fontSize: 16},
   footer: {
