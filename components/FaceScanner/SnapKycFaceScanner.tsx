@@ -10,7 +10,10 @@ import {
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED,
   SNAPKYC_RELAYING_PARTY_NAME_VALUE,
 } from '../../shared/constants';
-import {startSnapKycLiveness} from '../../shared/snapKyc/SnapKycLiveness';
+import {
+  closeSdkFaceMatch,
+  startSnapKycLiveness,
+} from '../../shared/snapKyc/SnapKycLiveness';
 import {compareProbeWithVcFace} from '../../shared/snapKyc/compareProbeWithVcFace';
 import {
   extractReferenceFaceBase64,
@@ -19,7 +22,8 @@ import {
 
 /**
  * Runs the native liveness SDK (SnapKYC on Android, BioChqFaceLiveness on iOS), then matches the
- * live probe against the credential portrait with the @iriscan face-match SDK, on both platforms.
+ * live probe against the credential portrait: with BioChqFaceLiveness's own face match on iOS,
+ * and with the @iriscan face-match SDK on Android.
  * Renders almost nothing itself — the liveness SDK takes over with its own full-screen screen.
  */
 export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
@@ -107,6 +111,8 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
       }
       props.onInvalid();
     } finally {
+      // The SDK's matcher (iOS) starts loading with the liveness check; free it however it ended.
+      closeSdkFaceMatch();
       setIsLaunching(false);
     }
   }, [props]);

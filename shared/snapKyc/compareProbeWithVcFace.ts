@@ -3,6 +3,7 @@ import {Buffer} from 'buffer';
 
 import {detectImageFormat, toDecodableImageBase64} from './compressFaceImage';
 import {ensureFaceModelReady} from '../api';
+import {hasSdkFaceMatch, matchFaceWithSdk} from './SnapKycLiveness';
 
 /** Dev-only: says what a value actually is, so a bad portrait is diagnosable from one log line. */
 function describeImageValue(label: string, value: unknown) {
@@ -59,9 +60,12 @@ export async function compareProbeWithVcFace(
     return 'unusable';
   }
 
-  // The native compare crashes the app (iOS) when the model isn't set up, so this must not reach
-  // it without one. Throwing makes the caller reject the check rather than share unverified.
-  if (!(await ensureFaceModelReady())) {
+  // iOS: the liveness SDK matches faces itself. Android still uses @iriscan.
+  const useSdkMatch = hasSdkFaceMatch();
+
+  // @iriscan's native compare crashes the app (iOS) when the model isn't set up, so this must not
+  // reach it without one. Throwing makes the caller reject the check rather than share unverified.
+  if (!useSdkMatch && !(await ensureFaceModelReady())) {
     throw new Error('Face matching model could not be set up');
   }
 
@@ -78,16 +82,26 @@ export async function compareProbeWithVcFace(
       continue;
     }
 
+    // A comparison that errors (no face found, model failed) counts as tried, not as no photo:
+    // it ends in `mismatch` unless another portrait matches, so liveness alone never lets it pass.
+    comparedAny = true;
     try {
-      comparedAny = true;
-      if (await faceCompare(probe, vcFaceBase64)) {
+      if (useSdkMatch) {
+        const result = await matchFaceWithSdk(probe, vcFaceBase64);
+        if (__DEV__) {
+          console.log('[SnapKYC] SDK face match', result);
+        }
+        if (result.isMatch) {
+          return 'match';
+        }
+      } else if (await faceCompare(probe, vcFaceBase64)) {
         return 'match';
       }
-    } catch (error) {
-      console.warn(
-        '[SnapKYC] faceCompare failed for credential portrait',
-        error,
-      );
+    } catch (error: any) {
+      console.warn('[SnapKYC] Face match failed for credential portrait', {
+        code: error?.code,
+        message: error?.message,
+      });
     }
   }
 

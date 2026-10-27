@@ -37,7 +37,7 @@ buildscript {
         buildToolsVersion = "36.0.0"
         minSdkVersion = 26
         compileSdkVersion = 36
-        targetSdkVersion = 36
+        g
         ndkVersion = "29.0.14206865"
         // Kotlin 2.x is required by Expo 53: expo-modules-core applies
         // `org.jetbrains.kotlin.plugin.compose`, which only exists for Kotlin 2.0+.

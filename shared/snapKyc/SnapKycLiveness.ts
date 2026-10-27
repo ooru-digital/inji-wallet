@@ -16,6 +16,16 @@ export type SnapKycLivenessOptions = {
   skipFaceImage?: boolean;
 };
 
+/** The face SDK's verdict on two faces (iOS). */
+export type SdkFaceMatchResult = {
+  isMatch: boolean;
+  cosine: number;
+  l2: number;
+  cosineThreshold: number;
+  l2Threshold: number;
+  durationMs: number;
+};
+
 type SnapKycLivenessModuleType = {
   startLiveness: (config: {
     relayingPartyName: string;
@@ -23,11 +33,38 @@ type SnapKycLivenessModuleType = {
     faceImageBase64?: string;
     skipFaceImage?: boolean;
   }) => Promise<SnapKycLivenessResult>;
+  /** iOS only: the BioChq SDK's own face match. Rejects with the SDK's error code. */
+  matchFace?: (
+    probeBase64: string,
+    galleryBase64: string,
+  ) => Promise<SdkFaceMatchResult>;
+  closeFaceMatch?: () => void;
 };
 
 const {SnapKycLivenessModule} = NativeModules as {
   SnapKycLivenessModule?: SnapKycLivenessModuleType;
 };
+
+/** Whether the liveness SDK also matches faces here (iOS), instead of @iriscan. */
+export function hasSdkFaceMatch(): boolean {
+  return typeof SnapKycLivenessModule?.matchFace === 'function';
+}
+
+/** Compares the live face with a credential photo using the liveness SDK's matcher. */
+export function matchFaceWithSdk(
+  probeBase64: string,
+  galleryBase64: string,
+): Promise<SdkFaceMatchResult> {
+  if (!SnapKycLivenessModule?.matchFace) {
+    throw new Error('The liveness SDK has no face match on this platform');
+  }
+  return SnapKycLivenessModule.matchFace(probeBase64, galleryBase64);
+}
+
+/** Frees the SDK's face-match model; call once the face check is over. */
+export function closeSdkFaceMatch() {
+  SnapKycLivenessModule?.closeFaceMatch?.();
+}
 
 let activeLivenessSession: Promise<SnapKycLivenessResult> | null = null;
 

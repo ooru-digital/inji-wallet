@@ -7,9 +7,10 @@ import BioChqFaceLiveness
 /// selfie" flows. Same JS name, method and result shape, so `shared/snapKyc/SnapKycLiveness.ts`
 /// drives both platforms.
 ///
-/// It runs the BioChq face liveness SDK, a binary Swift package downloaded from the BioChq Nexus
-/// (ios/Packages/BioChqFaceLivenessBinary; Xcode logs in to Nexus through ~/.netrc). The check
-/// runs on the device and returns a verdict and, when one could be taken, the face image.
+/// It runs the BioChq face SDK, a binary Swift package downloaded from the BioChq Nexus
+/// (ios/Packages/BioChqFaceLivenessBinary; Xcode logs in to Nexus through ~/.netrc). Everything
+/// runs on the device: the liveness check returns a verdict and the face it captured, and
+/// `matchFace` compares that face with the credential's photo.
 @objc(SnapKycLivenessModule)
 class RNSnapKycLivenessModule: NSObject, RCTBridgeModule {
   static func moduleName() -> String {
@@ -27,8 +28,16 @@ class RNSnapKycLivenessModule: NSObject, RCTBridgeModule {
   /// another transition, which would leave the JS promise waiting for ever.
   private static let presenterRetryInterval: TimeInterval = 0.1
   private static let presenterMaxRetries = 30
+  /// The SDK asks for phone photos scaled to about this many pixels on the long side.
+  private static let maxMatchImageSide: CGFloat = 1600
+  /// The SDK's own passed / failed screen judges liveness only, so it would say "passed" to a live
+  /// face that then fails the face match. The app shows the one result, after both.
+  private static let livenessConfiguration = BioChqLivenessConfiguration(showResult: false)
 
   private var isRunning = false
+  /// Kept between the liveness check and the matches after it, so the model loads once. Only
+  /// touched on the main thread.
+  private var faceMatcher: BioChqFaceMatch?
 
   @objc
   func startLiveness(
@@ -36,16 +45,111 @@ class RNSnapKycLivenessModule: NSObject, RCTBridgeModule {
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
   ) {
-    // The reference photo, language and relying party name are what the Android SDK takes; the
-    // iOS SDK has no face matching and no such options, so they are not used here.
-    DispatchQueue.main.async {
+    // Language and relying party name are Android SDK options with no iOS equivalent. The
+    // reference photo is matched afterwards through `matchFace`; here it only means a match will
+    // follow, so the matcher loads its model while the check runs.
+    let willMatch = config["faceImageBase64"] is String
+    Task { @MainActor in
       guard !self.isRunning else {
         reject("E_IN_PROGRESS", "Liveness session already in progress", nil)
         return
       }
       self.isRunning = true
+      if willMatch {
+        self.matcher().warmUp()
+      }
       self.presentWhenReady(attempt: 0, resolve: resolve, reject: reject)
     }
+  }
+
+  /// Compares the live face with a credential photo. Resolves with the SDK's result; rejects with
+  /// the SDK's error code (e.g. `NO_FACE_IN_GALLERY`) when no decision could be made.
+  @objc
+  func matchFace(
+    _ probeBase64: String,
+    galleryBase64: String,
+    resolve: @escaping RCTPromiseResolveBlock,
+    reject: @escaping RCTPromiseRejectBlock
+  ) {
+    guard
+      let probe = Self.matchableImage(probeBase64),
+      let gallery = Self.matchableImage(galleryBase64)
+    else {
+      reject("BAD_IMAGE", "Face image could not be read", nil)
+      return
+    }
+    Task { @MainActor in
+      do {
+        let result = try await self.matcher().match(gallery: gallery, probe: probe)
+        resolve([
+          "isMatch": result.isMatch,
+          "cosine": result.cosine,
+          "l2": result.l2,
+          "cosineThreshold": result.cosineThreshold,
+          "l2Threshold": result.l2Threshold,
+          "durationMs": result.durationMs,
+        ])
+      } catch let error as BioChqFaceMatchError {
+        reject(error.code, error.localizedDescription, error)
+      } catch {
+        reject("MATCH_FAILED", error.localizedDescription, error)
+      }
+    }
+  }
+
+  /// Frees the matcher's model once the face check is over.
+  @objc
+  func closeFaceMatch() {
+    Task { @MainActor in
+      self.faceMatcher?.close()
+      self.faceMatcher = nil
+    }
+  }
+
+  @objc
+  func invalidate() {
+    closeFaceMatch()
+  }
+
+  @MainActor
+  private func matcher() -> BioChqFaceMatch {
+    if let faceMatcher {
+      return faceMatcher
+    }
+    let created = BioChqFaceMatch()
+    faceMatcher = created
+    return created
+  }
+
+  /// JPEG or PNG bytes, as the matcher takes them. Other formats a credential may hold (WebP,
+  /// GIF, BMP) and oversized photos are redrawn as a JPEG of at most `maxMatchImageSide`.
+  private static func matchableImage(_ base64: String) -> Data? {
+    guard let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters),
+      let image = UIImage(data: data)
+    else {
+      return nil
+    }
+    let longSide = max(image.size.width, image.size.height) * image.scale
+    if isJpegOrPng(data) && longSide <= maxMatchImageSide {
+      return data
+    }
+    let scale = min(1, maxMatchImageSide / longSide)
+    let size = CGSize(
+      width: (image.size.width * image.scale * scale).rounded(),
+      height: (image.size.height * image.scale * scale).rounded())
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = 1
+    // Drawing applies the EXIF orientation, so the JPEG comes out upright.
+    let redrawn = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+      image.draw(in: CGRect(origin: .zero, size: size))
+    }
+    return redrawn.jpegData(compressionQuality: 0.95)
+  }
+
+  private static func isJpegOrPng(_ data: Data) -> Bool {
+    let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF]
+    let png: [UInt8] = [0x89, 0x50, 0x4E, 0x47]
+    return data.starts(with: jpeg) || data.starts(with: png)
   }
 
   private func presentWhenReady(
@@ -71,7 +175,8 @@ class RNSnapKycLivenessModule: NSObject, RCTBridgeModule {
     Task { @MainActor in
       defer { self.isRunning = false }
       do {
-        let result = try await BioChqLiveness.present(from: presenter)
+        let result = try await BioChqLiveness.present(
+          from: presenter, configuration: Self.livenessConfiguration)
         resolve(Self.payload(for: result))
       } catch BioChqLivenessError.cancelled {
         reject("E_CANCELLED", "Liveness session cancelled", nil)
