@@ -27,6 +27,7 @@ import io.ooru.biochq.liveness.BioChqLivenessContract
 import io.ooru.biochq.liveness.BioChqLivenessError
 import io.ooru.biochq.liveness.BioChqLivenessResult
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.max
 
 /**
@@ -42,7 +43,11 @@ class RNSnapKycLivenessModule(reactContext: ReactApplicationContext) :
 
   private val contract = BioChqLivenessContract()
   private val mainHandler = Handler(Looper.getMainLooper())
-  private var livenessPromise: Promise? = null
+  /**
+   * The open check's promise. Set on the native-modules thread and taken on the UI thread, so it
+   * is atomic: two quick calls can't both start a check.
+   */
+  private val livenessPromise = AtomicReference<Promise?>(null)
 
   /**
    * Kept between the liveness check and the matches after it, so the model loads once. Only
@@ -63,14 +68,14 @@ class RNSnapKycLivenessModule(reactContext: ReactApplicationContext) :
       promise.reject("E_NO_ACTIVITY", "Activity does not exist")
       return
     }
-    if (livenessPromise != null) {
-      promise.reject("E_IN_PROGRESS", "Liveness session already in progress")
-      return
-    }
     if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) !=
       PackageManager.PERMISSION_GRANTED
     ) {
       promise.reject("E_CAMERA_PERMISSION", "Camera permission not granted")
+      return
+    }
+    if (!livenessPromise.compareAndSet(null, promise)) {
+      promise.reject("E_IN_PROGRESS", "Liveness session already in progress")
       return
     }
 
@@ -86,7 +91,6 @@ class RNSnapKycLivenessModule(reactContext: ReactApplicationContext) :
     )
 
     try {
-      livenessPromise = promise
       activity.startActivityForResult(
         contract.createIntent(activity, configuration),
         LIVENESS_REQUEST_CODE,
@@ -95,7 +99,7 @@ class RNSnapKycLivenessModule(reactContext: ReactApplicationContext) :
         mainHandler.post { matcher().warmUp() }
       }
     } catch (e: Exception) {
-      livenessPromise = null
+      livenessPromise.set(null)
       promise.reject("E_LAUNCH_FAILED", e.message, e)
     }
   }
@@ -107,8 +111,7 @@ class RNSnapKycLivenessModule(reactContext: ReactApplicationContext) :
     data: Intent?,
   ) {
     if (requestCode != LIVENESS_REQUEST_CODE) return
-    val promise = livenessPromise ?: return
-    livenessPromise = null
+    val promise = livenessPromise.getAndSet(null) ?: return
 
     when (val outcome = contract.parseResult(resultCode, data)) {
       is BioChqLivenessContract.Outcome.Completed -> {
