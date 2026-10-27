@@ -51,6 +51,7 @@ class RNSnapKycLivenessModule: NSObject, RCTBridgeModule {
     let willMatch = config["faceImageBase64"] is String
     Task { @MainActor in
       guard !self.isRunning else {
+        // Not freed here: the check already running still needs the matcher.
         reject("E_IN_PROGRESS", "Liveness session already in progress", nil)
         return
       }
@@ -58,7 +59,21 @@ class RNSnapKycLivenessModule: NSObject, RCTBridgeModule {
       if willMatch {
         self.matcher().warmUp()
       }
-      self.presentWhenReady(attempt: 0, resolve: resolve, reject: reject)
+      // No match follows a check that failed or found no live face, so the matcher is freed here
+      // too, not only by the JS caller's `closeFaceMatch`.
+      let rejectAndFree: RCTPromiseRejectBlock = { code, message, error in
+        self.closeFaceMatch()
+        reject(code, message, error)
+      }
+      let resolveAndFreeIfUnused: RCTPromiseResolveBlock = { payload in
+        if let payload = payload as? [String: Any],
+          payload["isGenuine"] as? Bool != true || payload["probeImageBase64"] == nil
+        {
+          self.closeFaceMatch()
+        }
+        resolve(payload)
+      }
+      self.presentWhenReady(attempt: 0, resolve: resolveAndFreeIfUnused, reject: rejectAndFree)
     }
   }
 
