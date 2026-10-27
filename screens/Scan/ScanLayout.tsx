@@ -1,19 +1,38 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SendVcScreen} from './SendVcScreen';
 import {useScanLayout} from './ScanLayoutController';
 import {ScanScreen} from './ScanScreen';
 import {SCAN_ROUTES} from '../../routes/routesConstants';
-import {AlertSheet} from '../../components/revamp/Page';
-import {AlertCircleIcon} from '../../components/revamp/Icons';
+import {
+  AlertSheet,
+  Page,
+  PageButton,
+  PageHeading,
+  SpinnerGlyph,
+} from '../../components/revamp/Page';
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  CloseIcon,
+  ShareIcon,
+} from '../../components/revamp/Icons';
+import {ScaledText} from '../../components/revamp/ScaledText';
+import {fonts, radii} from '../../components/revamp/tokens';
+import {useRevampTheme} from '../../components/revamp/useRevampTheme';
 import {Theme} from '../../components/ui/styleUtils';
 import {Icon} from 'react-native-elements';
-import {Loader} from '../../components/ui/Loader';
 import {VerifyIdentityOverlay} from '../VerifyIdentityOverlay';
-import {View, I18nManager} from 'react-native';
+import {
+  BackHandler,
+  I18nManager,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {Text} from './../../components/ui';
-import {BannerStatusType} from '../../components/BannerNotification';
+import testIDProps from '../../shared/commonUtil';
 import {LIVENESS_CHECK} from '../../shared/constants';
 import {SendVPScreen} from './SendVPScreen';
 import {useSendVPScreen} from './SendVPScreenController';
@@ -58,26 +77,25 @@ export const ScanLayout: React.FC = () => {
       : controller.CLOSE_BANNER;
 
     return (
-      <Loader
+      <SharingProgressPage
         title={controller.statusOverlay?.title}
         hint={controller.statusOverlay?.hint}
-        onCancel={controller.statusOverlay?.onButtonPress}
-        onStayInProgress={controller.statusOverlay?.onStayInProgress}
         isHintVisible={
           controller.isStayInProgress ||
           controller.isBleError ||
           controller.isSendingVc ||
           controller.isSendingVP
         }
+        onCancel={controller.statusOverlay?.onButtonPress}
+        onStayInProgress={controller.statusOverlay?.onStayInProgress}
         onRetry={controller.statusOverlay?.onRetry}
-        showBanner={
+        notice={
           controller.isFaceIdentityVerified ||
           controller.isFaceVerifiedInVPSharing
+            ? t('ScanScreen:postFaceCapture:captureSuccessMessage')
+            : undefined
         }
-        bannerMessage={t('ScanScreen:postFaceCapture:captureSuccessMessage')}
-        onBannerClose={onClosingBanner}
-        bannerType={BannerStatusType.SUCCESS}
-        bannerTestID={'faceVerificationSuccess'}
+        onCloseNotice={onClosingBanner}
       />
     );
   }
@@ -233,3 +251,109 @@ export const ScanLayout: React.FC = () => {
     </React.Fragment>
   );
 };
+
+/**
+ * Connecting to the verifier and sharing the card: a spinning share icon, the step's title and
+ * hint, and the step's actions. After a face check, a closable notice says it passed.
+ */
+const SharingProgressPage: React.FC<{
+  title?: string;
+  hint?: string;
+  isHintVisible?: boolean;
+  onCancel?: () => void;
+  onStayInProgress?: () => void;
+  onRetry?: () => void;
+  notice?: string;
+  onCloseNotice: () => void;
+}> = props => {
+  const {t} = useTranslation('ScanScreen');
+  const {c} = useRevampTheme();
+
+  // Leaving mid-share is only through Cancel, as before.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, []);
+
+  const showActions = props.isHintVisible || !!props.onCancel;
+
+  return (
+    <Page
+      testID="loader-skeleton-loader-content"
+      footer={
+        showActions ? (
+          <>
+            {props.onRetry && (
+              <PageButton
+                testID="retry"
+                title={t('status.retry')}
+                onPress={props.onRetry}
+              />
+            )}
+            {props.onStayInProgress && (
+              <PageButton
+                testID="stayInProgress"
+                title={t('status.stayOnTheScreen')}
+                variant="outline"
+                onPress={props.onStayInProgress}
+              />
+            )}
+            {props.onCancel && (
+              <PageButton
+                testID="cancel"
+                title={t('common:cancel')}
+                variant="link"
+                onPress={props.onCancel}
+              />
+            )}
+          </>
+        ) : undefined
+      }>
+      {props.notice ? (
+        <View
+          {...testIDProps('faceVerificationSuccess')}
+          accessibilityLiveRegion="polite"
+          style={[sharingStyles.notice, {backgroundColor: c.tintPass}]}>
+          <CheckIcon color={c.pass} />
+          <ScaledText style={[sharingStyles.noticeText, {color: c.ink}]}>
+            {props.notice}
+          </ScaledText>
+          <Pressable
+            {...testIDProps('close')}
+            accessibilityRole="button"
+            accessibilityLabel={t('common:close')}
+            hitSlop={12}
+            onPress={props.onCloseNotice}>
+            <CloseIcon color={c.inkMuted} size={18} />
+          </Pressable>
+        </View>
+      ) : null}
+      <View style={sharingStyles.center}>
+        <SpinnerGlyph style={sharingStyles.spinner}>
+          {colour => <ShareIcon color={colour} size={40} />}
+        </SpinnerGlyph>
+        <PageHeading
+          testID="loaderTitle"
+          title={props.title ?? ''}
+          body={props.isHintVisible ? props.hint : undefined}
+          size="medium"
+        />
+      </View>
+    </Page>
+  );
+};
+
+const sharingStyles = StyleSheet.create({
+  notice: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: radii.chip,
+  },
+  noticeText: {flex: 1, fontFamily: fonts.medium, fontSize: 14, lineHeight: 20},
+  center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  spinner: {marginBottom: 32},
+});
