@@ -13,6 +13,7 @@ import {
   API_CACHED_STORAGE_KEYS,
   ENOENT,
   isAndroid,
+  isIOS,
   SETTINGS_STORE_KEY
 } from './constants';
 import {
@@ -25,6 +26,7 @@ import {
 import FileStorage, {
   getDirectorySize,
   getFilePath,
+  getPendingFilePath,
   vcDirectoryPath,
 } from './fileStorage';
 import { __AppId } from './GlobalVariables';
@@ -43,6 +45,23 @@ async function generateHmac(
     return hmacSHA(encryptionKey, data);
   }
   return await RNSecureKeystoreModule.generateHmacSha(HMAC_ALIAS, data);
+}
+
+const vcKeyLocks = new Map<string, Promise<unknown>>();
+
+// A VC's file and HMAC are changed in separate steps, so operations on the same VC must not
+// interleave: overlapping saves can pair one save's data with another's HMAC.
+function withVcKeyLock<T>(key: string, task: () => Promise<T>): Promise<T> {
+  const previous = vcKeyLocks.get(key) ?? Promise.resolve();
+  const result = previous.then(task);
+  const settled = result.catch(() => undefined);
+  vcKeyLocks.set(key, settled);
+  settled.then(() => {
+    if (vcKeyLocks.get(key) === settled) {
+      vcKeyLocks.delete(key);
+    }
+  });
+  return result;
 }
 
 class Storage {
@@ -82,8 +101,9 @@ class Storage {
     try {
       const isSavingVC = VCMetadata.isVCKey(key);
       if (isSavingVC) {
-        await this.storeVC(key, data);
-        return await this.storeVcHmac(encryptionKey, data, key);
+        return await withVcKeyLock(key, () =>
+          this.storeVC(key, data, encryptionKey),
+        );
       }
 
       await MMKV.setItem(key, data);
@@ -98,25 +118,7 @@ class Storage {
       const isVCKey = VCMetadata.isVCKey(key);
 
       if (isVCKey) {
-        const data = await this.readVCFromFile(key);
-        const isCorrupted = await this.isCorruptedVC(key, encryptionKey, data);
-
-        if (isCorrupted) {
-          sendErrorEvent(
-            getErrorEventData(
-              TelemetryConstants.FlowType.fetchData,
-              TelemetryConstants.ErrorId.tampered,
-              'VC is corrupted and will be deleted from storage',
-            ),
-          );
-          console.debug(
-            '[Inji-406]: VC is corrupted and will be deleted from storage',
-          );
-          console.debug('[Inji-406]: VC key: ', key);
-          console.debug('[Inji-406]: is Data null', data === null);
-        }
-
-        return isCorrupted ? null : data;
+        return await withVcKeyLock(key, () => this.readVC(key, encryptionKey));
       }
 
       return await MMKV.getItem(key);
@@ -155,12 +157,19 @@ class Storage {
 
   static removeItem = async (key: string) => {
     if (VCMetadata.isVCKey(key)) {
-      const path = getFilePath(key);
-      const isFileExists = await FileStorage.exists(path);
-      if (isFileExists) {
-        return await FileStorage.removeItem(path);
-      } else {
+      const isFileRemoved = await withVcKeyLock(key, async () => {
+        await FileStorage.removeItemIfExist(getPendingFilePath(key));
+        const path = getFilePath(key);
+        const isFileExists = await FileStorage.exists(path);
+        if (isFileExists) {
+          await FileStorage.removeItem(path);
+          return true;
+        }
         console.warn('file not exist`s');
+        return false;
+      });
+      if (isFileRemoved) {
+        return;
       }
     }
     MMKV.removeItem(key);
@@ -180,6 +189,53 @@ class Storage {
     }
   };
 
+  // A save writes the pending file, then the HMAC, then moves the pending file into place, so
+  // after an interruption the HMAC matches either the pending file (finish the move) or the
+  // current file (drop the pending one). Data matching neither has been tampered with.
+  private static async readVC(key: string, encryptionKey: string) {
+    const storedHMACofCurrentVC = await this.readHmacForDataCorruptionCheck(
+      key,
+      encryptionKey,
+    );
+    const path = getFilePath(key);
+    const pendingPath = getPendingFilePath(key);
+
+    if (await FileStorage.exists(pendingPath)) {
+      const pendingData = await FileStorage.readFile(pendingPath);
+      const HMACofPendingVC = await generateHmac(encryptionKey, pendingData);
+      if (
+        storedHMACofCurrentVC !== null &&
+        HMACofPendingVC === storedHMACofCurrentVC
+      ) {
+        await this.replaceWithPendingFile(pendingPath, path);
+        console.info(`Completed an interrupted save of VC - ${key}`);
+        return pendingData;
+      }
+      await FileStorage.removeItem(pendingPath);
+    }
+
+    const data = await this.readVCFromFile(key);
+    const HMACofVC = await generateHmac(encryptionKey, data);
+    const isCorrupted = HMACofVC !== storedHMACofCurrentVC;
+
+    if (isCorrupted) {
+      sendErrorEvent(
+        getErrorEventData(
+          TelemetryConstants.FlowType.fetchData,
+          TelemetryConstants.ErrorId.tampered,
+          'VC is corrupted and will be deleted from storage',
+        ),
+      );
+      console.debug(
+        '[Inji-406]: VC is corrupted and will be deleted from storage',
+      );
+      console.debug('[Inji-406]: VC key: ', key);
+      console.debug('[Inji-406]: is Data null', data === null);
+    }
+
+    return isCorrupted ? null : data;
+  }
+
   private static async isVCAlreadyDownloaded(
     key: string,
     encryptionKey: string,
@@ -190,24 +246,6 @@ class Storage {
         encryptionKey,
       );
       return storedHMACofCurrentVC !== null;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  private static async isCorruptedVC(
-    key: string,
-    encryptionKey: string,
-    data: string,
-  ) {
-    // TODO: INJI-612 refactor
-    try {
-      const storedHMACofCurrentVC = await this.readHmacForDataCorruptionCheck(
-        key,
-        encryptionKey,
-      );
-      const HMACofVC = await generateHmac(encryptionKey, data);
-      return HMACofVC !== storedHMACofCurrentVC;
     } catch (e) {
       throw e;
     }
@@ -245,10 +283,27 @@ class Storage {
     return await FileStorage.readFile(getFilePath(key));
   }
 
-  private static async storeVC(key: string, data: string) {
+  private static async storeVC(
+    key: string,
+    data: string,
+    encryptionKey: string,
+  ) {
     await FileStorage.createDirectory(vcDirectoryPath);
-    const path = getFilePath(key);
-    return await FileStorage.writeFile(path, data);
+    const pendingPath = getPendingFilePath(key);
+    await FileStorage.writeFile(pendingPath, data);
+    await this.storeVcHmac(encryptionKey, data, key);
+    await this.replaceWithPendingFile(pendingPath, getFilePath(key));
+  }
+
+  private static async replaceWithPendingFile(
+    pendingPath: string,
+    path: string,
+  ) {
+    // Android's rename replaces the file in one step; iOS refuses to move onto an existing file.
+    if (isIOS()) {
+      await FileStorage.removeItemIfExist(path);
+    }
+    await FileStorage.moveFile(pendingPath, path);
   }
 
   private static async storeVcHmac(
