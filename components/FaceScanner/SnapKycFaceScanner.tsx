@@ -42,8 +42,8 @@ import {
  */
 export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
   const {t} = useTranslation('FaceScanner');
+  const {c} = useRevampTheme();
   const hasStartedRef = useRef(false);
-  const [isCheckingPermission, setIsCheckingPermission] = useState(true);
   const [isPermissionDenied, setIsPermissionDenied] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
 
@@ -159,20 +159,19 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
       const permission = await Camera.getCameraPermissionsAsync();
       if (!permission.granted) {
         const requested = await Camera.requestCameraPermissionsAsync();
-        setIsCheckingPermission(false);
         if (!requested.granted) {
           setIsPermissionDenied(true);
           return;
         }
-      } else {
-        setIsCheckingPermission(false);
       }
 
       await runLiveness();
     })();
   }, [runLiveness]);
 
-  if (isCheckingPermission || isLaunching) {
+  // Only once the check has started: while the system's camera prompt is up, "Verifying your
+  // face" would be shown behind it before anything is being verified.
+  if (isLaunching) {
     return <FaceVerifyingView onCancel={() => settle(props.onCancel)} />;
   }
 
@@ -194,7 +193,8 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
     );
   }
 
-  return <Column fill />;
+  // The camera permission check, and the moment after the check ends while the page closes.
+  return <View style={[styles.fill, {backgroundColor: c.canvas}]} />;
 };
 
 /**
