@@ -33,7 +33,7 @@ describe('compareProbeWithVcFace', () => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
   });
 
-  describe('with the liveness SDK face match (iOS)', () => {
+  describe('with the liveness SDK face match', () => {
     beforeEach(() => {
       (hasSdkFaceMatch as jest.Mock).mockReturnValue(true);
     });
@@ -85,7 +85,7 @@ describe('compareProbeWithVcFace', () => {
     });
   });
 
-  describe('with @iriscan (Android)', () => {
+  describe('with @iriscan (native build without the SDK match)', () => {
     beforeEach(() => {
       (hasSdkFaceMatch as jest.Mock).mockReturnValue(false);
     });

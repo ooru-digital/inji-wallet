@@ -1,33 +1,56 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
-// SnapKYC face-liveness AARs live on a private Artifactory. Credentials come from an untracked
-// android/artifactory.local.properties, falling back to ARTIFACTORY_USERNAME/PASSWORD for CI.
+// The BioChq face SDK (io.ooru.biometrics) lives on the BioChq Nexus. Credentials, first found
+// wins: an untracked android/artifactory.local.properties, ARTIFACTORY_USERNAME/PASSWORD (CI),
+// then the Nexus line of ~/.netrc, the same file Xcode uses for the iOS SDK. Never in the repo.
 def artifactoryProps = new Properties()
 def artifactoryFile = rootProject.file("artifactory.local.properties")
 if (artifactoryFile.exists()) artifactoryProps.load(new FileInputStream(artifactoryFile))
 artifactoryProps.each { key, value -> rootProject.ext.set(key, value) }
 
+def biochqNexusHost = "nexus-biochq.credissuer.com"
+// login and password of `machine <biochqNexusHost>` in ~/.netrc, or an empty map.
+def netrcCredentials = {
+    def netrc = new File(System.getProperty("user.home"), ".netrc")
+    if (!netrc.canRead()) return [:]
+    def tokens = netrc.text.split(/\s+/).findAll { it }
+    def found = [:]
+    def inHost = false
+    for (int i = 0; i < tokens.size() - 1; i++) {
+        def token = tokens[i]
+        if (token == "machine") {
+            inHost = tokens[i + 1] == biochqNexusHost
+        } else if (token == "default") {
+            inHost = false
+        } else if (inHost && (token == "login" || token == "password")) {
+            found[token] = tokens[i + 1]
+        }
+    }
+    return found
+}.memoize()
+
 def snapKycArtifactoryUsername = {
     artifactoryProps.getProperty("artifactoryUsername")
         ?: System.getenv("ARTIFACTORY_USERNAME")
+        ?: netrcCredentials().login
         ?: ""
 }
 def snapKycArtifactoryPassword = {
     artifactoryProps.getProperty("artifactoryPassword")
         ?: System.getenv("ARTIFACTORY_PASSWORD")
+        ?: netrcCredentials().password
         ?: ""
 }
 def biochqUseLocalMaven =
     (artifactoryProps.getProperty("biochqUseLocalMaven") ?: "false").toBoolean()
-// Defaults point at the public Nexus, which needs no VPN. The old internal host
-// (http://biometrics.credissuer.com:8081) resolved to an RFC1918 address and so
-// only built from inside the corporate network; it still works if set explicitly.
+// The SDK's release repositories, as in its integration guide: buildpiper-release holds releases
+// and release candidates (never changed once published), buildpiper-snapshot the dev builds.
 def artifactorySnapshotUrl =
     artifactoryProps.getProperty("artifactorySnapshotUrl")
-        ?: "https://nexus-biochq.credissuer.com/repository/maven-snapshots/"
+        ?: "https://${biochqNexusHost}/repository/buildpiper-snapshot/"
 def artifactoryReleaseUrl =
     artifactoryProps.getProperty("artifactoryReleaseUrl")
-        ?: "https://nexus-biochq.credissuer.com/repository/maven-releases/"
+        ?: "https://${biochqNexusHost}/repository/buildpiper-release/"
 def biochqLocalMavenPath =
     artifactoryProps.getProperty("biochqLocalMavenPath")
         ?: "${rootProject.projectDir}/local-maven"
@@ -72,9 +95,9 @@ allprojects { repositories {
             content { includeGroup "io.ooru.biometrics" }
         }
     } else {
-        // The SnapKYC deps resolve from maven-releases now that they are fixed versions; the
-        // snapshot repo is kept declared only so an older -SNAPSHOT build still resolves if one is
-        // ever pinned again. `includeGroup` keeps every other dependency off this credentialed
+        // The face SDK resolves from buildpiper-release (a fixed release or release candidate);
+        // the snapshot repo is kept declared only so a -SNAPSHOT build resolves if one is ever
+        // pinned for testing. `includeGroup` keeps every other dependency off this credentialed
         // host. Cleartext is permitted only when the configured URL is actually plain http, so the
         // default https Nexus is never downgraded.
         maven {

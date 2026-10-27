@@ -60,7 +60,7 @@ export async function compareProbeWithVcFace(
     return 'unusable';
   }
 
-  // iOS: the liveness SDK matches faces itself. Android still uses @iriscan.
+  // The liveness SDK matches faces itself; @iriscan is only the fallback for an older native build.
   const useSdkMatch = hasSdkFaceMatch();
 
   // @iriscan's native compare crashes the app (iOS) when the model isn't set up, so this must not
