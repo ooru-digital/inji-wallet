@@ -57,6 +57,8 @@ android/artifactory.local.properties
 .kotlin/
 *.keystore
 !debug.keystore
+# Release signing passwords for the keystore above. Never commit.
+keystore.properties
 
 # node.js
 #
