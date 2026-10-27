@@ -215,7 +215,7 @@ class Storage {
             'Recovered an interrupted VC save',
           ),
         );
-        console.info(`Completed an interrupted save of VC - ${key}`);
+        console.info('Completed an interrupted VC save');
         return pendingData;
       }
       await FileStorage.removeItem(pendingPath);
@@ -226,7 +226,7 @@ class Storage {
           'Discarded an unfinished VC save',
         ),
       );
-      console.info(`Discarded an unfinished save of VC - ${key}`);
+      console.info('Discarded an unfinished VC save');
     }
 
     const data = await this.readVCFromFile(key);
