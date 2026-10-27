@@ -16,7 +16,7 @@ export type SnapKycLivenessOptions = {
   skipFaceImage?: boolean;
 };
 
-/** The face SDK's verdict on two faces (iOS). */
+/** The face SDK's verdict on two faces. */
 export type SdkFaceMatchResult = {
   isMatch: boolean;
   cosine: number;
@@ -33,7 +33,7 @@ type SnapKycLivenessModuleType = {
     faceImageBase64?: string;
     skipFaceImage?: boolean;
   }) => Promise<SnapKycLivenessResult>;
-  /** iOS only: the BioChq SDK's own face match. Rejects with the SDK's error code. */
+  /** The BioChq SDK's own face match. Rejects with the SDK's error code. */
   matchFace?: (
     probeBase64: string,
     galleryBase64: string,
@@ -45,7 +45,10 @@ const {SnapKycLivenessModule} = NativeModules as {
   SnapKycLivenessModule?: SnapKycLivenessModuleType;
 };
 
-/** Whether the liveness SDK also matches faces here (iOS), instead of @iriscan. */
+/**
+ * Whether the native module has the SDK's face match. It does on both platforms; false means the
+ * native module is miswired, and the face check then fails rather than match some other way.
+ */
 export function hasSdkFaceMatch(): boolean {
   return typeof SnapKycLivenessModule?.matchFace === 'function';
 }

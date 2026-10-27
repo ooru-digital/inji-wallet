@@ -21,9 +21,8 @@ import {
 } from '../../shared/snapKyc/compressFaceImage';
 
 /**
- * Runs the native liveness SDK (SnapKYC on Android, BioChqFaceLiveness on iOS), then matches the
- * live probe against the credential portrait: with BioChqFaceLiveness's own face match on iOS,
- * and with the @iriscan face-match SDK on Android.
+ * Runs the BioChq face SDK's liveness check (Android and iOS), then matches the live probe against
+ * the credential portrait with the same SDK's face match.
  * Renders almost nothing itself — the liveness SDK takes over with its own full-screen screen.
  */
 export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
@@ -111,7 +110,7 @@ export const SnapKycFaceScanner: React.FC<SnapKycFaceScannerProps> = props => {
       }
       props.onInvalid();
     } finally {
-      // The SDK's matcher (iOS) starts loading with the liveness check; free it however it ended.
+      // The SDK's matcher starts loading with the liveness check; free it however it ended.
       closeSdkFaceMatch();
       setIsLaunching(false);
     }
