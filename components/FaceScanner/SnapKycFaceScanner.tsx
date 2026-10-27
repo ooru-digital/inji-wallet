@@ -1,8 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Camera} from 'expo-camera';
 import {
-  Animated,
-  Easing,
   I18nManager,
   Linking,
   Modal as RNModal,
@@ -21,6 +19,7 @@ import {ScaledText} from '../revamp/ScaledText';
 import {ChevronIcon} from '../revamp/Icons';
 import {fonts, radii} from '../revamp/tokens';
 import {useRevampTheme} from '../revamp/useRevampTheme';
+import {SpinnerGlyph} from '../revamp/Page';
 import testIDProps from '../../shared/commonUtil';
 import {
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE_ENABLED,
@@ -206,7 +205,6 @@ interface SnapKycFaceScannerProps {
 }
 
 const BADGE_SIZE = 120;
-const RING_WIDTH = 4;
 
 /** "Verifying your face": shown before the camera opens and while the face is matched. */
 const FaceVerifyingView: React.FC<{onCancel: () => void}> = ({onCancel}) => {
@@ -416,82 +414,25 @@ const TextAction: React.FC<{
   );
 };
 
-/** Face outline in a tinted circle, with a quarter arc running round it. */
-const SpinnerBadge: React.FC = () => {
-  const {c, reduceMotion} = useRevampTheme();
-  const rotation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (reduceMotion) {
-      return;
-    }
-    const spin = Animated.loop(
-      Animated.timing(rotation, {
-        toValue: 1,
-        duration: 1100,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-    );
-    spin.start();
-    return () => spin.stop();
-  }, [reduceMotion, rotation]);
-
-  const center = BADGE_SIZE / 2;
-  const radius = (BADGE_SIZE - RING_WIDTH) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const rotate = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  return (
-    <View
-      style={styles.badge}
-      accessibilityRole="progressbar"
-      importantForAccessibility="no-hide-descendants">
-      <Svg width={BADGE_SIZE} height={BADGE_SIZE}>
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill={c.tintAzure}
-          stroke={c.azureInk}
-          strokeOpacity={0.12}
-          strokeWidth={RING_WIDTH}
-        />
+/** Face outline in the spinning ring. */
+const SpinnerBadge: React.FC = () => (
+  <SpinnerGlyph size={BADGE_SIZE} style={styles.badgeSpacing}>
+    {colour => (
+      <Svg
+        width={44}
+        height={44}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={colour}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round">
+        <Path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+        <Path d="M9 9v1.5M15 9v1.5M12 9v4l-1 .5M8.5 15.5a5 5 0 0 0 7 0" />
       </Svg>
-      <Animated.View style={[StyleSheet.absoluteFill, {transform: [{rotate}]}]}>
-        <Svg width={BADGE_SIZE} height={BADGE_SIZE}>
-          <Circle
-            cx={center}
-            cy={center}
-            r={radius}
-            fill="none"
-            stroke={c.ink}
-            strokeWidth={RING_WIDTH}
-            strokeLinecap="round"
-            strokeDasharray={`${circumference / 4} ${circumference}`}
-          />
-        </Svg>
-      </Animated.View>
-      <View style={[StyleSheet.absoluteFill, styles.badgeCenter]}>
-        <Svg
-          width={44}
-          height={44}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={c.ink}
-          strokeWidth={1.6}
-          strokeLinecap="round"
-          strokeLinejoin="round">
-          <Path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
-          <Path d="M9 9v1.5M15 9v1.5M12 9v4l-1 .5M8.5 15.5a5 5 0 0 0 7 0" />
-        </Svg>
-      </View>
-    </View>
-  );
-};
+    )}
+  </SpinnerGlyph>
+);
 
 const styles = StyleSheet.create({
   fill: {flex: 1, alignSelf: 'stretch'},
@@ -524,6 +465,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   badgeCenter: {alignItems: 'center', justifyContent: 'center'},
+  badgeSpacing: {marginBottom: 32},
   heading: {
     fontFamily: fonts.bold,
     fontSize: 24,
