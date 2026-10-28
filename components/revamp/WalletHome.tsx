@@ -13,6 +13,7 @@ import {NewCardDot} from './NewCardDot';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import {Copilot} from '../ui/Copilot';
+import {useCopilot} from 'react-native-copilot';
 import {COPILOT_FINAL_STEP} from '../../shared/constants';
 import {VCMetadata} from '../../shared/VCMetadata';
 import {VCShareFlowType} from '../../shared/Utils';
@@ -113,6 +114,28 @@ export const WalletHome: React.FC<{
       setLoaded(prev => ({...prev, [key]: card})),
     [],
   );
+
+  // The card step measures the card where it sits on screen, so a page scrolled down to the
+  // card's details put the highlight off the top. Scroll back to the top when the tour starts
+  // (steps 1-5 aren't in this scroll view, so by the card step it has settled) and again if
+  // the card step comes up some other way.
+  const scrollRef = useRef<ScrollView>(null);
+  const {copilotEvents} = useCopilot();
+  useEffect(() => {
+    const scrollToTop = () =>
+      scrollRef.current?.scrollTo({y: 0, animated: false});
+    const onStepChange = (step?: {order?: number}) => {
+      if (step?.order === COPILOT_FINAL_STEP) {
+        scrollToTop();
+      }
+    };
+    copilotEvents.on('start', scrollToTop);
+    copilotEvents.on('stepChange', onStepChange);
+    return () => {
+      copilotEvents.off('start', scrollToTop);
+      copilotEvents.off('stepChange', onStepChange);
+    };
+  }, [copilotEvents]);
 
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
@@ -332,6 +355,7 @@ export const WalletHome: React.FC<{
       />
 
       <ScrollView
+        ref={scrollRef}
         style={{flex: 1}}
         contentContainerStyle={{paddingBottom: TAB_BAR_SPACE + insets.bottom}}
         keyboardShouldPersistTaps="handled"
