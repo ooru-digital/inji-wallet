@@ -6,6 +6,7 @@ import {
   selectPasscode,
   selectPasscodeSalt,
   selectIsBiometricToggleFromSettings,
+  selectBiometrics,
 } from '../machines/auth';
 import {PasscodeRouteProps} from '../routes';
 import {GlobalContext} from '../shared/GlobalContext';
@@ -15,7 +16,7 @@ import {
   sendEndEvent,
 } from '../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
-import { SettingsEvents } from '../machines/settings';
+import {SettingsEvents} from '../machines/settings';
 
 export function usePasscodeScreen(props: PasscodeRouteProps) {
   const {appService} = useContext(GlobalContext);
@@ -41,6 +42,14 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
     }
   }, [isAuthorized]);
 
+  const toggleUnlock = useSelector(
+    authService,
+    selectIsBiometricToggleFromSettings,
+  );
+  // Set during onboarding after choosing biometrics, as the fallback for them.
+  const biometrics = useSelector(authService!, selectBiometrics);
+  const isBackupPasscode = !toggleUnlock && !!biometrics;
+
   return {
     isPasscodeSet,
     passcode,
@@ -49,7 +58,8 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
     setError,
 
     storedPasscode: useSelector(authService, selectPasscode),
-    toggleUnlock: useSelector(authService, selectIsBiometricToggleFromSettings),
+    toggleUnlock,
+    isBackupPasscode,
 
     LOGIN: () => {
       authService.send(AuthEvents.LOGIN());
@@ -57,7 +67,12 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
 
     SETUP_PASSCODE: () => {
       authService.send(AuthEvents.SETUP_PASSCODE(passcode));
-      settingsService?.send(SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(false,true))
+      // A backup passcode keeps biometric unlock on; switching to a passcode turns it off.
+      if (!isBackupPasscode) {
+        settingsService?.send(
+          SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(false, true),
+        );
+      }
     },
 
     storedSalt: useSelector(authService, selectPasscodeSalt),

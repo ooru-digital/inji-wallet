@@ -46,7 +46,7 @@ export const AuthScreen: React.FC<RootRouteProps> = props => {
         'Use Passcode Button',
       ),
     );
-    controller.navigateToPasscode();
+    controller.choosePasscodeOnly();
   };
 
   return (

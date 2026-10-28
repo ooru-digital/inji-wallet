@@ -10,7 +10,7 @@ fileignoreconfig:
   - filename: screens/Settings/KeyManagementScreen.tsx
     checksum: bcee7f81ce1bb46b73927834b3a2b84d86f7ef065a2731610cda7ea07edc041d
   - filename: screens/AuthScreenController.ts
-    checksum: 997dc27895c61709a3375504c83ef5a715ae8b0582251abf2e6e482d67794ab8
+    checksum: 01c3ce4379f8a9deab5a7ca89f544e8f3478d51fa2cf87c681b731159a85680a
   - filename: package.json
     checksum: 5b4fcb5ddc7cc96cc2d1733b544d56ea66e88cdab995a1052fbf9ac0e9c2dc21
   - filename: lib/jsonld-signatures/suites/ed255192018/ed25519.ts
@@ -465,7 +465,7 @@ fileignoreconfig:
   - filename: components/revamp/SettingsList.tsx
     checksum: 34aab779e1083a573f361fc20bdd8c4943e14949139cef35eb325688c263d702
   - filename: screens/Settings/SettingScreen.tsx
-    checksum: 6b7a55da2b44d156f049af0105f70e9930c8f2c3ea7e0e8846d2fb4ecd80367f
+    checksum: b6581a8f9a1f288faf6a0fae51f558f8ac002f54e1e36c0681591bd6cbf62975
   - filename: screens/Settings/autoLock.ts
     checksum: aafffaeb1bf5417893319cc235b25fbcb67eed6d271fed8340cfdc8e91420092
   - filename: screens/Settings/ChangePin.tsx
@@ -540,5 +540,9 @@ fileignoreconfig:
     checksum: 32e9d6f9b404bb6b47394769adfd2f00ecdbbad78ffc191e0380c2186b099890
   - filename: machines/VerifiableCredential/VCItemMachine/backgroundStatusChecks.test.ts
     checksum: b2ed9fc13c625e64f53764d42013a76c4b3ee21fa4cc60c810b7a143fafd9de4
+  - filename: machines/auth.test.ts
+    checksum: 3d0bbbc136bc39978efed756143dad900302e7e05ebe0fa27ddb262adc8e1c3f
+  - filename: screens/PasscodeScreenController.ts
+    checksum: bc68b007b199190752cf6228c689fadf99faf530ed81dbfd10cc1124bb02fa73
     version: "1.0"
 
