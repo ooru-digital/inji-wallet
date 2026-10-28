@@ -35,6 +35,8 @@ export type MdocRequestPurpose = NonNullable<
  * replaces the sending screen the moment it arrives.
  */
 export function deriveMdocShareStep(state: {
+  /** Started by a reader's tap: there is no QR code to show, the reader is already connecting. */
+  nfc?: boolean;
   qrReady: boolean;
   qrError: boolean;
   readerConnected: boolean;
@@ -58,6 +60,9 @@ export function deriveMdocShareStep(state: {
     return 'consent';
   }
   if (state.readerConnected) {
+    return 'connecting';
+  }
+  if (state.nfc) {
     return 'connecting';
   }
   if (state.qrError) {

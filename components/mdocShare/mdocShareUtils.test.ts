@@ -31,6 +31,19 @@ const idle = {
 };
 
 describe('deriveMdocShareStep', () => {
+  it('starts a tapped share at Connecting, with no QR code to show', () => {
+    expect(deriveMdocShareStep({...idle, nfc: true})).toBe('connecting');
+    expect(deriveMdocShareStep({...idle, nfc: true, qrError: true})).toBe(
+      'connecting',
+    );
+    expect(
+      deriveMdocShareStep({...idle, nfc: true, hasConsentRequest: true}),
+    ).toBe('consent');
+    expect(deriveMdocShareStep({...idle, nfc: true, result: 'failure'})).toBe(
+      'failed',
+    );
+  });
+
   it('walks the happy path in order', () => {
     expect(deriveMdocShareStep(idle)).toBe('loading');
     expect(deriveMdocShareStep({...idle, qrReady: true})).toBe('showQr');

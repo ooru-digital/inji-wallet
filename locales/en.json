@@ -1700,5 +1700,13 @@
     "downloadingCard": "Downloading your card…",
     "unknownIssuer": "Unknown issuer",
     "offering": "Offering"
+  },
+  "NfcTapShare": {
+    "chooseTitle": "A reader wants a card",
+    "chooseBody": "Choose the card to share. You’ll see what it asks for before anything is sent.",
+    "noCardsTitle": "No card to share",
+    "noCardsBody": "Add a driving licence or another mobile document to share it by tapping.",
+    "readerGoneTitle": "The reader stopped waiting",
+    "readerGoneBody": "Tap the phones together again to share."
   }
 }

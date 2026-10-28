@@ -568,6 +568,11 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
                 },
               );
               if (!cancelled && p && isoPresentmentGeneration === generation) {
+                // A reader that tapped the phone is waiting for this card: answer the tap
+                // rather than advertise for the QR code. Consent and the rest are the same.
+                if (props.nfcEngagementId) {
+                  p.nfcEngagementId = props.nfcEngagementId;
+                }
                 if (__DEV__) {
                   console.log(
                     '[QrCodeOverlay] Starting native ISO 18013-5 presentment before QR paint (Multipaz order)…',
@@ -586,10 +591,11 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
                     );
                   }
                   // A session that dies after the reader attached (link dropped before
-                  // the request) would otherwise leave the Connecting screen up.
+                  // the request) would otherwise leave the Connecting screen up. After a
+                  // tap there is no QR code to fall back on, so any failure ends it.
                   if (
                     isoPresentmentGeneration === generation &&
-                    readerConnectedRef.current &&
+                    (readerConnectedRef.current || props.nfcEngagementId) &&
                     !responseSentRef.current
                   ) {
                     setConsentRequest(null);
@@ -597,13 +603,21 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
                     setConsentResult(prev => prev ?? 'failure');
                   }
                 });
-              } else if (__DEV__ && !p) {
-                console.warn(
-                  '[QrCodeOverlay] ISO 18013-5 presentment not started — see earlier [mdoc presentment] warnings (credential / persisted engagement).',
-                );
+              } else if (!p) {
+                if (props.nfcEngagementId && !cancelled) {
+                  setConsentResult('failure');
+                }
+                if (__DEV__) {
+                  console.warn(
+                    '[QrCodeOverlay] ISO 18013-5 presentment not started — see earlier [mdoc presentment] warnings (credential / persisted engagement).',
+                  );
+                }
               }
             }
           } catch (e) {
+            if (props.nfcEngagementId && !cancelled) {
+              setConsentResult('failure');
+            }
             if (__DEV__) {
               console.warn(
                 '[QrCodeOverlay] ISO 18013-5 presentment bootstrap failed:',
@@ -810,6 +824,7 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
   }
 
   const mdocStep = deriveMdocShareStep({
+    nfc: !!props.nfcEngagementId,
     qrReady: qrString !== '',
     qrError,
     readerConnected,
@@ -856,7 +871,7 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
 
   return (
     <>
-      {qrString != '' && !qrError && (
+      {!props.presentmentOnly && qrString != '' && !qrError && (
         <React.Fragment>
           <View testID="qrCodeView" style={Theme.QrCodeStyles.QrView}>
             {props.showInlineQr !== false && (
@@ -1018,4 +1033,8 @@ interface QrCodeOverlayProps {
   /** Display name of the credential type (e.g. "Mobile Driving Licence") for the mDoc share flow. */
   credentialName?: string;
   issuerLogoUrl?: string;
+  /** A reader that tapped the phone (NFC) and is waiting for this card; see NfcTapShare. */
+  nfcEngagementId?: string;
+  /** Run the session, consent and result only - no QR code, the reader already has us. */
+  presentmentOnly?: boolean;
 }
