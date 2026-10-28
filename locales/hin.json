@@ -142,7 +142,8 @@
       "close": "बंद करें",
       "loadingQr": "आपका QR कोड तैयार हो रहा है…",
       "qrErrorTitle": "QR कोड नहीं बन सका",
-      "qrErrorMessage": "यह स्क्रीन बंद करें और फिर से प्रयास करें।"
+      "qrErrorMessage": "यह स्क्रीन बंद करें और फिर से प्रयास करें।",
+      "stepPhonesTapped": "फ़ोन टैप किए गए"
     },
     "nationalCard": "राष्ट्रीय पहचान पत्र",
     "identityCard": "पहचान पत्र",

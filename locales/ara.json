@@ -142,7 +142,8 @@
       "close": "إغلاق",
       "loadingQr": "جارٍ تجهيز رمز QR…",
       "qrErrorTitle": "تعذّر إنشاء رمز QR",
-      "qrErrorMessage": "أغلق هذه الشاشة وحاول مرة أخرى."
+      "qrErrorMessage": "أغلق هذه الشاشة وحاول مرة أخرى.",
+      "stepPhonesTapped": "تم تقريب الهاتفين"
     },
     "nationalCard": "الهوية الوطنية",
     "identityCard": "بطاقة الهوية",

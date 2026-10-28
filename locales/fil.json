@@ -142,7 +142,8 @@
       "close": "Isara",
       "loadingQr": "Inihahanda ang iyong QR code…",
       "qrErrorTitle": "Hindi magawa ang QR code",
-      "qrErrorMessage": "Isara ang screen na ito at subukang muli."
+      "qrErrorMessage": "Isara ang screen na ito at subukang muli.",
+      "stepPhonesTapped": "Na-tap ang mga telepono"
     },
     "nationalCard": "Pambansang ID",
     "identityCard": "Kard ng Pagkakakilanlan",

@@ -191,6 +191,7 @@
       "connectingTitle": "Connecting Securely",
       "connectingMessage": "Keep your phone close to the verifier's device.",
       "stepQrScanned": "QR code scanned",
+      "stepPhonesTapped": "Phones tapped",
       "stepBluetoothConnected": "Bluetooth connection established",
       "stepSecureSession": "Setting up an encrypted session",
       "stepReceivingRequest": "Receiving their request",

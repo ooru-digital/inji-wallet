@@ -947,6 +947,7 @@ export const QrCodeOverlay: React.FC<QrCodeOverlayProps> = props => {
         // opened, because a verifier can scan the small inline QR on the card.
         <MdocShareFlow
           visible={overlayVisible || isSessionStep(mdocStep)}
+          tapped={!!props.nfcEngagementId}
           step={mdocStep}
           title={
             mdocDocType === MDL_DOC_TYPE

@@ -80,7 +80,11 @@ export const MdocShareFlow: React.FC<MdocShareFlowProps> = props => {
         );
       case 'connecting':
         return (
-          <MdocConnectingStep title={props.title} onCancel={props.onCancel} />
+          <MdocConnectingStep
+            title={props.title}
+            onCancel={props.onCancel}
+            tapped={props.tapped}
+          />
         );
       case 'consent':
         return props.consentRequest ? (
@@ -155,6 +159,8 @@ type QrSvgRef = {toDataURL: (callback: (dataURL: string) => void) => void};
 
 export interface MdocShareFlowProps {
   visible: boolean;
+  /** The session started with a reader's tap rather than a QR scan. */
+  tapped?: boolean;
   step: MdocShareStep;
   title: string;
   credentialName: string;
