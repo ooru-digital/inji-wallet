@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import {ScaledText} from './ScaledText';
 import {NewCardDot} from './NewCardDot';
-import {useNavigation} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import {Copilot} from '../ui/Copilot';
 import {useCopilot} from 'react-native-copilot';
@@ -79,8 +79,11 @@ export const WalletHome: React.FC<{
   onAdd: () => void;
   refreshing: boolean;
   onRefresh: () => void;
-  /** The shown card is a tour step: while the tour is replayed from Settings. */
+  /** The shown card is a tour step: while the tour is replayed from Settings, or until the
+   * first-card tour has been shown. */
   isCardTourStep?: boolean;
+  /** Show the card tour step on its own once a card is showing: the first card was added. */
+  startCardTour?: boolean;
   /** A card to open the details page of once it has loaded, e.g. from a notification. */
   openVcKey?: string;
   onVcOpened?: () => void;
@@ -95,6 +98,7 @@ export const WalletHome: React.FC<{
   refreshing,
   onRefresh,
   isCardTourStep = false,
+  startCardTour = false,
   openVcKey,
   onVcOpened,
   highlightVcKey,
@@ -120,7 +124,11 @@ export const WalletHome: React.FC<{
   // (steps 1-5 aren't in this scroll view, so by the card step it has settled) and again if
   // the card step comes up some other way.
   const scrollRef = useRef<ScrollView>(null);
-  const {copilotEvents} = useCopilot();
+  const {
+    copilotEvents,
+    start: startTour,
+    visible: isTourVisible,
+  } = useCopilot();
   useEffect(() => {
     const scrollToTop = () =>
       scrollRef.current?.scrollTo({y: 0, animated: false});
@@ -267,6 +275,32 @@ export const WalletHome: React.FC<{
   const markSeen = (key?: string) => {
     if (key && key === newCardKey) setNewCardKey(null);
   };
+
+  /**
+   * The card tour step, shown once after the first card is added. Waits until Home is the
+   * screen in view (not under the "Added to your wallet" screen) and the front card has loaded,
+   * so the highlight has a card to land on. Stopping the tour on this step marks it done
+   * (INITIAL_DOWNLOAD_DONE in CopilotTooltip), so it doesn't come back.
+   */
+  const isFocused = useIsFocused();
+  const frontCardKey = showPinned ? pinnedEntry?.key : activeEntry?.key;
+  const isFrontCardLoaded = !!(frontCardKey && loaded[frontCardKey]);
+  const hasStartedCardTour = useRef(false);
+  useEffect(() => {
+    if (
+      !startCardTour ||
+      hasStartedCardTour.current ||
+      isTourVisible ||
+      !isFocused ||
+      !isFrontCardLoaded ||
+      detailEntry ||
+      searching
+    ) {
+      return;
+    }
+    hasStartedCardTour.current = true;
+    startTour(t('copilot:cardTitle'));
+  }, [startCardTour, isFocused, isFrontCardLoaded, !!detailEntry, searching]);
 
   const [qrFor, setQrFor] = useState<string | null>(null);
   // Which Show QR modal opened, chosen once when it opens: switching modals while one is open
