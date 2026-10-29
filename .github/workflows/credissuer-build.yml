@@ -1,17 +1,27 @@
 name: CredIssuer Wallet Build
 
-# Builds CredIssuer Wallet on GitHub and attaches the result to the run as a download.
-# Nothing is uploaded to the Play Store or TestFlight from here.
+# Builds CredIssuer Wallet on GitHub, attaches the result to the run as a download, and uploads it
+# to Google Play / TestFlight when the upload keys are configured.
 #
 # Run it from the Actions tab: choose this workflow, press "Run workflow", then pick the branch
 # and what to build. The button only appears once this file is on the default branch.
 #
-# Repository secrets it needs (Settings > Secrets and variables > Actions):
+# Versions are the ones committed in the repo (versionCode / versionName in
+# android/app/build.gradle, CURRENT_PROJECT_VERSION / MARKETING_VERSION in the Xcode project).
+# Bump them in a commit before running: Play and App Store Connect both reject a build number
+# they have already seen. The run summary shows which version was built.
+#
+# Secrets live in the `credissuer-release` environment (Settings > Environments), so only these
+# jobs can read them and the environment's protection rules apply:
 #   Both      CREDISSUER_API_TOKEN
 #   Android   CREDISSUER_ANDROID_KEYSTORE_BASE64, CREDISSUER_ANDROID_KEYSTORE_ALIAS,
 #             CREDISSUER_ANDROID_KEYSTORE_PASSWORD, ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD
 #   iOS       CREDISSUER_IOS_DIST_P12_BASE64, CREDISSUER_IOS_DIST_P12_PASSWORD,
-#             CREDISSUER_IOS_APPSTORE_PROFILE_BASE64
+#             CREDISSUER_IOS_APPSTORE_PROFILE_BASE64, ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD
+#             (the BioChq Nexus login: the face SDK is a Swift package downloaded from it)
+# Optional, for the uploads (each upload is skipped while its secrets are missing):
+#   Android   PLAY_SERVICE_ACCOUNT_JSON
+#   iOS       APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_P8
 # Files are stored base64-encoded: base64 -i <file> | pbcopy
 #
 # Optional repository variable CREDISSUER_IOS_RUNNER: the runner for the iOS job, for example
@@ -28,13 +38,15 @@ on:
           - android
           - ios
         default: both
-      android_output:
-        description: 'Android output: aab (Play Store upload) or apk (installs directly on a phone)'
+      play_track:
+        description: Google Play track for the Android upload
         type: choice
         options:
-          - aab
-          - apk
-        default: aab
+          - internal
+          - alpha
+          - beta
+          - production
+        default: internal
 
 permissions:
   contents: read
@@ -43,15 +55,22 @@ env:
   NODE_VERSION: '24'
   # The Xcode major version the app is built with locally.
   XCODE_MAJOR_VERSION: '27'
+  ANDROID_PACKAGE: io.ooru.credissuerwallet
+  AAB_PATH: android/app/build/outputs/bundle/residentappRelease/app-residentapp-release.aab
 
 jobs:
   android:
-    name: Android (${{ inputs.android_output }})
+    name: Android (AAB)
     if: inputs.platform != 'ios'
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    environment: credissuer-release
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Nothing here pushes. Keep the token out of .git/config, where npm install scripts
+          # could read it.
+          persist-credentials: false
 
       # A missing secret is an empty string, which otherwise only shows up much later as an
       # unrelated-looking signing or download error. Secrets are passed only to the steps that
@@ -73,7 +92,7 @@ jobs:
           [ -n "$ARTIFACTORY_USERNAME" ] || missing+=(ARTIFACTORY_USERNAME)
           [ -n "$ARTIFACTORY_PASSWORD" ] || missing+=(ARTIFACTORY_PASSWORD)
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Missing repository secrets: ${missing[*]}. Add them under Settings > Secrets and variables > Actions."
+            echo "::error::Missing secrets in the credissuer-release environment: ${missing[*]}."
             exit 1
           fi
 
@@ -111,25 +130,57 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_PASSWORD }}
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          ANDROID_OUTPUT: ${{ inputs.android_output }}
-        run: bash scripts/build-android.sh "$ANDROID_OUTPUT"
+        run: bash scripts/build-android.sh aab
+
+      - name: Summary
+        run: |
+          code=$(sed -n 's/^ *versionCode \([0-9]*\).*/\1/p' android/app/build.gradle | head -1)
+          name=$(sed -n 's/^ *versionName "\(.*\)".*/\1/p' android/app/build.gradle | head -1)
+          echo "### Android: $name ($code)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- AAB: $(du -h "$AAB_PATH" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: credissuer-wallet-android-${{ inputs.android_output }}
-          path: |
-            android/app/build/outputs/bundle/residentappRelease/app-residentapp-release.aab
-            android/app/build/outputs/apk/residentapp/release/CredIssuerWallet_universal.apk
+          name: credissuer-wallet-android-aab
+          path: ${{ env.AAB_PATH }}
           if-no-files-found: error
           retention-days: 14
+
+      - name: Check the Play upload key
+        id: play
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "- Not uploaded to Google Play: PLAY_SERVICE_ACCOUNT_JSON is not set. Download the AAB above." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload to Google Play (${{ inputs.play_track }})
+        if: steps.play.outputs.upload == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.ANDROID_PACKAGE }}
+          releaseFiles: ${{ env.AAB_PATH }}
+          track: ${{ inputs.play_track }}
+          status: completed
+
+      - name: Remove secret files
+        if: always()
+        run: rm -f .env.local android/app/release.keystore
 
   ios:
     name: iOS (signed IPA)
     if: inputs.platform != 'android'
     runs-on: ${{ vars.CREDISSUER_IOS_RUNNER || 'macos-26' }}
     timeout-minutes: 120
+    environment: credissuer-release
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Check required secrets
         env:
@@ -137,29 +188,34 @@ jobs:
           P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
           CREDISSUER_IOS_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
           PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
           missing=()
           [ -n "$CREDISSUER_API_TOKEN" ] || missing+=(CREDISSUER_API_TOKEN)
           [ -n "$P12_BASE64" ] || missing+=(CREDISSUER_IOS_DIST_P12_BASE64)
           [ -n "$CREDISSUER_IOS_P12_PASSWORD" ] || missing+=(CREDISSUER_IOS_DIST_P12_PASSWORD)
           [ -n "$PROFILE_BASE64" ] || missing+=(CREDISSUER_IOS_APPSTORE_PROFILE_BASE64)
+          [ -n "$ARTIFACTORY_USERNAME" ] || missing+=(ARTIFACTORY_USERNAME)
+          [ -n "$ARTIFACTORY_PASSWORD" ] || missing+=(ARTIFACTORY_PASSWORD)
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Missing repository secrets: ${missing[*]}. Add them under Settings > Secrets and variables > Actions."
+            echo "::error::Missing secrets in the credissuer-release environment: ${missing[*]}."
             exit 1
           fi
 
       # DEVELOPER_DIR is what xcodebuild and fastlane follow, and unlike xcode-select it needs
-      # no sudo and changes nothing outside this job.
+      # no sudo and changes nothing outside this job. Betas are skipped: a release is never built
+      # with one.
       - name: Select Xcode ${{ env.XCODE_MAJOR_VERSION }}
         run: |
           current="$(xcodebuild -version 2>/dev/null | sed -n 's/^Xcode \([0-9]*\).*/\1/p' || true)"
-          if [ "$current" = "$XCODE_MAJOR_VERSION" ]; then
+          if [ "$current" = "$XCODE_MAJOR_VERSION" ] && ! xcode-select -p | grep -qi beta; then
             developer_dir="$(xcode-select -p)"
           else
-            xcode_app="$(ls -d /Applications/Xcode_"$XCODE_MAJOR_VERSION"*.app 2>/dev/null | sort | tail -1 || true)"
+            xcode_app="$(find /Applications -maxdepth 1 -name "Xcode_${XCODE_MAJOR_VERSION}*.app" ! -iname '*beta*' 2>/dev/null | sort -V | tail -1 || true)"
             if [ -z "$xcode_app" ]; then
               installed="$(ls /Applications | grep -i '^Xcode' | tr '\n' ' ' || true)"
-              echo "::error::Xcode $XCODE_MAJOR_VERSION is not installed on this runner (installed: ${installed:-none}). Set the repository variable CREDISSUER_IOS_RUNNER to a runner that has it, for example a self-hosted Mac."
+              echo "::error::Xcode $XCODE_MAJOR_VERSION (non-beta) is not installed on this runner (installed: ${installed:-none}). Set the repository variable CREDISSUER_IOS_RUNNER to a runner that has it, for example a self-hosted Mac."
               exit 1
             fi
             developer_dir="$xcode_app/Contents/Developer"
@@ -202,8 +258,14 @@ jobs:
           CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
           P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
           PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
           printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
+          # Swift Package Manager logs in to the BioChq Nexus through ~/.netrc.
+          printf 'machine nexus-biochq.credissuer.com login %s password %s\n' \
+            "$ARTIFACTORY_USERNAME" "$ARTIFACTORY_PASSWORD" > ~/.netrc
+          chmod 600 ~/.netrc
           mkdir -p "$RUNNER_TEMP/signing"
           printf '%s' "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/distribution.p12"
           printf '%s' "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/appstore.mobileprovision"
@@ -216,6 +278,12 @@ jobs:
           CREDISSUER_IOS_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
         run: fastlane ios credissuer_build
 
+      - name: Summary
+        run: |
+          build=$(sed -n 's/.*CURRENT_PROJECT_VERSION = \([0-9]*\);/\1/p' ios/Inji.xcodeproj/project.pbxproj | sort -u | tr '\n' ' ')
+          version=$(sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' ios/Inji.xcodeproj/project.pbxproj | sort -u | tr '\n' ' ')
+          echo "### iOS: $version(build $build)" >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/upload-artifact@v4
         with:
           name: credissuer-wallet-ios-ipa
@@ -223,7 +291,29 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Check the App Store Connect key
+        id: asc
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+        run: |
+          if [ -n "$KEY_ID" ] && [ -n "$ISSUER_ID" ] && [ -n "$KEY_P8" ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "- Not uploaded to TestFlight: the APP_STORE_CONNECT_* secrets are not set. Download the IPA above." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload to TestFlight
+        if: steps.asc.outputs.upload == 'true'
+        uses: apple-actions/upload-testflight-build@v3
+        with:
+          app-path: ios/build/credissuer/CredIssuerWallet.ipa
+          issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          api-key-id: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          api-private-key: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+
       # A hosted runner is thrown away after the job; a self-hosted Mac is not.
       - name: Remove signing files
         if: always()
-        run: rm -rf "$RUNNER_TEMP/signing"
+        run: rm -rf "$RUNNER_TEMP/signing" .env.local ~/.netrc
