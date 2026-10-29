@@ -243,8 +243,6 @@ npm start -- --reset-cache                 # Metro cache
   `package.json`, but the `com.google.gms.google-services` plugin is not applied in
   `android/app/build.gradle` and no `android/app/google-services.json` is present. The build
   succeeds; push notifications will not initialise at runtime until both are added.
-- **`patches/@react-native+gradle-plugin+0.74.87.patch`** is named for RN 0.74 while the repo is on
-  0.79. It is stale and worth reviewing.
 
 ---
 
