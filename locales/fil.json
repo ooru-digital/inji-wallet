@@ -397,7 +397,10 @@
     "pinChangeFailed": "Hindi mapalitan ang PIN. Pakisubukang muli.",
     "closeApp": "Isara ang app",
     "languageHint": "Agad na nagbabago ang wika ng app.",
-    "wrongCurrentPin": "Hindi iyan ang kasalukuyan mong PIN."
+    "wrongCurrentPin": "Hindi iyan ang kasalukuyan mong PIN.",
+    "setPin": "Magtakda ng PIN",
+    "pinSet": "Naitakda ang PIN",
+    "pinSetMessage": "Gamitin ito para i-unlock ang wallet kung hindi makilala ang iyong fingerprint o mukha."
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "Tagumpay! Magagamit mo na ngayon ang passcode upang i-unlock ang CredIssuer app.",
@@ -830,7 +833,9 @@
     "confirmHint": "Para matiyak na ito nga ang gusto mo.",
     "confirmMismatch": "Hindi magkatugma ang mga passcode. Subukang muli.",
     "reEnableBiometrics": "Ilagay ang iyong passcode para muling i-on ang pag-unlock gamit ang biometrics.",
-    "step": "Hakbang {{current}} ng {{total}}"
+    "step": "Hakbang {{current}} ng {{total}}",
+    "backupTitle": "Magtakda ng backup na passcode",
+    "backupHint": "Gagamitin mo ito kung hindi makilala ang iyong fingerprint o mukha."
   },
   "QrLogin": {
     "title": "QR Login",

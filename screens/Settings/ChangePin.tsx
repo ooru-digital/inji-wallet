@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useSelector} from '@xstate/react';
@@ -23,20 +23,24 @@ import {argon2iConfig} from '../../shared/constants';
 
 const STEPS = ['current', 'new', 'confirm'] as const;
 type Step = (typeof STEPS)[number];
+const SET_STEPS: readonly Step[] = ['new', 'confirm'];
 
-/** Confirm the current PIN, then enter the new one twice. */
+/** Confirm the current PIN, then enter the new one twice. With `setting`, there is no PIN yet
+ * (biometrics only), so it starts at the new one. */
 export const ChangePin: React.FC<{
   isVisible: boolean;
+  setting?: boolean;
   onDone: (changed: boolean) => void;
   /** iOS only: called once the page has finished sliding away after `onDone`. */
   onDismissed?: () => void;
-}> = ({isVisible, onDone, onDismissed}) => {
+}> = ({isVisible, setting, onDone, onDismissed}) => {
   const {t} = useTranslation('SettingScreen');
   const {appService} = useContext(GlobalContext);
   const authService = appService.children.get('auth')!;
   const storedPasscode = useSelector(authService, selectPasscode);
   const salt = useSelector(authService, selectPasscodeSalt);
-  const [step, setStep] = useState<Step>('current');
+  const steps = setting ? SET_STEPS : STEPS;
+  const [step, setStep] = useState<Step>(steps[0]);
   const [newPasscode, setNewPasscode] = useState('');
   const [error, setError] = useState('');
   // One set of boxes serves every step; bumping this empties them without closing the keyboard.
@@ -45,8 +49,14 @@ export const ChangePin: React.FC<{
   // keyboard opens with it.
   const [shown, setShown] = useState(false);
 
+  useEffect(() => {
+    if (isVisible) {
+      setStep(steps[0]);
+    }
+  }, [isVisible]);
+
   const close = (changed: boolean) => {
-    setStep('current');
+    setStep(steps[0]);
     setNewPasscode('');
     setError('');
     setShown(false);
@@ -105,12 +115,15 @@ export const ChangePin: React.FC<{
       <Page
         testID="changePin"
         header={
-          <PageHeader title={t('changePin')} onBack={() => close(false)} />
+          <PageHeader
+            title={setting ? t('setPin') : t('changePin')}
+            onBack={() => close(false)}
+          />
         }>
         <ScrollView
           keyboardShouldPersistTaps="always"
           contentContainerStyle={styles.content}>
-          <StepDots current={STEPS.indexOf(step)} count={STEPS.length} />
+          <StepDots current={steps.indexOf(step)} count={steps.length} />
           <PageHeading testID="changePinTitle" size="medium" title={title} />
           <View style={styles.pins}>
             {shown && (

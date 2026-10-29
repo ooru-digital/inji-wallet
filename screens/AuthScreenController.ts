@@ -48,6 +48,13 @@ export function useAuthScreen(props: RootRouteProps) {
   const unEnrolledNoticeBio = useSelector(bioService, selectUnenrolledNotice);
   const errorResponse = useSelector(bioService, selectErrorResponse);
 
+  // Choosing the passcode drops biometrics picked earlier on this screen.
+  const choosePasscodeOnly = () => {
+    authService?.send(AuthEvents.SETUP_BIOMETRICS(''));
+    settingsService?.send(SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(false, false));
+    navigateToPasscode();
+  };
+
   const navigateToPasscode = () => {
     props.navigation.navigate('Passcode', {setup: isSettingUp});
   };
@@ -157,5 +164,6 @@ export function useAuthScreen(props: RootRouteProps) {
     hideAlert,
     useBiometrics,
     navigateToPasscode,
+    choosePasscodeOnly,
   };
 }

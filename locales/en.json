@@ -500,7 +500,10 @@
     "pinChangeFailed": "Couldn't change the PIN. Please try again.",
     "closeApp": "Close app",
     "languageHint": "The app changes language straight away.",
-    "wrongCurrentPin": "That isn't your current PIN."
+    "wrongCurrentPin": "That isn't your current PIN.",
+    "setPin": "Set PIN",
+    "pinSet": "PIN set",
+    "pinSetMessage": "Use it to unlock the wallet if your fingerprint or face isn’t recognised."
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "Success! You can now use passcode to unlock CredIssuer app.",
@@ -933,7 +936,9 @@
     "confirmHint": "Just to make sure it’s the one you meant.",
     "confirmMismatch": "The passcodes don’t match. Try again.",
     "reEnableBiometrics": "Enter your passcode to turn biometric unlock back on.",
-    "step": "Step {{current}} of {{total}}"
+    "step": "Step {{current}} of {{total}}",
+    "backupTitle": "Set a backup passcode",
+    "backupHint": "You’ll use it if your fingerprint or face isn’t recognised."
   },
   "QrLogin": {
     "title": "QR Login",

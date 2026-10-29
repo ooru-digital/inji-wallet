@@ -87,10 +87,13 @@ export const PasscodeScreen: React.FC<PasscodeRouteProps> = props => {
   return isSettingUp ? (
     <SetupPasscode
       step={controller.passcode === '' ? 'choose' : 'confirm'}
+      backup={controller.isBackupPasscode}
       hint={
         controller.passcode === ''
           ? controller.toggleUnlock
             ? t('enterAlternateNewPassword')
+            : controller.isBackupPasscode
+            ? t('backupHint')
             : t('chooseHint')
           : controller.toggleUnlock
           ? t('reEnterAlternatePassword')
@@ -154,8 +157,9 @@ const SetupPasscode: React.FC<{
   hint: string;
   error: string;
   onBack: () => void;
+  backup?: boolean;
   children: React.ReactNode;
-}> = ({step, hint, error, onBack, children}) => {
+}> = ({step, hint, error, onBack, backup, children}) => {
   const {t} = useTranslation('PasscodeScreen');
   return (
     <Page
@@ -170,7 +174,13 @@ const SetupPasscode: React.FC<{
             step === 'choose' ? 'setPasscodeHeader' : 'confirmPasscodeHeader'
           }
           size="medium"
-          title={step === 'choose' ? t('chooseTitle') : t('confirmTitle')}
+          title={
+            step === 'confirm'
+              ? t('confirmTitle')
+              : backup
+              ? t('backupTitle')
+              : t('chooseTitle')
+          }
           body={hint}
         />
         <View style={styles.pins}>{children}</View>

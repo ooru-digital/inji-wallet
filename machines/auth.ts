@@ -137,14 +137,10 @@ export const authMachine = model.createMachine(
               'storeContext',
             ],
           },
+          // Biometrics are kept until the backup passcode is set; SETUP_PASSCODE completes
+          // setup and stores both, so leaving halfway starts setup again.
           SETUP_BIOMETRICS: {
-            target: 'authorized',
-            actions: [
-              'setBiometrics',
-              'setLanguage',
-              'setAppSetupComplete',
-              'storeContext',
-            ],
+            actions: ['setBiometrics'],
           },
         },
       },

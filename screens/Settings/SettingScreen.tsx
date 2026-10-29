@@ -76,6 +76,8 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
   >(null);
   const [autoLockMinutes, setAutoLockMinutes] = useAutoLockSetting();
   const [showPinChanged, setShowPinChanged] = useState(false);
+  // Whether the PIN page was opened to set a first PIN rather than change one.
+  const settingPin = useRef(false);
   // iOS drops a modal presented while another is still sliding away, so there the PIN changed
   // dialog waits until Change PIN's page has gone. Android can open it at once.
   const pinChangedPending = useRef(false);
@@ -148,14 +150,15 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
                 <SettingsSwitch value={controller.isBiometricUnlockEnabled} />
               }
             />
-            {controller.isPasscodeSet() && (
-              <SettingsRow
-                testID="changePin"
-                icon={settingsIcons.lock}
-                label={t('changePin')}
-                onPress={() => setPage('changePin')}
-              />
-            )}
+            <SettingsRow
+              testID={controller.isPasscodeSet() ? 'changePin' : 'setPin'}
+              icon={settingsIcons.lock}
+              label={controller.isPasscodeSet() ? t('changePin') : t('setPin')}
+              onPress={() => {
+                settingPin.current = !controller.isPasscodeSet();
+                setPage('changePin');
+              }}
+            />
             <SettingsRow
               testID="autoLock"
               icon={settingsIcons.clock}
@@ -282,6 +285,7 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
       </View>
       <ChangePin
         isVisible={page === 'changePin'}
+        setting={settingPin.current}
         onDone={changed => {
           setPage(null);
           if (!changed) return;
@@ -300,8 +304,10 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
         icon={colour => (
           <CheckIcon color={colour} size={30} strokeWidth={2.5} />
         )}
-        title={t('pinChanged')}
-        message={t('pinChangedMessage')}
+        title={settingPin.current ? t('pinSet') : t('pinChanged')}
+        message={
+          settingPin.current ? t('pinSetMessage') : t('pinChangedMessage')
+        }
         button={{
           title: t('done'),
           onPress: closePinChanged,
