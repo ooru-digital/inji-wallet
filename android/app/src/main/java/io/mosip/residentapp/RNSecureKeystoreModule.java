@@ -1,5 +1,6 @@
 package io.mosip.residentapp;
 
+import android.app.Activity;
 import com.reactnativesecurekeystore.SecureKeystoreImpl;
 import com.reactnativesecurekeystore.KeyGeneratorImpl;
 import com.reactnativesecurekeystore.CipherBoxImpl;
@@ -187,7 +188,13 @@ public class RNSecureKeystoreModule extends ReactContextBaseJavaModule {
 
   @ReactMethod(isBlockingSynchronousMethod = true)
   public boolean hasBiometricsEnabled() {
-    return deviceCapability.hasBiometricsEnabled(getCurrentActivity());
+    // There is no current activity while another one is on top, such as the permission dialog
+    // MainActivity opens on first launch. A release build gets here during that dialog, and the
+    // null threw, so the first-launch key setup never finished and the app stayed on a blank
+    // screen. The enrollment check only needs a Context, so fall back to the app's.
+    Activity activity = getCurrentActivity();
+    return deviceCapability.hasBiometricsEnabled(
+        activity != null ? activity : getReactApplicationContext());
   }
 
   @ReactMethod
