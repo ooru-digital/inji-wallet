@@ -15,7 +15,7 @@ import {
   sendEndEvent,
 } from '../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
-import { SettingsEvents } from '../machines/settings';
+import {SettingsEvents} from '../machines/settings';
 
 export function usePasscodeScreen(props: PasscodeRouteProps) {
   const {appService} = useContext(GlobalContext);
@@ -25,6 +25,12 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
   const isPasscodeSet = () => !!passcode;
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
+  // True when the passcode is being set from Settings to replace biometric unlock, not
+  // during onboarding.
+  const toggleUnlock = useSelector(
+    authService,
+    selectIsBiometricToggleFromSettings,
+  );
 
   useEffect(() => {
     if (isAuthorized) {
@@ -49,7 +55,7 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
     setError,
 
     storedPasscode: useSelector(authService, selectPasscode),
-    toggleUnlock: useSelector(authService, selectIsBiometricToggleFromSettings),
+    toggleUnlock,
 
     LOGIN: () => {
       authService.send(AuthEvents.LOGIN());
@@ -57,7 +63,13 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
 
     SETUP_PASSCODE: () => {
       authService.send(AuthEvents.SETUP_PASSCODE(passcode));
-      settingsService?.send(SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(false,true))
+      // The second argument only decides whether the "you can now use passcode" banner shows.
+      // It belongs to a switch from biometrics in Settings. During onboarding it put that
+      // banner on the first Home screen, where it closed under the tour and pulled the tour's
+      // highlight off the + button.
+      settingsService?.send(
+        SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(false, toggleUnlock),
+      );
     },
 
     storedSalt: useSelector(authService, selectPasscodeSalt),

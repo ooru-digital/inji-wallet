@@ -232,6 +232,12 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
   // Don't set isTourGuide anywhere else: an effect here used to set it on every mount until the
   // first credential was downloaded, which replayed the whole tour on every app open.
   const shouldStartTour = controller.isOnboarding || controller.isTourGuide;
+  // The card step shown on its own after the first card is added, until it has been seen once.
+  // Not while onboarding: the onboarding tour would otherwise end on the card as a 1-of-1 step.
+  const isFirstCardTourDue =
+    !!controller.isInitialDownloading &&
+    !controller.isOnboarding &&
+    !controller.isTourGuide;
 
   /**
    * Covers the Settings "Replay tour guide". The onLayout below is what starts the tour
@@ -424,7 +430,8 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
             onAdd={() => props.onAddCredential?.()}
             refreshing={controller.isRefreshingVcs}
             onRefresh={controller.REFRESH}
-            isCardTourStep={controller.isTourGuide}
+            isCardTourStep={controller.isTourGuide || isFirstCardTourDue}
+            startCardTour={isFirstCardTourDue}
             openVcKey={props.openVcKey}
             onVcOpened={props.onVcOpened}
             highlightVcKey={props.highlightVcKey}

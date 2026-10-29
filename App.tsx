@@ -31,8 +31,11 @@ import {CopilotProvider} from 'react-native-copilot';
 import {CopilotTooltip} from './components/CopilotTooltip';
 import {Theme} from './components/ui/styleUtils';
 import {selectAppSetupComplete} from './machines/auth';
-import {COPILOT_ANDROID_STATUS_BAR_VISIBLE} from './shared/constants';
-import {COPILOT_OVERLAY_PROPS, roundedSvgMaskPath} from './shared/copilotMask';
+import {
+  COPILOT_OVERLAY_PROPS,
+  roundedSvgMaskPath,
+  useCopilotVerticalOffset,
+} from './shared/copilotMask';
 
 const {RNSecureKeystoreModule} = NativeModules;
 // kludge: this is a bad practice but has been done temporarily to surface
@@ -166,15 +169,17 @@ const AppInitialization: React.FC = () => {
 };
 
 export default function App() {
+  const copilotVerticalOffset = useCopilotVerticalOffset();
   return (
     <GlobalContextProvider>
       <CopilotProvider
         // Shared look of the overlay; first, so the props below always win.
         {...COPILOT_OVERLAY_PROPS}
         stopOnOutsideClick
-        // Version-dependent — see COPILOT_ANDROID_STATUS_BAR_VISIBLE. Keep in sync with
-        // MainLayout's provider.
-        androidStatusBarVisible={COPILOT_ANDROID_STATUS_BAR_VISIBLE}
+        // The status bar correction is ours (see useCopilotVerticalOffset), not the
+        // library's. Keep in sync with MainLayout's provider.
+        androidStatusBarVisible
+        verticalOffset={copilotVerticalOffset}
         tooltipComponent={CopilotTooltip}
         tooltipStyle={Theme.Styles.copilotStyle}
         stepNumberComponent={() => null}
