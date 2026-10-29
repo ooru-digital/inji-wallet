@@ -1,4 +1,29 @@
+import {useContext} from 'react';
 import {Animated} from 'react-native';
+import {
+  SafeAreaInsetsContext,
+  initialWindowMetrics,
+} from 'react-native-safe-area-context';
+import {COPILOT_ANDROID_STATUS_BAR_VISIBLE} from './constants';
+
+/**
+ * How far to shift every tour highlight up. Use with androidStatusBarVisible={true}, which
+ * turns off the library's own correction.
+ *
+ * On Android 15+ a step's measured position includes the status bar but the overlay starts
+ * below it (see COPILOT_ANDROID_STATUS_BAR_VISIBLE). The library corrects that with
+ * StatusBar.currentHeight, but React Native reads that once, the first time JS asks, and gets
+ * 0 if the window has no insets yet. A release build asks right at launch, so it got 0 and
+ * every highlight sat a status bar too low; a debug build loads JS later and got the real
+ * height. The safe-area top inset is the same height and stays current.
+ */
+export const useCopilotVerticalOffset = () => {
+  const insets = useContext(SafeAreaInsetsContext);
+  if (COPILOT_ANDROID_STATUS_BAR_VISIBLE) {
+    return 0;
+  }
+  return -(insets?.top ?? initialWindowMetrics?.insets.top ?? 0);
+};
 
 // react-native-copilot's default svgMaskPath cuts a sharp-cornered rectangle
 // out of the dimmed overlay to highlight the target element. This variant
