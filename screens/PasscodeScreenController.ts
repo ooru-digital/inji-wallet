@@ -6,6 +6,7 @@ import {
   selectPasscode,
   selectPasscodeSalt,
   selectIsBiometricToggleFromSettings,
+  selectBiometrics,
 } from '../machines/auth';
 import {PasscodeRouteProps} from '../routes';
 import {GlobalContext} from '../shared/GlobalContext';
@@ -15,7 +16,7 @@ import {
   sendEndEvent,
 } from '../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../shared/telemetry/TelemetryConstants';
-import { SettingsEvents } from '../machines/settings';
+import {SettingsEvents} from '../machines/settings';
 
 export function usePasscodeScreen(props: PasscodeRouteProps) {
   const {appService} = useContext(GlobalContext);
@@ -25,6 +26,12 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
   const isPasscodeSet = () => !!passcode;
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
+  // True when the passcode is being set from Settings to replace biometric unlock, not
+  // during onboarding.
+  const toggleUnlock = useSelector(
+    authService,
+    selectIsBiometricToggleFromSettings,
+  );
 
   useEffect(() => {
     if (isAuthorized) {
@@ -41,6 +48,10 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
     }
   }, [isAuthorized]);
 
+  // Set during onboarding after choosing biometrics, as the fallback for them.
+  const biometrics = useSelector(authService!, selectBiometrics);
+  const isBackupPasscode = !toggleUnlock && !!biometrics;
+
   return {
     isPasscodeSet,
     passcode,
@@ -49,7 +60,8 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
     setError,
 
     storedPasscode: useSelector(authService, selectPasscode),
-    toggleUnlock: useSelector(authService, selectIsBiometricToggleFromSettings),
+    toggleUnlock,
+    isBackupPasscode,
 
     LOGIN: () => {
       authService.send(AuthEvents.LOGIN());
@@ -57,7 +69,16 @@ export function usePasscodeScreen(props: PasscodeRouteProps) {
 
     SETUP_PASSCODE: () => {
       authService.send(AuthEvents.SETUP_PASSCODE(passcode));
-      settingsService?.send(SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(false,true))
+      // A backup passcode keeps biometric unlock on; switching to a passcode turns it off.
+      // The second argument only decides whether the "you can now use passcode" banner shows.
+      // It belongs to a switch from biometrics in Settings. During onboarding it put that
+      // banner on the first Home screen, where it closed under the tour and pulled the tour's
+      // highlight off the + button.
+      if (!isBackupPasscode) {
+        settingsService?.send(
+          SettingsEvents.TOGGLE_BIOMETRIC_UNLOCK(false, toggleUnlock),
+        );
+      }
     },
 
     storedSalt: useSelector(authService, selectPasscodeSalt),

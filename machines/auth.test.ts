@@ -92,3 +92,34 @@ describe('auth machine setup', () => {
     expect(service.getSnapshot().context.passcodeSalt).toBe('stored-salt');
   });
 });
+
+describe('auth machine biometrics at setup', () => {
+  const inSetup = async () => {
+    const service = startAuth(() => Promise.resolve('generated-salt'));
+    restore(service, {selectLanguage: false});
+    service.send(AuthEvents.SELECT());
+    await settle();
+    return service;
+  };
+
+  it('waits for the backup passcode after biometrics are chosen', async () => {
+    const service = await inSetup();
+
+    service.send(AuthEvents.SETUP_BIOMETRICS('true'));
+
+    expect(service.getSnapshot().value).toBe('settingUp');
+    expect(service.getSnapshot().context.biometrics).toBe('true');
+  });
+
+  it('finishes setup with both once the backup passcode is set', async () => {
+    const service = await inSetup();
+    service.send(AuthEvents.SETUP_BIOMETRICS('true'));
+
+    service.send(AuthEvents.SETUP_PASSCODE('hashed-passcode'));
+
+    const {value, context} = service.getSnapshot();
+    expect(value).toBe('authorized');
+    expect(context.biometrics).toBe('true');
+    expect(context.passcode).toBe('hashed-passcode');
+  });
+});

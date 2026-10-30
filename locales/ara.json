@@ -399,7 +399,10 @@
     "pinChangeFailed": "تعذر تغيير رمز PIN. يرجى المحاولة مرة أخرى.",
     "closeApp": "إغلاق التطبيق",
     "languageHint": "يتغير لغة التطبيق فورًا.",
-    "wrongCurrentPin": "هذا ليس رمز PIN الحالي."
+    "wrongCurrentPin": "هذا ليس رمز PIN الحالي.",
+    "setPin": "تعيين رمز PIN",
+    "pinSet": "تم تعيين رمز PIN",
+    "pinSetMessage": "استخدمه لفتح المحفظة إذا لم يتم التعرف على بصمتك أو وجهك."
   },
   "BannerNotification": {
     "alternatePasscodeSuccess": "تم النجاح! يمكنك الآن استخدام رمز المرور لفتح تطبيق CredIssuer.",
@@ -832,7 +835,9 @@
     "confirmHint": "للتأكد من أنه الرمز الذي قصدته.",
     "confirmMismatch": "رموز المرور غير متطابقة. حاول مرة أخرى.",
     "reEnableBiometrics": "أدخل رمز المرور لإعادة تشغيل فتح القفل بالقياسات الحيوية.",
-    "step": "الخطوة {{current}} من {{total}}"
+    "step": "الخطوة {{current}} من {{total}}",
+    "backupTitle": "تعيين رمز مرور احتياطي",
+    "backupHint": "ستستخدمه إذا لم يتم التعرف على بصمتك أو وجهك."
   },
   "QrLogin": {
     "title": "QR تسجيل الدخول",
