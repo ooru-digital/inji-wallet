@@ -457,7 +457,7 @@ fileignoreconfig:
   - filename: components/revamp/WalletHeader.tsx
     checksum: 4dd697ec883c1684958a79c3d6040604415a5b6176264be55b882830c61e31e3
   - filename: components/revamp/WalletHome.tsx
-    checksum: 3d969673e69701d353e7c049b498b74e737a05b019456debd7a0cb5bbd892e47
+    checksum: e767d2bf2b8de68706449eb7cb7ed1c2270437d07c120019d64f42c4bccf1260
   - filename: components/revamp/useCredentialCard.ts
     checksum: 40e892bdea792a554b3c08ad9b46bec761d14997cf6284afc03ae46b988514c8
   - filename: components/revamp/cardFields.ts
@@ -543,6 +543,6 @@ fileignoreconfig:
   - filename: machines/auth.test.ts
     checksum: 3d0bbbc136bc39978efed756143dad900302e7e05ebe0fa27ddb262adc8e1c3f
   - filename: screens/PasscodeScreenController.ts
-    checksum: bc68b007b199190752cf6228c689fadf99faf530ed81dbfd10cc1124bb02fa73
+    checksum: 888031623319f0eebb01de27ea8d5eda24aad4cadf9232d6068628215507cd11
     version: "1.0"
 

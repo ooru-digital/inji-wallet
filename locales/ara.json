@@ -142,7 +142,8 @@
       "close": "إغلاق",
       "loadingQr": "جارٍ تجهيز رمز QR…",
       "qrErrorTitle": "تعذّر إنشاء رمز QR",
-      "qrErrorMessage": "أغلق هذه الشاشة وحاول مرة أخرى."
+      "qrErrorMessage": "أغلق هذه الشاشة وحاول مرة أخرى.",
+      "stepPhonesTapped": "تم تقريب الهاتفين"
     },
     "nationalCard": "الهوية الوطنية",
     "identityCard": "بطاقة الهوية",
@@ -1527,5 +1528,13 @@
     "downloadingCard": "جارٍ تنزيل بطاقتك…",
     "unknownIssuer": "جهة مُصدِرة غير معروفة",
     "offering": "المعروض"
+  },
+  "NfcTapShare": {
+    "chooseTitle": "قارئ يطلب بطاقة",
+    "chooseBody": "اختر البطاقة التي تريد مشاركتها. سترى ما يطلبه قبل إرسال أي شيء.",
+    "noCardsTitle": "لا توجد بطاقة للمشاركة",
+    "noCardsBody": "أضف رخصة قيادة أو مستندًا رقميًا آخر لمشاركته بالنقر.",
+    "readerGoneTitle": "توقف القارئ عن الانتظار",
+    "readerGoneBody": "قرّب الهاتفين مرة أخرى للمشاركة."
   }
 }
