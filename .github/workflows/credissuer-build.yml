@@ -50,7 +50,8 @@ on:
           - none
           - ipa (download only, for manual upload)
           - ipa → TestFlight
-        default: ipa (download only, for manual upload)
+        # none until iOS signing is configured, so a default run is a complete one.
+        default: none
 
 permissions:
   contents: read
