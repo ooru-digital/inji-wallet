@@ -4,7 +4,8 @@ name: CredIssuer Wallet Build
 # to Google Play / TestFlight when the upload keys are configured.
 #
 # Run it from the Actions tab: choose this workflow, press "Run workflow", then pick the branch
-# and what to build. The button only appears once this file is on the default branch.
+# and what to build for each platform. The button only appears once this file is on the default
+# branch. Plain aab / apk / ipa are only attached to the run; the "→" options also upload.
 #
 # Versions are the ones committed in the repo (versionCode / versionName in
 # android/app/build.gradle, CURRENT_PROJECT_VERSION / MARKETING_VERSION in the Xcode project).
@@ -30,23 +31,26 @@ name: CredIssuer Wallet Build
 on:
   workflow_dispatch:
     inputs:
-      platform:
-        description: What to build
+      android:
+        description: Android
         type: choice
         options:
-          - both
-          - android
-          - ios
-        default: both
-      play_track:
-        description: Google Play track for the Android upload
+          - none
+          - aab
+          - aab → Play internal
+          - aab → Play alpha
+          - aab → Play beta
+          - aab → Play production
+          - apk
+        default: aab
+      ios:
+        description: iOS
         type: choice
         options:
-          - internal
-          - alpha
-          - beta
-          - production
-        default: internal
+          - none
+          - ipa (download only, for manual upload)
+          - ipa → TestFlight
+        default: ipa (download only, for manual upload)
 
 permissions:
   contents: read
@@ -57,15 +61,36 @@ env:
   XCODE_MAJOR_VERSION: '27'
   ANDROID_PACKAGE: io.ooru.credissuerwallet
   AAB_PATH: android/app/build/outputs/bundle/residentappRelease/app-residentapp-release.aab
+  APK_PATH: android/app/build/outputs/apk/residentapp/release/CredIssuerWallet_universal.apk
 
 jobs:
+  nothing-to-build:
+    name: Nothing to build
+    if: inputs.android == 'none' && inputs.ios == 'none'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::Both Android and iOS are set to none. Pick what to build."
+          exit 1
+
   android:
-    name: Android (AAB)
-    if: inputs.platform != 'ios'
+    name: Android (${{ startsWith(inputs.android, 'apk') && 'APK' || 'AAB' }})
+    if: inputs.android != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     environment: credissuer-release
+    env:
+      ANDROID_OUTPUT: ${{ startsWith(inputs.android, 'apk') && 'apk' || 'aab' }}
     steps:
+      # "aab → Play internal" uploads to the internal track; plain "aab" and "apk" upload nothing.
+      - name: Read the Play track
+        env:
+          CHOICE: ${{ inputs.android }}
+        run: |
+          case "$CHOICE" in
+            *Play*) echo "PLAY_TRACK=${CHOICE##* }" >> "$GITHUB_ENV" ;;
+          esac
+
       - uses: actions/checkout@v4
         with:
           # Nothing here pushes. Keep the token out of .git/config, where npm install scripts
@@ -130,41 +155,45 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_PASSWORD }}
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-        run: bash scripts/build-android.sh aab
+        run: bash scripts/build-android.sh "$ANDROID_OUTPUT"
 
       - name: Summary
+        id: out
         run: |
           code=$(sed -n 's/^ *versionCode \([0-9]*\).*/\1/p' android/app/build.gradle | head -1)
           name=$(sed -n 's/^ *versionName "\(.*\)".*/\1/p' android/app/build.gradle | head -1)
+          if [ "$ANDROID_OUTPUT" = apk ]; then file="$APK_PATH"; else file="$AAB_PATH"; fi
+          echo "file=$file" >> "$GITHUB_OUTPUT"
           echo "### Android: $name ($code)" >> "$GITHUB_STEP_SUMMARY"
-          echo "- AAB: $(du -h "$AAB_PATH" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ${ANDROID_OUTPUT^^}: $(du -h "$file" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: credissuer-wallet-android-aab
-          path: ${{ env.AAB_PATH }}
+          name: credissuer-wallet-android-${{ env.ANDROID_OUTPUT }}
+          path: ${{ steps.out.outputs.file }}
           if-no-files-found: error
           retention-days: 14
 
       - name: Check the Play upload key
         id: play
+        if: env.PLAY_TRACK != ''
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           if [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
             echo "upload=true" >> "$GITHUB_OUTPUT"
           else
-            echo "- Not uploaded to Google Play: PLAY_SERVICE_ACCOUNT_JSON is not set. Download the AAB above." >> "$GITHUB_STEP_SUMMARY"
+            echo "- Not uploaded to Google Play ($PLAY_TRACK): PLAY_SERVICE_ACCOUNT_JSON is not set. Download the AAB above." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload to Google Play (${{ inputs.play_track }})
+      - name: Upload to Google Play (${{ env.PLAY_TRACK }})
         if: steps.play.outputs.upload == 'true'
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ env.ANDROID_PACKAGE }}
           releaseFiles: ${{ env.AAB_PATH }}
-          track: ${{ inputs.play_track }}
+          track: ${{ env.PLAY_TRACK }}
           status: completed
 
       - name: Remove secret files
@@ -173,7 +202,7 @@ jobs:
 
   ios:
     name: iOS (signed IPA)
-    if: inputs.platform != 'android'
+    if: inputs.ios != 'none'
     runs-on: ${{ vars.CREDISSUER_IOS_RUNNER || 'macos-26' }}
     timeout-minutes: 120
     environment: credissuer-release
@@ -293,6 +322,7 @@ jobs:
 
       - name: Check the App Store Connect key
         id: asc
+        if: contains(inputs.ios, 'TestFlight')
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
