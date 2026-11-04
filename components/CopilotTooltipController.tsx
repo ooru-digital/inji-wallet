@@ -1,5 +1,9 @@
 import {useCopilot} from 'react-native-copilot';
-import {COPILOT_FINAL_STEP, KEY_MANAGEMENT_STEP} from '../shared/constants';
+import {
+  COPILOT_ADD_CARD_STEP,
+  COPILOT_FINAL_STEP,
+  KEY_MANAGEMENT_STEP,
+} from '../shared/constants';
 import {useContext, useEffect, useRef} from 'react';
 import {GlobalContext} from '../shared/GlobalContext';
 import {
@@ -129,6 +133,9 @@ export const UseCopilotTooltip = () => {
 
   const isFinalStep = CURRENT_STEP === COPILOT_FINAL_STEP;
 
+  // Shown as a single tip with one "Got it" button, which still moves on to the rest of the tour.
+  const isQuickTip = CURRENT_STEP === COPILOT_ADD_CARD_STEP;
+
   // A standalone step has nothing to go back to.
   const showPrevious = !(isFirstStep || isStandalone);
   // The step whose primary button ends the tour ("Done") instead of moving on ("Next").
@@ -151,6 +158,7 @@ export const UseCopilotTooltip = () => {
     stepNumber,
     stepTotal,
     isStandalone,
+    isQuickTip,
     showPrevious,
     isDoneStep,
     isOnboarding,

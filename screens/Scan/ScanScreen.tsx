@@ -20,7 +20,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Icon} from 'react-native-elements';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -41,6 +41,7 @@ import {APP_EVENTS} from '../../machines/app';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {useOvpErrorModal} from '../../shared/hooks/useOvpErrorModal';
 import {useScanStackScreenSwitcher} from './useScanStackScreenSwitcher';
+import {isCredentialOffer} from '../../shared/openId4VCI/credentialOffer';
 
 const COLORS = Theme.Colors.Design;
 
@@ -67,6 +68,41 @@ export const ScanScreen: React.FC = () => {
   const [isBluetoothOn, setIsBluetoothOn] = useState(false);
   const insets = useSafeAreaInsets();
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const isFocused = useIsFocused();
+  // With no card to share, this scanner can only add one: it skips the Bluetooth and location
+  // checks sharing needs, and runs on its own rather than through the scan machine.
+  const isAddOnly =
+    scanScreenController.isNoSharableVCs &&
+    scanScreenController.authorizationRequest === '' &&
+    scanScreenController.linkcode === '';
+  const [isNotCardOffer, setIsNotCardOffer] = useState(false);
+  // Remounts the add-only scanner, which stops reading after its first code.
+  const [addOnlyScanKey, setAddOnlyScanKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setIsNotCardOffer(false);
+        setIsTorchOn(false);
+      },
+      [],
+    ),
+  );
+
+  const onQrFound = (qrCode: string) => {
+    if (isCredentialOffer(qrCode)) {
+      scanScreenController.ADD_CREDENTIAL(qrCode);
+    } else if (isAddOnly) {
+      setIsNotCardOffer(true);
+    } else {
+      scanScreenController.SCAN(qrCode);
+    }
+  };
+
+  const scanAgainToAdd = () => {
+    setIsNotCardOffer(false);
+    setAddOnlyScanKey(key => key + 1);
+  };
 
   // This tab is dark, so the status bar switches to light icons while it is in focus.
   useFocusEffect(
@@ -226,7 +262,7 @@ export const ScanScreen: React.FC = () => {
   function qrScannerComponent() {
     return (
       <VerifierQrScanner
-        onQrFound={scanScreenController.SCAN}
+        onQrFound={onQrFound}
         isTorchOn={isTorchOn}
         title={t('pointCameraTitle')}
         subtitle={t('pointCameraSubtitle')}
@@ -234,7 +270,41 @@ export const ScanScreen: React.FC = () => {
     );
   }
 
+  function addOnlyScannerComponent() {
+    return (
+      <>
+        {isFocused && (
+          <React.Fragment key={addOnlyScanKey}>
+            {qrScannerComponent()}
+          </React.Fragment>
+        )}
+        <AlertSheet
+          testID="notCardOfferPopup"
+          isVisible={isNotCardOffer}
+          tone="warn"
+          icon={colour => <QrUnknownIcon color={colour} />}
+          title={t('notCardOfferTitle')}
+          message={t('notCardOfferMessage')}
+          primary={{
+            testID: 'scanAgain',
+            title: t('scanAgain'),
+            onPress: scanAgainToAdd,
+          }}
+          secondary={{
+            testID: 'backToWallet',
+            title: t('backToWallet'),
+            onPress: scanScreenController.GOTO_HOME,
+          }}
+          onRequestClose={scanAgainToAdd}
+        />
+      </>
+    );
+  }
+
   function loadQRScanner() {
+    if (isAddOnly) {
+      return addOnlyScannerComponent();
+    }
     if (
       scanScreenController.isNoSharableVCs &&
       scanScreenController.authorizationRequest === ''
@@ -300,8 +370,8 @@ export const ScanScreen: React.FC = () => {
           isVisible={scanScreenController.selectIsInvalid}
           tone="warn"
           icon={colour => <QrUnknownIcon color={colour} />}
-          title={t('notVerifierCodeTitle')}
-          message={t('notVerifierCodeMessage')}
+          title={t('unknownCodeTitle')}
+          message={t('unknownCodeMessage')}
           primary={{
             testID: 'scanAgain',
             title: t('scanAgain'),
@@ -374,9 +444,9 @@ export const ScanScreen: React.FC = () => {
           />
         </Pressable>
         <Text style={styles.headerTitle} accessibilityRole="header">
-          {t('scanVerifierTitle')}
+          {t('scanQrTitle')}
         </Text>
-        {scanScreenController.isScanning ? (
+        {scanScreenController.isScanning || isAddOnly ? (
           <Pressable
             testID="scanTorch"
             accessibilityRole="button"

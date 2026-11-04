@@ -16,7 +16,8 @@ export const Copilot: React.FC<CopilotProps> = (props: CopilotProps) => {
     <CopilotStep
       name={props.title}
       text={props.description}
-      order={props.order}>
+      order={props.order}
+      tooltipPosition={props.tooltipPosition}>
       <CopilotView style={props.targetStyle ? props.targetStyle : null}>
         {props.children}
       </CopilotView>
@@ -29,5 +30,7 @@ interface CopilotProps {
   description: string;
   order: number;
   targetStyle?: StyleProp<ViewStyle>;
+  /** Puts the tooltip above or below the target; by default it goes on the roomier side. */
+  tooltipPosition?: 'top' | 'bottom';
   children: React.ReactElement;
 }

@@ -93,15 +93,6 @@
     "cameraPermissionGuideLabel": "Go to phone settings and enable the camera access manually.",
     "flipCamera": "Flip Camera"
   },
-  "AddToWallet": {
-    "title": "Add to Wallet",
-    "subtitle": "How would you like to add a credential?",
-    "scanToAdd": {
-      "title": "Scan to Add",
-      "description": "Scan a credential offer from an issuer's screen, letter or SMS."
-    },
-    "signedNote": "Credentials come straight from the issuing authority, digitally signed. CredIssuer can't change them."
-  },
   "ScanToAdd": {
     "title": "Scan to Add",
     "close": "Close",
@@ -1090,14 +1081,14 @@
       "backToWallet": "Back to Wallet",
       "viewHistory": "View Sharing History"
     },
-    "scanVerifierTitle": "Scan verifier",
+    "scanQrTitle": "Scan QR code",
     "close": "Close",
     "flashOn": "Turn on flashlight",
     "flashOff": "Turn off flashlight",
-    "pointCameraTitle": "Point your camera at the verifier's QR code",
-    "pointCameraSubtitle": "You'll see who is asking and choose what to share before anything is sent.",
+    "pointCameraTitle": "Point your camera at the QR code",
+    "pointCameraSubtitle": "Scan an issuer's code to add a card, or a verifier's code to share. You'll choose what to share before anything is sent.",
     "cameraOffTitle": "Camera access is off",
-    "cameraOffSubtitle": "Allow camera access in Settings to scan the verifier's QR code.",
+    "cameraOffSubtitle": "Allow camera access in Settings to scan QR codes.",
     "openSettings": "Open Settings",
     "shareWithSelfie": "Share with Selfie",
     "shareWithSelfieQrLogin": "QR Code Login",
@@ -1306,8 +1297,10 @@
       "accept": "OK",
       "cancel": "Cancel"
     },
-    "notVerifierCodeTitle": "This isn’t a verifier’s code",
-    "notVerifierCodeMessage": "The wallet reads QR codes from verifiers asking for your details. Ask the verifier to show theirs again, then point the camera at it.",
+    "unknownCodeTitle": "We can’t use this QR code",
+    "unknownCodeMessage": "The wallet reads QR codes from issuers, to add a card, and from verifiers asking for your details. Ask them to show their code again, then point the camera at it.",
+    "notCardOfferTitle": "This code can’t add a card",
+    "notCardOfferMessage": "It isn’t a card offer from an issuer. If a verifier is asking for your details, add a card to your wallet first, then scan their code again.",
     "scanAgain": "Scan again",
     "backToWallet": "Back to wallet"
   },
@@ -1614,16 +1607,17 @@
     "close": "Close"
   },
   "copilot": {
-    "scanToShareTitle": "Scan to Share",
-    "scanToShareMessage": "Tap Scan and point your camera at a verifier's QR code to share your credentials.",
+    "scanTitle": "Scan to Add or Share",
+    "scanMessage": "Tap Scan and point your camera at an issuer's QR code to add a card, or at a verifier's QR code to share your credentials.",
     "moreTitle": "Stay in the Loop",
     "moreMessage": "Your notifications live inside ⋯. Notifications show each credential you download or share.",
     "quickTour": "Quick tour",
+    "quickTip": "Quick tip",
     "skipTour": "Skip tour",
     "helpTitle": "Help/FAQs",
     "helpMessage": "Find answers to common questions and access helpful resources in our FAQ section, ensuring you have the support whenever you need it.",
-    "downloadTitle": "Download Card",
-    "downloadMessage": "Easily download and securely store your card in the app for convenient access whenever you need them.",
+    "addCardTitle": "Add Your First Card",
+    "addCardMessage": "Tap Add a Card, then point your camera at the QR code your issuer gives you. Your card is saved in your wallet in seconds.",
     "shareTitle": "Share Card",
     "shareMessage": "Share your card with ease in offline mode using bluetooth, empowering you to provide verified information whenever required.",
     "historyTitle": "Access to History",
@@ -1633,6 +1627,7 @@
     "cardTitle": "Card",
     "cardMessage": "Your card displays your verified identity information. Tap for a detailed view or click on … for additional options.",
     "next": "Next",
+    "gotIt": "Got It",
     "previous": "Previous",
     "skip": "Skip",
     "done": "Done",

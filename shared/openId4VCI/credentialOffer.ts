@@ -2,6 +2,25 @@ import type {displayType} from '../../machines/Issuers/IssuersMachine';
 import {getDisplayObjectForCurrentLanguage} from './Utils';
 
 const OFFER_FETCH_TIMEOUT_MS = 5000;
+const CREDENTIAL_OFFER_SCHEME = 'openid-credential-offer://';
+
+/**
+ * Whether a scanned QR is an issuer's credential offer, rather than a verifier's request. The
+ * offer is either the `openid-credential-offer://` scheme or any link carrying the offer inline
+ * (`credential_offer=`) or by reference (`credential_offer_uri=`).
+ */
+export function isCredentialOffer(qrCode: string): boolean {
+  if (qrCode.startsWith(CREDENTIAL_OFFER_SCHEME)) {
+    return true;
+  }
+  try {
+    const params = parseQueryParams(qrCode);
+    return !!(params.credential_offer || params.credential_offer_uri);
+  } catch {
+    // A QR that isn't a link can hold a stray `%`, which decodeURIComponent rejects.
+    return false;
+  }
+}
 
 /**
  * The `credential_configuration_ids` of a scanned credential offer. The offer is either inline

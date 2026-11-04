@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {Column} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {HomeRouteProps} from '../../routes/routeTypes';
@@ -12,9 +12,9 @@ import {Linking} from 'react-native';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
 import {VerifiableCredential} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
-import {AddToWalletSheet} from '../../components/addCredential/AddToWalletSheet';
 import {IssuerScreenTabEvents} from '../../machines/Issuers/IssuersMachine';
 import type {IssuersScreenParams} from '../Issuers/IssuersScreen';
+import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
 
 const CREDENTIAL_OFFER_SCHEME = 'openid-credential-offer://';
 
@@ -24,38 +24,36 @@ let isInitialUrlHandled = false;
 
 export const HomeScreen: React.FC<HomeRouteProps> = props => {
   const controller = useHomeScreen(props);
-  const [isAddToWalletVisible, setIsAddToWalletVisible] = useState(false);
-  const shouldScanAfterSheetCloses = useRef(false);
   const pendingCredentialOffer = useRef('');
 
-  const startScanToAdd = () => {
-    shouldScanAfterSheetCloses.current = true;
-    setIsAddToWalletVisible(false);
-  };
-
-  const onAddToWalletClosed = () => {
-    if (shouldScanAfterSheetCloses.current) {
-      shouldScanAfterSheetCloses.current = false;
-      controller.GOTO_ISSUERS();
-    }
+  const startCredentialOfferDownload = (url: string) => {
+    pendingCredentialOffer.current = url;
+    controller.GOTO_ISSUERS();
   };
 
   useEffect(() => {
-    const startCredentialOfferDownload = (url: string | null) => {
-      if (!url?.startsWith(CREDENTIAL_OFFER_SCHEME)) return;
-      pendingCredentialOffer.current = url;
-      controller.GOTO_ISSUERS();
+    const onLink = (url: string | null) => {
+      if (url?.startsWith(CREDENTIAL_OFFER_SCHEME)) {
+        startCredentialOfferDownload(url);
+      }
     };
 
     if (!isInitialUrlHandled) {
       isInitialUrlHandled = true;
-      Linking.getInitialURL().then(startCredentialOfferDownload);
+      Linking.getInitialURL().then(onLink);
     }
     const subscription = Linking.addEventListener('url', ({url}) =>
-      startCredentialOfferDownload(url),
+      onLink(url),
     );
     return () => subscription.remove();
   }, []);
+
+  const scannedCredentialOffer = props.route.params?.credentialOfferUrl;
+  useEffect(() => {
+    if (!scannedCredentialOffer) return;
+    props.navigation.setParams({credentialOfferUrl: undefined});
+    startCredentialOfferDownload(scannedCredentialOffer);
+  }, [scannedCredentialOffer]);
 
   useEffect(() => {
     if (controller.IssuersService) {
@@ -95,7 +93,9 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
           <Column fill>
             <MyVcsTab
               isVisible={controller.activeTab === 0}
-              onAddCredential={() => setIsAddToWalletVisible(true)}
+              onAddCredential={() =>
+                props.navigation.navigate(BOTTOM_TAB_ROUTES.share)
+              }
               service={controller.tabRefs.myVcs}
               vcItemActor={controller.selectedVc}
               isViewingVc={controller.isViewingVc}
@@ -111,13 +111,6 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
           </Column>
         )}
       </Column>
-
-      <AddToWalletSheet
-        isVisible={isAddToWalletVisible}
-        onScanToAdd={startScanToAdd}
-        onCancel={() => setIsAddToWalletVisible(false)}
-        onClosed={onAddToWalletClosed}
-      />
 
       <ErrorMessageOverlay
         translationPath={'MyVcsTab'}
