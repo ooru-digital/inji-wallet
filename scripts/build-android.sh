@@ -106,7 +106,9 @@ echo "▶ Building CredIssuer Wallet $VERSION_NAME ($VERSION_CODE) for Android: 
 # A leftover file from an earlier build must not be reported as this build's result.
 rm -f "$OUTPUT"
 
-(cd android && ./gradlew "$GRADLE_TASK")
+# On a clean checkout the APK's native build configures before the libraries' codegen has run,
+# and fails on their missing build/generated/source/codegen/jni folders. Generate them first.
+(cd android && ./gradlew generateCodegenArtifactsFromSchema "$GRADLE_TASK")
 
 if [ ! -f "$OUTPUT" ]; then
   echo "❌ Gradle finished but $OUTPUT was not created." >&2
