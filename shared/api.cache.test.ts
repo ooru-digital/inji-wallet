@@ -1,6 +1,3 @@
-import {CACHED_API} from './api';
-import {getItem, setItem} from '../machines/store';
-import {request} from './request';
 import {CACHE_TTL} from './constants';
 
 jest.mock('../machines/store', () => ({
@@ -15,8 +12,11 @@ jest.mock('./telemetry/TelemetryUtils', () => ({
   sendImpressionEvent: jest.fn(),
 }));
 
-const mockGetItem = getItem as jest.Mock;
-const mockRequest = request as jest.Mock;
+// A fresh module per test: the cache it keeps in memory would otherwise carry over.
+let CACHED_API: typeof import('./api').CACHED_API;
+let mockGetItem: jest.Mock;
+let setItem: jest.Mock;
+let mockRequest: jest.Mock;
 
 const issuer = 'https://issuer.example';
 const fresh = {credential_issuer: issuer, version: 'fresh'};
@@ -27,6 +27,10 @@ const cached = (response: object, ageMs: number) => ({
   cachedTime: Date.now() - ageMs,
 });
 
+// Importing the module also reads unrelated settings, such as the language.
+const wellknownReads = () =>
+  mockGetItem.mock.calls.filter(([key]) => key.includes(issuer)).length;
+
 const fetchWellknown = () =>
   CACHED_API.fetchIssuerWellknownConfig(issuer, issuer, true);
 
@@ -34,7 +38,12 @@ const fetchWellknown = () =>
 const settle = () => new Promise(resolve => setTimeout(resolve, 0));
 
 describe('issuer well-known config, cache preferred', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.resetModules();
+    CACHED_API = require('./api').CACHED_API;
+    ({getItem: mockGetItem, setItem} = require('../machines/store'));
+    mockRequest = require('./request').request;
+  });
 
   it('returns a valid cached copy without going to the network', async () => {
     mockGetItem.mockResolvedValue(cached(old, 0));
@@ -91,17 +100,26 @@ describe('issuer well-known config, cache preferred', () => {
     ]);
 
     expect(results).toEqual([fresh, fresh, fresh]);
-    expect(mockGetItem).toHaveBeenCalledTimes(1);
+    expect(wellknownReads()).toBe(1);
     expect(mockRequest).toHaveBeenCalledTimes(1);
   });
 
-  it('asks again once the shared request has finished', async () => {
+  it('reads the stored copy once, then answers from memory', async () => {
+    mockGetItem.mockResolvedValue(cached(old, 0));
+
+    await fetchWellknown();
+    expect(await fetchWellknown()).toEqual(old);
+
+    expect(wellknownReads()).toBe(1);
+  });
+
+  it('a download replaces the copy in memory', async () => {
     mockGetItem.mockResolvedValue(null);
     mockRequest.mockResolvedValue(fresh);
 
     await fetchWellknown();
-    await fetchWellknown();
+    expect(await fetchWellknown()).toEqual(fresh);
 
-    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(mockRequest).toHaveBeenCalledTimes(1);
   });
 });

@@ -238,6 +238,12 @@ async function generateCacheAPIFunction({
  */
 const inFlightCacheLookups = new Map<string, Promise<any>>();
 const inFlightFetches = new Map<string, Promise<any>>();
+/**
+ * What was last read or fetched for each cache key, kept for the session. The stored copy is
+ * decrypted on every read, which is slow for a megabyte of issuer metadata, and every card asks
+ * for it again each time it is drawn.
+ */
+const memoryCache = new Map<string, any>();
 
 function shareInFlight<T>(
   inFlight: Map<string, Promise<T>>,
@@ -258,7 +264,9 @@ function fetchAndCache(cacheKey: string, fetchCall: (...props: any[]) => any) {
     if (!response) {
       throw new Error('Received Empty response in fetch call');
     }
-    setItem(cacheKey, createCacheObject(response), '').then(() =>
+    const cacheObject = createCacheObject(response);
+    memoryCache.set(cacheKey, cacheObject);
+    setItem(cacheKey, cacheObject, '').then(() =>
       console.info('Cached response for ' + cacheKey),
     );
     return response;
@@ -272,7 +280,11 @@ async function generateCacheAPIFunctionWithCachePreference(
   useStaleWhileRefreshing = false,
 ) {
   try {
-    const cachedData = await getItem(cacheKey, null, '');
+    let cachedData = memoryCache.get(cacheKey);
+    if (!cachedData) {
+      cachedData = await getItem(cacheKey, null, '');
+      if (cachedData) memoryCache.set(cacheKey, cachedData);
+    }
     if (cachedData && isCacheValid(cachedData)) {
       console.info('Returned cached response for' + cacheKey);
       return cachedData.response;
@@ -314,6 +326,7 @@ async function generateCacheAPIFunctionWithAPIPreference(
       updateCacheTTL(Number(response.cacheTTLInMilliSeconds));
     }
     cacheObject = createCacheObject(response);
+    memoryCache.set(cacheKey, cacheObject);
     setItem(cacheKey, cacheObject, '').then(() =>
       console.info('Cached response for ' + cacheKey),
     );

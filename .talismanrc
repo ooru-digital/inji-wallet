@@ -94,7 +94,7 @@ fileignoreconfig:
   - filename: screens/Settings/BackupViaPassword.tsx
     checksum: d2a355356bcaf8f7ef3b53ba93710cec15fefd0fdf31efd779eebd2bfab61c19
   - filename: shared/api.ts
-    checksum: 4f41647ff726abd8d2136ff01238048473b416ede5d42bd1629e44729c7db793
+    checksum: 455e96dea77f40f6e91fdf7a07220b1034997b53708575a8a7fb95fccd9cae4a
   - filename: machines/backupWithEncryption.ts
     checksum: 038c12d30b2312fcbd9230a1c6ddb494d2e561fe0d09741335fa80ab67e2c550
   - filename: machines/backupWithEncryption.typegen.ts
@@ -457,7 +457,7 @@ fileignoreconfig:
   - filename: components/revamp/WalletHeader.tsx
     checksum: 4dd697ec883c1684958a79c3d6040604415a5b6176264be55b882830c61e31e3
   - filename: components/revamp/WalletHome.tsx
-    checksum: 3d969673e69701d353e7c049b498b74e737a05b019456debd7a0cb5bbd892e47
+    checksum: ca6df9e83a42fff827f6351fdec6dcd14e5a92e9376aa3ae5fe63a789e73a497
   - filename: components/revamp/useCredentialCard.ts
     checksum: 40e892bdea792a554b3c08ad9b46bec761d14997cf6284afc03ae46b988514c8
   - filename: components/revamp/cardFields.ts
@@ -544,5 +544,9 @@ fileignoreconfig:
     checksum: 3d0bbbc136bc39978efed756143dad900302e7e05ebe0fa27ddb262adc8e1c3f
   - filename: screens/PasscodeScreenController.ts
     checksum: bc68b007b199190752cf6228c689fadf99faf530ed81dbfd10cc1124bb02fa73
+  - filename: machines/VerifiableCredential/VCItemMachine/backgroundStatusChecks.ts
+    checksum: 406588098ddf7711ffde0cf990ad188aa8388331b62e09bea9edc53450a663c3
+  - filename: shared/api.cache.test.ts
+    checksum: 2d3cf175094716c5a37ebeb2641260a74a5ea894df48e81058a3a924c4f6030a
     version: "1.0"
 

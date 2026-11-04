@@ -1,4 +1,11 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Animated,
   Pressable,
@@ -28,6 +35,7 @@ import {IssuerQrDialog} from '../IssuerQrCodeImage';
 import {CardCarousel} from './CardCarousel';
 import {frontCardFrame} from './carouselLayout';
 import {CardLoader, LoadedCard} from './CardLoader';
+import {holdBackgroundStatusChecks} from '../../machines/VerifiableCredential/VCItemMachine/backgroundStatusChecks';
 import {useCardQr} from './useCardQr';
 import {CredentialCardFront, isInactive, ScaledCard} from './CredentialCard';
 import {
@@ -63,6 +71,9 @@ interface HomeEntry {
   vcMetadata: VCMetadata;
   data?: LoadedCard['data'];
 }
+
+/** Long enough for a slow phone to draw the front card; the checks start anyway after it. */
+const FRONT_CARD_MAX_HOLD_MS = 10_000;
 
 const pluralCredentials = (n: number) =>
   `${n} ${n === 1 ? 'credential' : 'credentials'}`;
@@ -285,6 +296,13 @@ export const WalletHome: React.FC<{
   const isFocused = useIsFocused();
   const frontCardKey = showPinned ? pinnedEntry?.key : activeEntry?.key;
   const isFrontCardLoaded = !!(frontCardKey && loaded[frontCardKey]);
+
+  // The cards' status checks wait until the front card has drawn. A layout effect, so the hold
+  // is in place before any card's own effect queues its check.
+  useLayoutEffect(() => {
+    if (!frontCardKey || isFrontCardLoaded) return;
+    return holdBackgroundStatusChecks(FRONT_CARD_MAX_HOLD_MS);
+  }, [frontCardKey, isFrontCardLoaded]);
   const hasStartedCardTour = useRef(false);
   useEffect(() => {
     if (
