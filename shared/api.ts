@@ -166,6 +166,9 @@ export const CACHED_API = {
       cacheKey:
         API_CACHED_STORAGE_KEYS.fetchIssuerWellknownConfig(issuerCacheKey),
       fetchCall: API.fetchIssuerWellknownConfig.bind(null, credentialIssuer),
+      // Cards wait for this before they draw, and it can be a megabyte from a slow server:
+      // an hour-old copy is fine for laying out a card while a fresh one downloads.
+      useStaleWhileRefreshing: true,
     }),
 
   fetchIssuerAuthorizationServerMetadata: (
@@ -197,6 +200,11 @@ interface GenerateCacheAPIFunctionProps {
   cacheKey: string;
   fetchCall: (...props: any) => Promise<any>;
   onErrorHardCodedValue?: any;
+  /**
+   * With isCachePreferred: return an expired cached response straight away and refresh it in
+   * the background, instead of waiting for the network.
+   */
+  useStaleWhileRefreshing?: boolean;
 }
 
 async function generateCacheAPIFunction({
@@ -204,12 +212,16 @@ async function generateCacheAPIFunction({
   cacheKey = '',
   fetchCall = () => Promise.resolve(),
   onErrorHardCodedValue = undefined,
+  useStaleWhileRefreshing = false,
 }: GenerateCacheAPIFunctionProps) {
   if (isCachePreferred) {
-    return await generateCacheAPIFunctionWithCachePreference(
-      cacheKey,
-      fetchCall,
-      onErrorHardCodedValue,
+    return await shareInFlight(inFlightCacheLookups, cacheKey, () =>
+      generateCacheAPIFunctionWithCachePreference(
+        cacheKey,
+        fetchCall,
+        onErrorHardCodedValue,
+        useStaleWhileRefreshing,
+      ),
     );
   } else {
     return await generateCacheAPIFunctionWithAPIPreference(
@@ -220,28 +232,70 @@ async function generateCacheAPIFunction({
   }
 }
 
+/**
+ * Every card asks for its issuer's metadata as it mounts, all at once. These let those callers
+ * share one storage read and one download per cache key instead of each starting their own.
+ */
+const inFlightCacheLookups = new Map<string, Promise<any>>();
+const inFlightFetches = new Map<string, Promise<any>>();
+/**
+ * What was last read or fetched for each cache key, kept for the session. The stored copy is
+ * decrypted on every read, which is slow for a megabyte of issuer metadata, and every card asks
+ * for it again each time it is drawn.
+ */
+const memoryCache = new Map<string, any>();
+
+function shareInFlight<T>(
+  inFlight: Map<string, Promise<T>>,
+  key: string,
+  start: () => Promise<T>,
+): Promise<T> {
+  let pending = inFlight.get(key);
+  if (!pending) {
+    pending = start().finally(() => inFlight.delete(key));
+    inFlight.set(key, pending);
+  }
+  return pending;
+}
+
+function fetchAndCache(cacheKey: string, fetchCall: (...props: any[]) => any) {
+  return shareInFlight(inFlightFetches, cacheKey, async () => {
+    const response = await fetchCall();
+    if (!response) {
+      throw new Error('Received Empty response in fetch call');
+    }
+    const cacheObject = createCacheObject(response);
+    memoryCache.set(cacheKey, cacheObject);
+    setItem(cacheKey, cacheObject, '').then(() =>
+      console.info('Cached response for ' + cacheKey),
+    );
+    return response;
+  });
+}
+
 async function generateCacheAPIFunctionWithCachePreference(
   cacheKey: string,
   fetchCall: (...props: any[]) => any,
   onErrorHardCodedValue?: any,
+  useStaleWhileRefreshing = false,
 ) {
   try {
-    const cachedData = await getItem(cacheKey, null, '');
+    let cachedData = memoryCache.get(cacheKey);
+    if (!cachedData) {
+      cachedData = await getItem(cacheKey, null, '');
+      if (cachedData) memoryCache.set(cacheKey, cachedData);
+    }
     if (cachedData && isCacheValid(cachedData)) {
       console.info('Returned cached response for' + cacheKey);
       return cachedData.response;
-    } else {
-      const response = await fetchCall();
-      if (!response) {
-        throw new Error('Received Empty response in fetch call');
-      }
-      const cacheObject = createCacheObject(response);
-      setItem(cacheKey, cacheObject, '').then(() =>
-        console.info('Cached response for ' + cacheKey),
-      );
-
-      return response;
     }
+    if (useStaleWhileRefreshing && cachedData?.response) {
+      fetchAndCache(cacheKey, fetchCall).catch(error =>
+        console.warn(`Background refresh failed for ${cacheKey}`, error),
+      );
+      return cachedData.response;
+    }
+    return await fetchAndCache(cacheKey, fetchCall);
   } catch (error) {
     console.warn(`Failed to load due to network issue in cache preferred api call.
      cache key:${cacheKey} and has onErrorHardCodedValue:${
@@ -272,6 +326,7 @@ async function generateCacheAPIFunctionWithAPIPreference(
       updateCacheTTL(Number(response.cacheTTLInMilliSeconds));
     }
     cacheObject = createCacheObject(response);
+    memoryCache.set(cacheKey, cacheObject);
     setItem(cacheKey, cacheObject, '').then(() =>
       console.info('Cached response for ' + cacheKey),
     );
