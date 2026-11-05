@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   ModalProps,
   Pressable,
@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {TFunction} from 'i18next';
 import {useTranslation} from 'react-i18next';
 import {PinInput} from '../../components/PinInput';
 import {
@@ -22,6 +23,7 @@ import {WarningIcon} from '../../components/revamp/Icons';
 import {ScaledText} from '../../components/revamp/ScaledText';
 import {fonts, radii} from '../../components/revamp/tokens';
 import {useRevampTheme} from '../../components/revamp/useRevampTheme';
+import {IssuanceFailure} from '../../shared/openId4VCI/issuanceFailure';
 
 /** Asks for the code an issuer sends (by email or SMS) before it releases the card. */
 export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
@@ -37,6 +39,15 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
     (!props.inputMode || props.inputMode === 'numeric') &&
     !!props.length &&
     props.length <= 6;
+  const isLocked = props.failure === IssuanceFailure.TX_CODE_ATTEMPTS_EXHAUSTED;
+  const firstResetKey = useRef(props.inputResetKey);
+
+  useEffect(() => {
+    if (props.inputResetKey === firstResetKey.current) return;
+    setTransactionCode('');
+    setErrorMessage('');
+    setTouched(false);
+  }, [props.inputResetKey]);
 
   const validateCode = (code: string): string => {
     if (!code.trim()) return t('emptyCodeError');
@@ -45,6 +56,7 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
   };
 
   const verify = (code: string) => {
+    if (isLocked || props.verifying) return;
     const error = validateCode(code);
     if (error) {
       setErrorMessage(error);
@@ -55,6 +67,8 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
   };
 
   const handleChange = (text: string) => {
+    // The PIN boxes report '' again when they're cleared after a rejected code.
+    if (text === transactionCode) return;
     if (!touched) setTouched(true);
     setTransactionCode(text);
     setErrorMessage(touched ? validateCode(text) : '');
@@ -73,12 +87,21 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
           />
         }
         footer={
-          <PageButton
-            testID="verifyTransactionCode"
-            title={t('continue')}
-            disabled={transactionCode.length === 0}
-            onPress={() => verify(transactionCode)}
-          />
+          isLocked ? (
+            <PageButton
+              testID="closeTransactionCode"
+              title={t('close')}
+              onPress={() => props.onDismiss?.()}
+            />
+          ) : (
+            <PageButton
+              testID="verifyTransactionCode"
+              title={t('continue')}
+              disabled={transactionCode.length === 0}
+              loading={props.verifying}
+              onPress={() => verify(transactionCode)}
+            />
+          )
         }>
         <ScrollView
           keyboardShouldPersistTaps="always"
@@ -90,11 +113,14 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
             body={props.description || t('description')}
           />
           {isShortNumeric ? (
-            <View style={styles.pins}>
+            <View
+              style={[styles.pins, isLocked && styles.locked]}
+              pointerEvents={isLocked ? 'none' : 'auto'}>
               <PinInput
                 testID="pinInput"
                 length={props.length!}
                 autosubmit={false}
+                clearKey={props.inputResetKey}
                 onChange={handleChange}
                 onDone={verify}
               />
@@ -104,10 +130,12 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
               style={[
                 styles.field,
                 {borderColor: c.lineStrong, backgroundColor: c.card},
+                isLocked && styles.locked,
               ]}>
               <TextInput
                 testID="transactionCodeInput"
                 autoFocus
+                editable={!isLocked}
                 style={[styles.input, {color: c.ink}]}
                 placeholder={t('placeholder')}
                 placeholderTextColor={c.inkMuted}
@@ -131,7 +159,11 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
           )}
           <FieldError
             testID="otpVerificationError"
-            message={errorMessage || props.error}
+            message={
+              errorMessage ||
+              props.error ||
+              failureMessage(t, props.failure, props.attemptsRemaining)
+            }
           />
         </ScrollView>
       </Page>
@@ -162,12 +194,40 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
   );
 };
 
+function failureMessage(
+  t: TFunction,
+  failure: ExtendedModalProps['failure'],
+  attemptsRemaining: ExtendedModalProps['attemptsRemaining'],
+): string {
+  switch (failure) {
+    case IssuanceFailure.INCORRECT_TX_CODE:
+      return attemptsRemaining != null
+        ? t('incorrectCodeAttemptsLeft', {count: attemptsRemaining})
+        : t('incorrectCode');
+    case IssuanceFailure.TX_CODE_ATTEMPTS_EXHAUSTED:
+      return t('attemptsExhausted');
+    case IssuanceFailure.TX_CODE_EXPIRED:
+      return t('codeExpired');
+    case IssuanceFailure.RATE_LIMITED:
+      return t('tooManyAttempts');
+    default:
+      return '';
+  }
+}
+
 interface ExtendedModalProps extends ModalProps {
   onVerify?: (transactionCode: string) => void;
   error?: string;
   description?: string;
   inputMode?: 'text' | 'numeric';
   length?: number;
+  /** Why the issuer turned down the last code, if it did. */
+  failure?: IssuanceFailure | '';
+  attemptsRemaining?: number | null;
+  /** Changing it empties the input. */
+  inputResetKey?: number;
+  /** The code has been sent and the issuer hasn't answered yet. */
+  verifying?: boolean;
 }
 
 const styles = StyleSheet.create({
@@ -184,4 +244,5 @@ const styles = StyleSheet.create({
   },
   input: {flex: 1, fontFamily: fonts.regular, fontSize: 17},
   show: {fontFamily: fonts.semibold, fontSize: 14},
+  locked: {opacity: 0.5},
 });

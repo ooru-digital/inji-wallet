@@ -61,6 +61,16 @@ export function selectTxCodeDisplayDetails(state: State) {
   };
 }
 
+export function selectTxCodeStatus(state: State) {
+  const context = state.context;
+  return {
+    failure: context.txCodeError,
+    attemptsRemaining: context.txCodeAttemptsRemaining,
+    inputResetKey: context.txCodeInputResetKey,
+    verifying: context.isTxCodeVerifying,
+  };
+}
+
 export function selectIsBiometricCancelled(state: State) {
   return (
     state.matches('downloadCredentials.userCancelledBiometric') ||

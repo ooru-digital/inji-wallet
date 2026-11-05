@@ -12,6 +12,7 @@ import {issuerType} from './IssuersMachine';
 import {ActorRefFrom} from 'xstate';
 import {openID4VPMachine} from '../openID4VP/openID4VPMachine';
 import {AuthorizationType} from '../../shared/constants';
+import {IssuanceFailure} from '../../shared/openId4VCI/issuanceFailure';
 
 export const IssuersModel = createModel(
   {
@@ -61,6 +62,12 @@ export const IssuersModel = createModel(
     txCodeInputMode: '' as string,
     txCodeDescription: '' as string,
     txCodeLength: null as number | null,
+    // Why the issuer turned down the last transaction code; shown on the code screen.
+    txCodeError: '' as '' | IssuanceFailure,
+    txCodeAttemptsRemaining: null as number | null,
+    // Bumped whenever the code screen should empty its input.
+    txCodeInputResetKey: 0 as number,
+    isTxCodeVerifying: false as boolean,
     isCredentialOfferFlow: false as boolean,
     credentialOfferCredentialIssuer: {} as string,
     tokenRequestObject: {} as object,

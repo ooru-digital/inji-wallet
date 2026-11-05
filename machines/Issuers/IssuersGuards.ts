@@ -3,6 +3,7 @@ import {ErrorMessage, OIDCErrors} from '../../shared/openId4VCI/Utils';
 import {BiometricCancellationError} from '../../shared/error/BiometricCancellationError';
 import {VerificationErrorType} from '../../shared/vcjs/verifyCredential';
 import {AuthorizationType} from '../../shared/constants';
+import {IssuanceFailure} from '../../shared/openId4VCI/issuanceFailure';
 
 export const IssuersGuards = () => {
   return {
@@ -48,5 +49,25 @@ export const IssuersGuards = () => {
         context.authorizationType === AuthorizationType.OPENID4VP_PRESENTATION
       );
     },
+    /** The token request failed over the transaction code, so the holder goes back to the code screen. */
+    shouldReenterTxCode: (context: any, event: any) => {
+      switch (event.data?.failure) {
+        case IssuanceFailure.INCORRECT_TX_CODE:
+        case IssuanceFailure.TX_CODE_ATTEMPTS_EXHAUSTED:
+        case IssuanceFailure.TX_CODE_EXPIRED:
+        case IssuanceFailure.TX_CODE_REQUIRED:
+          return true;
+        case IssuanceFailure.RATE_LIMITED:
+          return !!context.tokenRequestObject?.txCode;
+        default:
+          return false;
+      }
+    },
+    // Only when a code was sent, so the retry without one can't loop.
+    isTxCodeNotExpected: (context: any, event: any) =>
+      event.data?.failure === IssuanceFailure.TX_CODE_NOT_EXPECTED &&
+      !!context.tokenRequestObject?.txCode,
+    canSubmitTxCode: (context: any) =>
+      context.txCodeError !== IssuanceFailure.TX_CODE_ATTEMPTS_EXHAUSTED,
   };
 };

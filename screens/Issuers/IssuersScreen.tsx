@@ -374,6 +374,10 @@ export const IssuersScreen: React.FC<
         inputMode={controller.txCodeDisplayDetails.inputMode}
         description={controller.txCodeDisplayDetails.description}
         length={controller.txCodeDisplayDetails.length}
+        failure={controller.txCodeStatus.failure}
+        attemptsRemaining={controller.txCodeStatus.attemptsRemaining}
+        inputResetKey={controller.txCodeStatus.inputResetKey}
+        verifying={controller.txCodeStatus.verifying}
       />
     );
   }
@@ -407,6 +411,13 @@ export const IssuersScreen: React.FC<
   }
   if (showFullScreenError) {
     const errorType = controller.errorMessageType || ErrorMessage.GENERIC;
+    const canRetry = ![
+      ErrorMessage.TECHNICAL_DIFFICULTIES,
+      ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED,
+      // The offer is spent or expired; only a new one from the issuer helps.
+      ErrorMessage.PRE_AUTHORIZED_CODE_INVALID,
+      ErrorMessage.OFFER_ALREADY_USED,
+    ].includes(errorType as ErrorMessage);
     return (
       <DownloadFailed
         testID={`${errorType}Error`}
@@ -415,8 +426,7 @@ export const IssuersScreen: React.FC<
         message={t(`errors.${errorType}.message`)}
         onClose={goBack}
         primary={
-          errorType != ErrorMessage.TECHNICAL_DIFFICULTIES &&
-          errorType != ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED
+          canRetry
             ? {
                 testID: 'tryAgain',
                 title: t('common:tryAgain'),
@@ -429,8 +439,7 @@ export const IssuersScreen: React.FC<
               }
         }
         secondary={
-          errorType != ErrorMessage.TECHNICAL_DIFFICULTIES &&
-          errorType != ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED
+          canRetry
             ? {
                 testID: 'backToWallet',
                 title: t('backToWallet'),

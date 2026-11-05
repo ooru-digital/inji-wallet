@@ -487,6 +487,18 @@
         "title": "Nabigo ang kahilingan sa network",
         "message": "Hindi namin maiproseso ang iyong kahilingan sa ngayon."
       },
+      "preAuthorizedCodeInvalid": {
+        "title": "Hindi na valid ang alok",
+        "message": "Nag-expire na o nagamit na ang alok na ito. Hilingin sa issuer na magpadala ng bago."
+      },
+      "tooManyRequests": {
+        "title": "Masyadong maraming pagsubok",
+        "message": "Masyadong maraming pagsubok. Subukang muli pagkalipas ng isang minuto."
+      },
+      "offerAlreadyUsed": {
+        "title": "Nagamit na ang alok",
+        "message": "Nagamit na ang QR code na ito para magdagdag ng card. Tingnan ito sa iyong wallet. Kung wala ito roon, hilingin sa issuer na magpadala ng bagong alok."
+      },
       "biometricsCancelled": {
         "title": "Itigil ang pagdaragdag ng card na ito?",
         "message": "Kailangan ang iyong fingerprint para matapos. Kung titigil ka ngayon, walang mase-save; maaari mong i-scan muli ang code mamaya.",
@@ -1483,7 +1495,14 @@
     "title": "Ilagay ang code mula sa issuer",
     "continue": "Magpatuloy",
     "show": "Ipakita",
-    "hide": "Itago"
+    "hide": "Itago",
+    "close": "Isara",
+    "incorrectCode": "Mali ang code. Pakisubukang muli.",
+    "incorrectCodeAttemptsLeft": "Mali ang code. {{count}} pagsubok na lang ang natitira.",
+    "incorrectCodeAttemptsLeft_plural": "Mali ang code. {{count}} pagsubok na lang ang natitira.",
+    "attemptsExhausted": "Masyadong maraming maling pagsubok. Hilingin sa issuer na ipadala muli ang code.",
+    "codeExpired": "Nag-expire na ang code na ito o hindi pa ito dumarating. Tingnan ang iyong email para sa pinakabagong code, o hilingin sa issuer na ipadala ito muli.",
+    "tooManyAttempts": "Masyadong maraming pagsubok. Subukang muli pagkalipas ng isang minuto."
   },
   "trustScreen": {
     "Description": "Tiyaking kilala mo o pinagkakatiwalaan mo ang issuer na ito. Kapag pinagkakatiwalaan mo na ang issuer na ito:",
