@@ -204,10 +204,18 @@ export const INTRO_SLIDER_LOGO_MARGIN = Dimensions.get('screen').width * 0.45;
  * orders must stay contiguous from 1: removing or adding a step means renumbering every later
  * one and updating these constants, or the counter reads past the total and testIDs shift.
  */
-// The bottom bar's Scan button (scan a verifier's QR to share), last of the onboarding steps.
-export const COPILOT_SCAN_STEP = 5;
+// The empty wallet's "Add a card" button, shown as a quick tip. Not there once a card is added,
+// so a replay with cards starts on the next step.
+export const COPILOT_ADD_CARD_STEP = 1;
+// The bottom bar's Activity and Settings tabs.
+export const COPILOT_HISTORY_STEP = 2;
+export const COPILOT_SETTINGS_STEP = 3;
+// The bottom bar's Scan button (scan an issuer's QR to add a card, or a verifier's to share).
+export const COPILOT_SCAN_STEP = 4;
+// The header's ⋯ menu, last of the onboarding steps.
+export const COPILOT_MORE_STEP = 5;
 // Stopping the tour on any step up to here completes onboarding.
-export const COPILOT_PRE_FINAL_STEP = COPILOT_SCAN_STEP;
+export const COPILOT_PRE_FINAL_STEP = COPILOT_MORE_STEP;
 // The first card, toured on its own after the first download.
 export const COPILOT_FINAL_STEP = 6;
 
@@ -237,11 +245,11 @@ export const COPILOT_ANDROID_STATUS_BAR_VISIBLE =
   Platform.OS !== 'android' || (Platform.Version as number) < 35;
 /** Copilot step `order` → testID prefix. Keys must match the `order` props one-for-one. */
 export const copilotTestID = {
-  '1': 'download',
-  '2': 'more',
-  '3': 'history',
-  '4': 'settings',
-  '5': 'scanToShare',
+  '1': 'addCard',
+  '2': 'history',
+  '3': 'settings',
+  '4': 'scan',
+  '5': 'more',
   '6': 'cardView',
 };
 
