@@ -16,7 +16,13 @@ import VciClient from '../../shared/vciClient/VciClient';
 import {
   getCredentialConfigurationNames,
   getOfferedCredentialConfigurationIds,
+  isCredentialOfferAlreadyUsed,
 } from '../../shared/openId4VCI/credentialOffer';
+import {
+  IssuanceError,
+  IssuanceFailure,
+  TokenRequestError,
+} from '../../shared/openId4VCI/issuanceFailure';
 import {displayType, issuerType} from './IssuersMachine';
 import {setItem} from '../store';
 import {
@@ -239,8 +245,8 @@ export const IssuersService = () => {
         });
       };
 
-      const credentialResponse =
-        await VciClient.getInstance().requestCredentialByOffer(
+      try {
+        return await VciClient.getInstance().requestCredentialByOffer(
           context.qrData,
           getTxCode,
           getSignedProofJwt,
@@ -250,7 +256,16 @@ export const IssuersService = () => {
           handlePresentationRequest,
           signPresentation,
         );
-      return credentialResponse;
+      } catch (error) {
+        // The library drops the issuer's answer when it can't fetch the offer, so ask directly.
+        if (await isCredentialOfferAlreadyUsed(context.qrData)) {
+          throw new IssuanceError(
+            (error as Error)?.message,
+            IssuanceFailure.OFFER_ALREADY_USED,
+          );
+        }
+        throw error;
+      }
     },
     sendTokenRequest: async (context: any) => {
       const tokenRequestObject = context.tokenRequestObject;
@@ -453,7 +468,7 @@ async function sendTokenRequest(
       response.status,
       errorText,
     );
-    throw new Error(`Token request failed: ${response.status} ${errorText}`);
+    throw new TokenRequestError(response.status, errorText);
   }
   const tokenResponse = await response.json();
   return tokenResponse;

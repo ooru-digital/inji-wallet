@@ -2,6 +2,7 @@
 import {
   getCredentialConfigurationNames,
   getOfferedCredentialConfigurationIds,
+  isCredentialOfferAlreadyUsed,
 } from './credentialOffer';
 
 jest.mock('./Utils', () => ({
@@ -43,6 +44,7 @@ describe('getOfferedCredentialConfigurationIds', () => {
       'DrivingLicence',
     ]);
     expect(fetchMock).toHaveBeenCalledWith(uri, {
+      headers: {Accept: 'application/json'},
       signal: expect.any(AbortSignal),
     });
   });
@@ -79,6 +81,65 @@ describe('getOfferedCredentialConfigurationIds', () => {
     await expect(
       getOfferedCredentialConfigurationIds('https://example.com'),
     ).resolves.toEqual([]);
+  });
+});
+
+describe('isCredentialOfferAlreadyUsed', () => {
+  const qr = `openid-credential-offer://?credential_offer_uri=${encodeURIComponent(
+    'https://issuer.example.com/offers/123',
+  )}`;
+  const respond = (status: number, body: unknown) => {
+    (global as any).fetch = jest.fn().mockResolvedValue({
+      ok: status >= 200 && status < 300,
+      status,
+      json: async () => body,
+    });
+  };
+
+  afterEach(() => {
+    (global as any).fetch = undefined;
+  });
+
+  it('is true when the issuer answers 409', async () => {
+    respond(409, {
+      error: 'invalid_offer',
+      message: 'Credential offer has already been used.',
+    });
+    await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(true);
+  });
+
+  it('is true for invalid_offer under another status, even 200', async () => {
+    respond(400, {error: 'invalid_offer'});
+    await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(true);
+    respond(200, {
+      error: 'invalid_offer',
+      message: 'Credential offer has already been used.',
+    });
+    await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(true);
+  });
+
+  it('is false when the offer is still available or the failure is something else', async () => {
+    respond(200, offer);
+    await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(false);
+    respond(404, {error: 'not_found'});
+    await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(false);
+  });
+
+  it('is false when the issuer cannot be reached', async () => {
+    (global as any).fetch = jest
+      .fn()
+      .mockRejectedValue(new Error('Network request failed'));
+    await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(false);
+  });
+
+  it('does not ask about an inline offer', async () => {
+    const fetchMock = jest.fn();
+    (global as any).fetch = fetchMock;
+    const inline = `openid-credential-offer://?credential_offer=${encodeURIComponent(
+      JSON.stringify(offer),
+    )}`;
+    await expect(isCredentialOfferAlreadyUsed(inline)).resolves.toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

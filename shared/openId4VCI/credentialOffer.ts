@@ -20,16 +20,9 @@ export async function getOfferedCredentialConfigurationIds(
     if (!params.credential_offer_uri.startsWith('https://')) {
       return [];
     }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), OFFER_FETCH_TIMEOUT_MS);
-    try {
-      const response = await fetch(params.credential_offer_uri, {
-        signal: controller.signal,
-      });
-      offerObject = await response.json();
-    } finally {
-      clearTimeout(timer);
-    }
+    offerObject = await fetchOfferUri(params.credential_offer_uri, response =>
+      response.json(),
+    );
   } else {
     return [];
   }
@@ -60,6 +53,51 @@ export function getCredentialConfigurationNames(
       return display ? getDisplayObjectForCurrentLanguage(display)?.name : '';
     })
     .filter((name): name is string => !!name);
+}
+
+/**
+ * Whether a by-reference offer has already been claimed: the issuer answers 409, or an
+ * `invalid_offer` body under any status (CredIssuer sends it with a 200). Asked after a download
+ * fails, because the VCI library drops the issuer's answer when it can't read the offer. Any doubt
+ * answers false.
+ */
+export async function isCredentialOfferAlreadyUsed(
+  offer: string,
+): Promise<boolean> {
+  const offerUri = parseQueryParams(offer).credential_offer_uri;
+  if (!offerUri?.startsWith('https://')) {
+    return false;
+  }
+  try {
+    return await fetchOfferUri(offerUri, async response => {
+      if (response.status === 409) {
+        return true;
+      }
+      const body = await response.json().catch(() => null);
+      return body?.error === 'invalid_offer';
+    });
+  } catch {
+    return false;
+  }
+}
+
+/** Fetches an offer link, giving up after OFFER_FETCH_TIMEOUT_MS including reading the body. */
+async function fetchOfferUri<T>(
+  uri: string,
+  read: (response: Response) => Promise<T>,
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OFFER_FETCH_TIMEOUT_MS);
+  try {
+    return await read(
+      await fetch(uri, {
+        headers: {Accept: 'application/json'},
+        signal: controller.signal,
+      }),
+    );
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function parseQueryParams(url: string): Record<string, string> {
