@@ -87,7 +87,7 @@ function logMdocCredentialShapeForPresentment(vc: VerifiableCredential): void {
 
 /**
  * Builds native presentment parameters for an mso_mdoc VC (Tap2iD / ISO proximity).
- * Android: hardware ES256 keystore via native bridge. iOS: software device key when private key is available.
+ * The ES256 device key signs in hardware on both platforms: Android keystore, iOS Secure Enclave.
  */
 export async function buildIso18013PresentmentParamsForVc(
   vcId: string,
@@ -124,37 +124,29 @@ export async function buildIso18013PresentmentParamsForVc(
     console.log('[mdoc presentment] using docType:', docType);
   }
 
-  let useSoftwareDeviceKey = false;
-  let deviceKeyPrivateBase64: string | undefined;
-
   if (isIOS()) {
+    // The device key stays in the Secure Enclave and signs DeviceAuth there (see `presentment/`);
+    // only its public key is read here, to log which key the session will use.
     try {
       const kp = await fetchKeyPair(KeyTypes.ES256);
-      const pk = kp?.privateKey as Buffer | string | undefined;
       const pub = kp?.publicKey as Buffer | string | undefined;
-      if (pk) {
-        const buf = Buffer.isBuffer(pk)
-          ? pk
-          : Buffer.from(pk as string, 'base64');
-        if (buf.length > 0) {
-          deviceKeyPrivateBase64 = buf.toString('base64');
-          useSoftwareDeviceKey = true;
-          console.log(
-            'Wallet key source for presentation: alias=ES256, keyId=ES256, source=ios-secure-storage',
-          );
-          if (pub) {
-            const publicKeyBuffer = Buffer.isBuffer(pub)
-              ? pub
-              : Buffer.from(pub as string, 'base64');
-            const jwk = getP256JwkFromUncompressedPublicKey(publicKeyBuffer);
-            console.log(
-              `Wallet presentation device-auth key: kty=${jwk.kty}, crv=${jwk.crv}, x=${jwk.x}, y=${jwk.y}`,
-            );
-          }
-        }
+      console.log(
+        'Wallet key source for presentation: alias=ES256, keyId=ES256, source=ios-secure-enclave',
+      );
+      if (pub) {
+        const publicKeyBuffer = Buffer.isBuffer(pub)
+          ? pub
+          : Buffer.from(pub as string, 'base64');
+        const jwk = getP256JwkFromUncompressedPublicKey(publicKeyBuffer);
+        console.log(
+          `Wallet presentation device-auth key: kty=${jwk.kty}, crv=${jwk.crv}, x=${jwk.x}, y=${jwk.y}`,
+        );
       }
-    } catch {
-      // Android or keystore-only key
+    } catch (e) {
+      console.warn(
+        'Wallet presentation device-auth key: failed to load iOS ES256 pubkey',
+        e,
+      );
     }
   } else if (isAndroid()) {
     // TEMP debug: mirror keystore ES256 pubkey to Metro. Native also compares vs MSO in logcat.
@@ -187,8 +179,6 @@ export async function buildIso18013PresentmentParamsForVc(
     deviceEngagementUri: proximity.mdocUri,
     deviceEngagementCbor: proximity.deviceEngagementCbor,
     ephemeralPresentationPrivateKey: proximity.ephemeralPrivateKey,
-    useSoftwareDeviceKey,
-    deviceKeyPrivateBase64,
   };
 }
 

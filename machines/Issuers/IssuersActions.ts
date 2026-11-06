@@ -10,7 +10,6 @@ import {
   MY_VCS_STORE_KEY,
   NO_INTERNET,
   REQUEST_TIMEOUT,
-  isIOS,
   AuthorizationType,
   OVP_ERROR_CODE,
   OVP_ERROR_MESSAGES,
@@ -21,7 +20,10 @@ import {StoreEvents} from '../store';
 import {BackupEvents} from '../backupAndRestore/backup/backupMachine';
 import {getVCMetadata, VCMetadata} from '../../shared/VCMetadata';
 import {findCredentialsOfSameType} from '../../shared/credentialIdentity';
-import {isHardwareKeystoreExists} from '../../shared/cryptoutil/cryptoUtil';
+import {
+  isHardwareKeystoreExists,
+  isStoredAsGenericKey,
+} from '../../shared/cryptoutil/cryptoUtil';
 import {ActivityLogEvents} from '../activityLog';
 import {
   getEndEventData,
@@ -153,7 +155,7 @@ export const IssuersActions = (model: any) => {
     }),
     storeKeyPair: async (context: any) => {
       const keyType = context.keyType;
-      if ((keyType != 'ES256' && keyType != 'RS256') || isIOS())
+      if (isStoredAsGenericKey(keyType))
         await RNSecureKeystoreModule.storeGenericKey(
           context.publicKey,
           context.privateKey,

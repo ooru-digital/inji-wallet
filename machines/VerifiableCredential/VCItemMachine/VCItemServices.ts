@@ -5,10 +5,10 @@ import getAllConfigurations, {
   DownloadProps,
 } from '../../../shared/api';
 import Cloud from '../../../shared/CloudBackupAndRestoreUtils';
-import {isIOS} from '../../../shared/constants';
 import {
   fetchKeyPair,
   generateKeyPair,
+  isStoredAsGenericKey,
 } from '../../../shared/cryptoutil/cryptoUtil';
 import {
   getMatchingCredentialIssuerMetadata,
@@ -84,7 +84,7 @@ export const VCItemServices = model => {
     generateKeypairAndStore: async context => {
       const keyType = context.vcMetadata?.downloadKeyType;
       const keypair = await generateKeyPair(keyType);
-      if ((keyType != 'ES256' && keyType != 'RS256') || isIOS())
+      if (isStoredAsGenericKey(keyType))
         await RNSecureKeystoreModule.storeGenericKey(
           keypair.publicKey as string,
           keypair.privateKey as string,

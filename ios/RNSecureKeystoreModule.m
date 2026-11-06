@@ -23,6 +23,11 @@ RCT_EXTERN_METHOD(sign:(NSString *)signAlgorithm
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(signBytes:(NSString *)alias
+                  data:(NSString *)data
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(storeGenericKey:(NSString *)publicKey
                   privateKey:(NSString *)privateKey
                   account:(NSString *)account

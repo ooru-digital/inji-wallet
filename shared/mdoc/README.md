@@ -150,7 +150,7 @@ The list below is the **complete** ISO/IEC 18013-5 holder proximity path Tap2iD 
 
 The iOS path implements the protocol **once, in TypeScript**, and keeps native to the one thing that cannot be JavaScript: operating a GATT peripheral (`CBPeripheralManager` / `BluetoothGattServer` are unreachable from Hermes, and no maintained RN package exposes peripheral mode — the peripheral-capable ones were last published in 2022). Multipaz makes the same split; its BLE lives in `.android.kt` / `.ios.kt` actuals under a common protocol layer.
 
-Android is **deliberately unchanged**: it has a working presenter, and `isMdocBleTransportAvailable()` is iOS-only so nothing reroutes. When Android does adopt the common engine it implements the same `MdocBleTransport` native contract and everything above it is reused as-is. The one thing that must be designed for now is signing: `Es256Signer` is **injected**, because iOS can hand the ES256 private key to JS (`useSoftwareDeviceKey`) while Android's device key is non-extractable and can only sign across the bridge.
+Android is **deliberately unchanged**: it has a working presenter, and `isMdocBleTransportAvailable()` is iOS-only so nothing reroutes. When Android does adopt the common engine it implements the same `MdocBleTransport` native contract and everything above it is reused as-is. Signing is the one platform-specific piece: `Es256Signer` is **injected**. The ES256 device key is non-extractable on both platforms (iOS Secure Enclave, Android keystore), so the iOS signer calls `RNSecureKeystoreModule.signBytes` across the bridge and converts the DER result to COSE `r || s`.
 
 ### Verifying without a reader
 
