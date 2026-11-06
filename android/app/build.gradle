@@ -9,6 +9,10 @@ apply plugin: 'kotlin-android'
 
 
 configurations.all {
+    // identity-credential (via inji-openid4vp and vcverifier) lists the Dokka documentation plugin,
+    // and FreeMarker under it, as runtime dependencies; neither runs in the app.
+    exclude group: 'org.jetbrains.dokka'
+    exclude group: 'org.freemarker'
     resolutionStrategy {
         force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
         // The BioChq face SDK needs CameraX 1.4.1; expo-camera pins 1.4.0-beta02 and 1.3.x
@@ -333,10 +337,6 @@ dependencies {
     // mutable — re-fetching its metadata on every build and letting a re-published 0.7.0 silently
     // change the app.
     implementation("io.inji:inji-openid4vp-aar:0.7.0"){
-        // identity-credential lists the Dokka documentation plugin (and FreeMarker under it) as a
-        // runtime dependency; neither runs in the app.
-        exclude group: 'org.jetbrains.dokka'
-        exclude group: 'org.freemarker'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
         exclude group: 'io.mosip', module: 'vcverifier-jar'
