@@ -9,8 +9,6 @@ import hi from './locales/hin.json';
 import kn from './locales/kan.json';
 import ta from './locales/tam.json';
 
-import {iso6393To1} from 'iso-639-3';
-
 import {getItem} from './machines/store';
 import {LocalizedField} from './machines/VerifiableCredential/VCMetaMachine/vc';
 
@@ -101,14 +99,19 @@ export function getClientNameForCurrentLanguage(
     : localizedDataObject[defaultLanguage];
 }
 
-// This method gets the value from iso-639-3 package, which contains key value pairs of three letter language codes[key] and two letter langugae code[value]. These values are according to iso standards.
-// The response received from the server is three letter language code and the value in the inji code base is two letter language code. Hence the conversion is done.
+// The server sends ISO 639-3 (three-letter) language codes; the app's languages use ISO 639-1
+// (two-letter) codes where one exists. Only the supported languages need converting, so this is a
+// fixed list rather than the iso-639-3 package, whose full table is half a megabyte.
+const THREE_LETTER_LANGUAGE_CODES: Record<string, string> = {
+  en: 'eng',
+  ar: 'ara',
+  hi: 'hin',
+  kn: 'kan',
+  ta: 'tam',
+};
+
 function getThreeLetterLanguageCode(twoLetterLanguageCode: string) {
-  return iso6393To1
-    ? Object.keys(iso6393To1).find(
-        key => iso6393To1[key] === twoLetterLanguageCode,
-      )
-    : null;
+  return THREE_LETTER_LANGUAGE_CODES[twoLetterLanguageCode];
 }
 
 function populateLanguageCodeMap() {
