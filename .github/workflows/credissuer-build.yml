@@ -175,6 +175,18 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload build to Nexus
+        continue-on-error: true
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          FILE: ${{ steps.out.outputs.file }}
+        run: |
+          url="$NEXUS_URL/repository/Inji-wallet-artifacts/${{ github.event.repository.name }}/credissuer-android/${{ github.run_id }}/$(basename "$FILE")"
+          curl -sS --fail --retry 3 --max-time 1800 -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" --upload-file "$FILE" "$url"
+          echo "- Nexus: $url" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Check the Play upload key
         id: play
         if: env.PLAY_TRACK != ''
@@ -320,6 +332,17 @@ jobs:
           path: ios/build/credissuer/CredIssuerWallet.ipa
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload build to Nexus
+        continue-on-error: true
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+        run: |
+          url="$NEXUS_URL/repository/Inji-wallet-artifacts/${{ github.event.repository.name }}/credissuer-ios/${{ github.run_id }}/CredIssuerWallet.ipa"
+          curl -sS --fail --retry 3 --max-time 1800 -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" --upload-file ios/build/credissuer/CredIssuerWallet.ipa "$url"
+          echo "- Nexus: $url" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check the App Store Connect key
         id: asc
