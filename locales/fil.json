@@ -142,7 +142,8 @@
       "close": "Isara",
       "loadingQr": "Inihahanda ang iyong QR code…",
       "qrErrorTitle": "Hindi magawa ang QR code",
-      "qrErrorMessage": "Isara ang screen na ito at subukang muli."
+      "qrErrorMessage": "Isara ang screen na ito at subukang muli.",
+      "stepPhonesTapped": "Na-tap ang mga telepono"
     },
     "nationalCard": "Pambansang ID",
     "identityCard": "Kard ng Pagkakakilanlan",
@@ -1526,5 +1527,13 @@
     "downloadingCard": "Dina-download ang iyong card…",
     "unknownIssuer": "Hindi kilalang issuer",
     "offering": "Iniaalok"
+  },
+  "NfcTapShare": {
+    "chooseTitle": "May reader na humihingi ng card",
+    "chooseBody": "Piliin ang card na ibabahagi. Makikita mo ang hinihingi nito bago may maipadala.",
+    "noCardsTitle": "Walang card na maibabahagi",
+    "noCardsBody": "Magdagdag ng lisensya sa pagmamaneho o ibang mobile na dokumento para maibahagi ito sa pag-tap.",
+    "readerGoneTitle": "Tumigil sa paghihintay ang reader",
+    "readerGoneBody": "Idikit muli ang mga telepono para magbahagi."
   }
 }

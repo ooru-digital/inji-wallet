@@ -54,6 +54,7 @@ import {CARD_WIDTH, fonts, motion, radii, shadows} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
 import {TAB_BAR_SPACE} from './RevampTabBar';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {setNfcCardInView} from '../../shared/mdoc/mdocNfcEngagement';
 
 const RAIL_CARD_WIDTH = 212;
 const ALL = 'all';
@@ -232,6 +233,11 @@ export const WalletHome: React.FC<{
   const targetEntry =
     detailEntry ?? (pinnedEntry && !searching ? pinnedEntry : activeEntry);
   const target = targetEntry ? loaded[targetEntry.key] : undefined;
+
+  useEffect(() => {
+    setNfcCardInView(targetEntry?.key ?? null);
+    return () => setNfcCardInView(null);
+  }, [targetEntry?.key]);
 
   useEffect(() => {
     navigation

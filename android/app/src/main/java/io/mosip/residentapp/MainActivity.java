@@ -2,10 +2,13 @@ package io.mosip.residentapp;
 import expo.modules.ReactActivityDelegateWrapper;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
+import android.nfc.cardemulation.CardEmulation;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -60,6 +63,41 @@ public class MainActivity extends ReactActivity {
     super.onCreate(null);
     Intent intent = getIntent();
     handleIntent(intent);
+  }
+
+  /**
+   * While the wallet is on screen, it is the preferred service for an mdoc reader's tap, ahead of
+   * any other wallet on the phone registered for the same NFC application.
+   */
+  private CardEmulation cardEmulation() {
+    NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
+    return adapter == null ? null : CardEmulation.getInstance(adapter);
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    try {
+      CardEmulation ce = cardEmulation();
+      if (ce != null) {
+        ce.setPreferredService(this,
+            new ComponentName(this, io.mosip.residentapp.mdoc.MdocNfcEngagementService.class));
+      }
+    } catch (Exception ignored) {
+      // No NFC or no card emulation: sharing still works by QR code.
+    }
+  }
+
+  @Override
+  protected void onPause() {
+    try {
+      CardEmulation ce = cardEmulation();
+      if (ce != null) {
+        ce.unsetPreferredService(this);
+      }
+    } catch (Exception ignored) {
+    }
+    super.onPause();
   }
 
   @Override
