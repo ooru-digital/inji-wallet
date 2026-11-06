@@ -544,5 +544,7 @@ fileignoreconfig:
     checksum: 3d0bbbc136bc39978efed756143dad900302e7e05ebe0fa27ddb262adc8e1c3f
   - filename: screens/PasscodeScreenController.ts
     checksum: bc68b007b199190752cf6228c689fadf99faf530ed81dbfd10cc1124bb02fa73
+  - filename: .github/workflows/credissuer-build.yml
+    checksum: 30185c6472a8447e46880b792528d36aa98de169ada6ec6ffee9ad7fb8ddf7e4
     version: "1.0"
 

@@ -1,4 +1,8 @@
-xcode_select '/Applications/Xcode_16.2.app'
+require 'securerandom'
+
+# Upstream pins Xcode 16.2 for every lane. A caller that has already chosen an Xcode through
+# DEVELOPER_DIR (the CredIssuer build workflow does) keeps its choice.
+xcode_select '/Applications/Xcode_16.2.app' unless ENV["DEVELOPER_DIR"]
 
 default_platform(:ios)
 APP_STORE_CONNECT_TEAM_ID = ENV["APP_STORE_CONNECT_TEAM_ID"]
@@ -23,6 +27,10 @@ MIMOTO_HOST = ENV["MIMOTO_HOST"]
 ESIGNET_HOST =  ENV["ESIGNET_HOST"]
 APPLICATION_THEME = ENV["APPLICATION_THEME"]
 CREDENTIAL_REGISTRY_EDIT = ENV["CREDENTIAL_REGISTRY_EDIT"]
+
+# The upstream helpers below map the "residentapp" flavor to MOSIP's bundle IDs, which this fork
+# does not ship; the CredIssuer lane uses the project's own.
+CREDISSUER_BUNDLE_ID = "io.ooru.credissuerwallet"
 
 def generate_app_bundle_id()
   flavor = APP_FLAVOR
@@ -286,4 +294,70 @@ platform :ios do
     )
 
    end
+
+  desc "CredIssuer Wallet: build a signed App Store IPA, without uploading it anywhere"
+  lane :credissuer_build do
+    # Written by .github/workflows/credissuer-build.yml from the repository's secrets.
+    p12_path = ENV["CREDISSUER_IOS_P12_PATH"].to_s
+    profile_path = ENV["CREDISSUER_IOS_PROFILE_PATH"].to_s
+    UI.user_error!("CREDISSUER_IOS_P12_PATH does not point to the distribution certificate (.p12)") unless File.file?(p12_path)
+    UI.user_error!("CREDISSUER_IOS_PROFILE_PATH does not point to the provisioning profile") unless File.file?(profile_path)
+
+    # Its own keychain, deleted afterwards, so the certificate never lands in the login keychain.
+    # Unlike the upstream lanes it is unlocked and not made the default: codesign only needs it
+    # on the search list, and a self-hosted Mac keeps its own default keychain.
+    keychain_name = "credissuer-build"
+    keychain_password = SecureRandom.hex(16)
+    delete_temp_keychain(keychain_name)
+
+    begin
+      create_keychain(
+        name: keychain_name,
+        password: keychain_password,
+        unlock: true,
+        timeout: 3600,
+        lock_when_sleeps: false
+      )
+      import_certificate(
+        certificate_path: p12_path,
+        certificate_password: ENV["CREDISSUER_IOS_P12_PASSWORD"].to_s,
+        keychain_name: keychain_name,
+        keychain_password: keychain_password
+      )
+      install_provisioning_profile(path: profile_path)
+
+      # Manual signing needs the profile's name, which only the profile itself knows.
+      profile_name = sh(
+        "security cms -D -i '#{profile_path}' 2>/dev/null | plutil -extract Name raw -o - -",
+        log: false
+      ).strip
+      UI.user_error!("Could not read the provisioning profile's name. Is the secret a valid .mobileprovision?") if profile_name.empty?
+      UI.message("Signing with provisioning profile: #{profile_name}")
+
+      # The project uses automatic signing, which needs an Apple ID logged in to Xcode. This
+      # only changes the checkout being built, never the committed project.
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: "Inji.xcodeproj",
+        profile_name: profile_name,
+        code_sign_identity: "Apple Distribution",
+        targets: ["Inji"],
+        build_configurations: ["Release"]
+      )
+
+      gym(
+        workspace: "Inji.xcworkspace",
+        scheme: "Inji",
+        configuration: "Release",
+        export_method: "app-store",
+        export_options: {
+          provisioningProfiles: {CREDISSUER_BUNDLE_ID => profile_name}
+        },
+        output_directory: "./build/credissuer",
+        output_name: "CredIssuerWallet.ipa"
+      )
+    ensure
+      delete_temp_keychain(keychain_name)
+    end
+  end
 end
