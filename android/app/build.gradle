@@ -333,6 +333,10 @@ dependencies {
     // mutable — re-fetching its metadata on every build and letting a re-published 0.7.0 silently
     // change the app.
     implementation("io.inji:inji-openid4vp-aar:0.7.0"){
+        // identity-credential lists the Dokka documentation plugin (and FreeMarker under it) as a
+        // runtime dependency; neither runs in the app.
+        exclude group: 'org.jetbrains.dokka'
+        exclude group: 'org.freemarker'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
         exclude group: 'io.mosip', module: 'vcverifier-jar'
@@ -364,7 +368,11 @@ dependencies {
     // A fixed version, not -SNAPSHOT: a snapshot is mutable, so Gradle would re-check it against
     // the Nexus on every build. Release candidates are never replaced once published. Do NOT add
     // `changing = true` here — that forces the same per-build re-check even on a fixed version.
-    implementation("io.ooru.biometrics:faceliveness-android:1.0.0-rc.1")
+    implementation("io.ooru.biometrics:faceliveness-android:1.0.0-rc.1") {
+        // MediaPipe lists AutoValue's annotation processor as a runtime dependency; it only runs
+        // when compiling. The SDK's R8 rules already ignore its classes.
+        exclude group: 'com.google.auto.value', module: 'auto-value'
+    }
     // CameraX 1.4.1, the face SDK's version (also forced in resolutionStrategy above)
     implementation 'androidx.camera:camera-core:1.4.1'
     implementation 'androidx.camera:camera-camera2:1.4.1'
@@ -438,5 +446,18 @@ task CaptureLibraryVersion {
 }
 
 // https://github.com/oblador/react-native-vector-icons?tab=readme-ov-file#android-setup
+// Only the icon sets the app uses (react-native-elements' `type`s, direct imports, CheckBox's
+// FontAwesome default); fonts.gradle copies all 19 otherwise.
+project.ext.vectoricons = [
+    iconFontNames: [
+        'AntDesign.ttf',
+        'Entypo.ttf',
+        'Feather.ttf',
+        'FontAwesome.ttf',
+        'Ionicons.ttf',
+        'MaterialCommunityIcons.ttf',
+        'MaterialIcons.ttf',
+    ]
+]
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 apply from: "./eas-build.gradle"
