@@ -295,12 +295,17 @@ platform :ios do
 
    end
 
-  desc "CredIssuer Wallet: build a signed App Store IPA, without uploading it anywhere"
+  desc "CredIssuer Wallet: build a signed IPA (development or App Store), without uploading it anywhere"
   lane :credissuer_build do
     # Written by .github/workflows/credissuer-build.yml from the repository's secrets.
     p12_path = ENV["CREDISSUER_IOS_P12_PATH"].to_s
     profile_path = ENV["CREDISSUER_IOS_PROFILE_PATH"].to_s
-    UI.user_error!("CREDISSUER_IOS_P12_PATH does not point to the distribution certificate (.p12)") unless File.file?(p12_path)
+    # development: installs only on the devices in the profile. app-store: TestFlight / App Store.
+    export_method = ENV.fetch("CREDISSUER_IOS_EXPORT_METHOD", "app-store")
+    unless %w[development app-store].include?(export_method)
+      UI.user_error!("CREDISSUER_IOS_EXPORT_METHOD must be development or app-store, not #{export_method}")
+    end
+    UI.user_error!("CREDISSUER_IOS_P12_PATH does not point to the signing certificate (.p12)") unless File.file?(p12_path)
     UI.user_error!("CREDISSUER_IOS_PROFILE_PATH does not point to the provisioning profile") unless File.file?(profile_path)
 
     # Its own keychain, deleted afterwards, so the certificate never lands in the login keychain.
@@ -340,7 +345,7 @@ platform :ios do
         use_automatic_signing: false,
         path: "Inji.xcodeproj",
         profile_name: profile_name,
-        code_sign_identity: "Apple Distribution",
+        code_sign_identity: export_method == "development" ? "Apple Development" : "Apple Distribution",
         targets: ["Inji"],
         build_configurations: ["Release"]
       )
@@ -349,7 +354,7 @@ platform :ios do
         workspace: "Inji.xcworkspace",
         scheme: "Inji",
         configuration: "Release",
-        export_method: "app-store",
+        export_method: export_method,
         export_options: {
           provisioningProfiles: {CREDISSUER_BUNDLE_ID => profile_name}
         },

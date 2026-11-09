@@ -17,9 +17,12 @@ name: CredIssuer Wallet Build
 #   Both      CREDISSUER_API_TOKEN
 #   Android   CREDISSUER_ANDROID_KEYSTORE_BASE64, CREDISSUER_ANDROID_KEYSTORE_ALIAS,
 #             CREDISSUER_ANDROID_KEYSTORE_PASSWORD, ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD
-#   iOS       CREDISSUER_IOS_DIST_P12_BASE64, CREDISSUER_IOS_DIST_P12_PASSWORD,
-#             CREDISSUER_IOS_APPSTORE_PROFILE_BASE64, ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD
-#             (the BioChq Nexus login: the face SDK is a Swift package downloaded from it)
+#   iOS       ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD (the BioChq Nexus login: the face SDK is
+#             a Swift package downloaded from it), and the signing for the chosen kind of IPA:
+#               development (registered test devices): CREDISSUER_IOS_DEV_P12_BASE64,
+#                 CREDISSUER_IOS_DEV_P12_PASSWORD, CREDISSUER_IOS_DEV_PROFILE_BASE64
+#               App Store / TestFlight: CREDISSUER_IOS_DIST_P12_BASE64,
+#                 CREDISSUER_IOS_DIST_P12_PASSWORD, CREDISSUER_IOS_APPSTORE_PROFILE_BASE64
 # Optional, for the uploads (each upload is skipped while its secrets are missing):
 #   Android   PLAY_SERVICE_ACCOUNT_JSON
 #   iOS       APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_P8
@@ -48,6 +51,7 @@ on:
         type: choice
         options:
           - none
+          - ipa (development, registered test devices)
           - ipa (download only, for manual upload)
           - ipa → TestFlight
         # none until iOS signing is configured, so a default run is a complete one.
@@ -219,6 +223,10 @@ jobs:
     runs-on: ${{ vars.CREDISSUER_IOS_RUNNER || 'macos-26' }}
     timeout-minutes: 120
     environment: credissuer-release
+    env:
+      # development: signed with the development certificate, installs only on the devices in its
+      # profile. app-store: for TestFlight and the App Store.
+      IOS_SIGNING: ${{ contains(inputs.ios, 'development') && 'development' || 'app-store' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -227,17 +235,26 @@ jobs:
       - name: Check required secrets
         env:
           CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
-          P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
-          CREDISSUER_IOS_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
-          PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
+          DEV_P12_BASE64: ${{ secrets.CREDISSUER_IOS_DEV_P12_BASE64 }}
+          DEV_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DEV_P12_PASSWORD }}
+          DEV_PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_DEV_PROFILE_BASE64 }}
+          DIST_P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
+          DIST_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
+          APPSTORE_PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
           missing=()
           [ -n "$CREDISSUER_API_TOKEN" ] || missing+=(CREDISSUER_API_TOKEN)
-          [ -n "$P12_BASE64" ] || missing+=(CREDISSUER_IOS_DIST_P12_BASE64)
-          [ -n "$CREDISSUER_IOS_P12_PASSWORD" ] || missing+=(CREDISSUER_IOS_DIST_P12_PASSWORD)
-          [ -n "$PROFILE_BASE64" ] || missing+=(CREDISSUER_IOS_APPSTORE_PROFILE_BASE64)
+          if [ "$IOS_SIGNING" = development ]; then
+            [ -n "$DEV_P12_BASE64" ] || missing+=(CREDISSUER_IOS_DEV_P12_BASE64)
+            [ -n "$DEV_P12_PASSWORD" ] || missing+=(CREDISSUER_IOS_DEV_P12_PASSWORD)
+            [ -n "$DEV_PROFILE_BASE64" ] || missing+=(CREDISSUER_IOS_DEV_PROFILE_BASE64)
+          else
+            [ -n "$DIST_P12_BASE64" ] || missing+=(CREDISSUER_IOS_DIST_P12_BASE64)
+            [ -n "$DIST_P12_PASSWORD" ] || missing+=(CREDISSUER_IOS_DIST_P12_PASSWORD)
+            [ -n "$APPSTORE_PROFILE_BASE64" ] || missing+=(CREDISSUER_IOS_APPSTORE_PROFILE_BASE64)
+          fi
           [ -n "$ARTIFACTORY_USERNAME" ] || missing+=(ARTIFACTORY_USERNAME)
           [ -n "$ARTIFACTORY_PASSWORD" ] || missing+=(ARTIFACTORY_PASSWORD)
           if [ "${#missing[@]}" -gt 0 ]; then
@@ -298,8 +315,10 @@ jobs:
       - name: Write the files the build reads but git ignores
         env:
           CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
-          P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
-          PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
+          DEV_P12_BASE64: ${{ secrets.CREDISSUER_IOS_DEV_P12_BASE64 }}
+          DEV_PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_DEV_PROFILE_BASE64 }}
+          DIST_P12_BASE64: ${{ secrets.CREDISSUER_IOS_DIST_P12_BASE64 }}
+          APPSTORE_PROFILE_BASE64: ${{ secrets.CREDISSUER_IOS_APPSTORE_PROFILE_BASE64 }}
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
@@ -308,27 +327,39 @@ jobs:
           printf 'machine nexus-biochq.credissuer.com login %s password %s\n' \
             "$ARTIFACTORY_USERNAME" "$ARTIFACTORY_PASSWORD" > ~/.netrc
           chmod 600 ~/.netrc
+          if [ "$IOS_SIGNING" = development ]; then
+            P12_BASE64="$DEV_P12_BASE64"; PROFILE_BASE64="$DEV_PROFILE_BASE64"
+          else
+            P12_BASE64="$DIST_P12_BASE64"; PROFILE_BASE64="$APPSTORE_PROFILE_BASE64"
+          fi
           mkdir -p "$RUNNER_TEMP/signing"
-          printf '%s' "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/distribution.p12"
-          printf '%s' "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/appstore.mobileprovision"
-          echo "CREDISSUER_IOS_P12_PATH=$RUNNER_TEMP/signing/distribution.p12" >> "$GITHUB_ENV"
-          echo "CREDISSUER_IOS_PROFILE_PATH=$RUNNER_TEMP/signing/appstore.mobileprovision" >> "$GITHUB_ENV"
+          printf '%s' "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/signing.p12"
+          printf '%s' "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/signing.mobileprovision"
+          echo "CREDISSUER_IOS_P12_PATH=$RUNNER_TEMP/signing/signing.p12" >> "$GITHUB_ENV"
+          echo "CREDISSUER_IOS_PROFILE_PATH=$RUNNER_TEMP/signing/signing.mobileprovision" >> "$GITHUB_ENV"
 
       - name: Build
         working-directory: ios
         env:
-          CREDISSUER_IOS_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
-        run: fastlane ios credissuer_build
+          DEV_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DEV_P12_PASSWORD }}
+          DIST_P12_PASSWORD: ${{ secrets.CREDISSUER_IOS_DIST_P12_PASSWORD }}
+        run: |
+          if [ "$IOS_SIGNING" = development ]; then
+            export CREDISSUER_IOS_P12_PASSWORD="$DEV_P12_PASSWORD"
+          else
+            export CREDISSUER_IOS_P12_PASSWORD="$DIST_P12_PASSWORD"
+          fi
+          CREDISSUER_IOS_EXPORT_METHOD="$IOS_SIGNING" fastlane ios credissuer_build
 
       - name: Summary
         run: |
           build=$(sed -n 's/.*CURRENT_PROJECT_VERSION = \([0-9]*\);/\1/p' ios/Inji.xcodeproj/project.pbxproj | sort -u | tr '\n' ' ')
           version=$(sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' ios/Inji.xcodeproj/project.pbxproj | sort -u | tr '\n' ' ')
-          echo "### iOS: $version(build $build)" >> "$GITHUB_STEP_SUMMARY"
+          echo "### iOS: $version(build $build), $IOS_SIGNING signing" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: credissuer-wallet-ios-ipa
+          name: credissuer-wallet-ios-${{ env.IOS_SIGNING }}-ipa
           path: ios/build/credissuer/CredIssuerWallet.ipa
           if-no-files-found: error
           retention-days: 14
