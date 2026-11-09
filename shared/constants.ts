@@ -4,7 +4,6 @@ import {
   ESIGNET_HOST,
   MIMOTO_HOST,
   LIVENESS_DETECTION,
-  SNAPKYC_LIVENESS,
   SNAPKYC_RELAYING_PARTY_NAME,
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE,
   CREDISSUER_API_HOST,
@@ -27,7 +26,6 @@ export const LIVENESS_THRESHOLD = 0.4;
  * SnapKYC SDK; iOS runs the BioChq face liveness SDK (ios/Packages/BioChqFaceLivenessBinary).
  * Explicit opt-in: a missing .env key leaves it off.
  */
-export const SNAPKYC_LIVENESS_ENABLED = SNAPKYC_LIVENESS === 'true';
 export const SNAPKYC_RELAYING_PARTY_NAME_VALUE =
   (SNAPKYC_RELAYING_PARTY_NAME || '').trim().replace(/\s+/g, ' ') ||
   'YourRelyingPartyName';
@@ -244,12 +242,6 @@ export const copilotTestID = {
   '5': 'scanToShare',
   '6': 'cardView',
 };
-
-export const FACE_SDK_MODEL_PATH = isAndroid()
-  ? 'assets:faceModel.tflite'
-  : 'bundle:/faceModel.tflite';
-export const FACE_SDK_MODEL_CHECKSUM =
-  '797b4d99794965749635352d55da38d4748c28c659ee1502338badee4614ed06';
 
 export const EXPIRED_VC_ERROR_CODE = 'ERR_VC_EXPIRED';
 
