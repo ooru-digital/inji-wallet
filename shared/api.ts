@@ -19,6 +19,12 @@ import {
 import {TelemetryConstants} from './telemetry/TelemetryConstants';
 import NetInfo from '@react-native-community/netinfo';
 import {createCacheObject} from './Utils';
+import {
+  currentApiMemoryCacheGeneration,
+  inFlightCacheLookups,
+  inFlightFetches,
+  memoryCache,
+} from './apiMemoryCache';
 
 const isCacheValid = (cachedData: any) => {
   if (!cachedData?.cachedTime || typeof cachedData.cachedTime !== 'number') {
@@ -232,19 +238,6 @@ async function generateCacheAPIFunction({
   }
 }
 
-/**
- * Every card asks for its issuer's metadata as it mounts, all at once. These let those callers
- * share one storage read and one download per cache key instead of each starting their own.
- */
-const inFlightCacheLookups = new Map<string, Promise<any>>();
-const inFlightFetches = new Map<string, Promise<any>>();
-/**
- * What was last read or fetched for each cache key, kept for the session. The stored copy is
- * decrypted on every read, which is slow for a megabyte of issuer metadata, and every card asks
- * for it again each time it is drawn.
- */
-const memoryCache = new Map<string, any>();
-
 function shareInFlight<T>(
   inFlight: Map<string, Promise<T>>,
   key: string,
@@ -252,7 +245,11 @@ function shareInFlight<T>(
 ): Promise<T> {
   let pending = inFlight.get(key);
   if (!pending) {
-    pending = start().finally(() => inFlight.delete(key));
+    const started = start().finally(() => {
+      // The cache may have been cleared, and the key reused, while this was running.
+      if (inFlight.get(key) === started) inFlight.delete(key);
+    });
+    pending = started;
     inFlight.set(key, pending);
   }
   return pending;
@@ -260,12 +257,15 @@ function shareInFlight<T>(
 
 function fetchAndCache(cacheKey: string, fetchCall: (...props: any[]) => any) {
   return shareInFlight(inFlightFetches, cacheKey, async () => {
+    const generation = currentApiMemoryCacheGeneration();
     const response = await fetchCall();
     if (!response) {
       throw new Error('Received Empty response in fetch call');
     }
     const cacheObject = createCacheObject(response);
-    memoryCache.set(cacheKey, cacheObject);
+    if (generation === currentApiMemoryCacheGeneration()) {
+      memoryCache.set(cacheKey, cacheObject);
+    }
     setItem(cacheKey, cacheObject, '').then(() =>
       console.info('Cached response for ' + cacheKey),
     );
@@ -282,8 +282,11 @@ async function generateCacheAPIFunctionWithCachePreference(
   try {
     let cachedData = memoryCache.get(cacheKey);
     if (!cachedData) {
+      const generation = currentApiMemoryCacheGeneration();
       cachedData = await getItem(cacheKey, null, '');
-      if (cachedData) memoryCache.set(cacheKey, cachedData);
+      if (cachedData && generation === currentApiMemoryCacheGeneration()) {
+        memoryCache.set(cacheKey, cachedData);
+      }
     }
     if (cachedData && isCacheValid(cachedData)) {
       console.info('Returned cached response for' + cacheKey);
@@ -317,6 +320,7 @@ async function generateCacheAPIFunctionWithAPIPreference(
   onErrorHardCodedValue?: any,
 ) {
   let cacheObject;
+  const generation = currentApiMemoryCacheGeneration();
   try {
     const response = await fetchCall();
     if (!response) {
@@ -326,7 +330,9 @@ async function generateCacheAPIFunctionWithAPIPreference(
       updateCacheTTL(Number(response.cacheTTLInMilliSeconds));
     }
     cacheObject = createCacheObject(response);
-    memoryCache.set(cacheKey, cacheObject);
+    if (generation === currentApiMemoryCacheGeneration()) {
+      memoryCache.set(cacheKey, cacheObject);
+    }
     setItem(cacheKey, cacheObject, '').then(() =>
       console.info('Cached response for ' + cacheKey),
     );

@@ -14,6 +14,7 @@ jest.mock('./telemetry/TelemetryUtils', () => ({
 
 // A fresh module per test: the cache it keeps in memory would otherwise carry over.
 let CACHED_API: typeof import('./api').CACHED_API;
+let clearApiMemoryCache: () => void;
 let mockGetItem: jest.Mock;
 let setItem: jest.Mock;
 let mockRequest: jest.Mock;
@@ -41,6 +42,7 @@ describe('issuer well-known config, cache preferred', () => {
   beforeEach(() => {
     jest.resetModules();
     CACHED_API = require('./api').CACHED_API;
+    clearApiMemoryCache = require('./apiMemoryCache').clearApiMemoryCache;
     ({getItem: mockGetItem, setItem} = require('../machines/store'));
     mockRequest = require('./request').request;
   });
@@ -121,5 +123,35 @@ describe('issuer well-known config, cache preferred', () => {
     expect(await fetchWellknown()).toEqual(fresh);
 
     expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads storage again once the memory copy is cleared', async () => {
+    mockGetItem.mockResolvedValue(cached(old, 0));
+    await fetchWellknown();
+
+    mockGetItem.mockResolvedValue(cached(fresh, 0));
+    clearApiMemoryCache();
+
+    expect(await fetchWellknown()).toEqual(fresh);
+    expect(wellknownReads()).toBe(2);
+  });
+
+  it('a download that finishes after a clear is not kept in memory', async () => {
+    mockGetItem.mockResolvedValue(null);
+    let finishDownload: (value: object) => void = () => {};
+    mockRequest.mockReturnValueOnce(
+      new Promise(resolve => {
+        finishDownload = resolve;
+      }),
+    );
+    const before = fetchWellknown();
+    await settle();
+
+    clearApiMemoryCache();
+    finishDownload(old);
+    await before;
+
+    mockRequest.mockResolvedValue(fresh);
+    expect(await fetchWellknown()).toEqual(fresh);
   });
 });

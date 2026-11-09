@@ -297,10 +297,15 @@ export const WalletHome: React.FC<{
   const frontCardKey = showPinned ? pinnedEntry?.key : activeEntry?.key;
   const isFrontCardLoaded = !!(frontCardKey && loaded[frontCardKey]);
 
-  // The cards' status checks wait until the front card has drawn. A layout effect, so the hold
-  // is in place before any card's own effect queues its check.
+  // The cards' status checks wait until the first front card has drawn, once per Home. Swiping
+  // to a card that hasn't loaded, or can't, doesn't hold them again. A layout effect, so the
+  // hold is in place before any card's own effect queues its check.
+  const hasHeldForFrontCard = useRef(false);
   useLayoutEffect(() => {
-    if (!frontCardKey || isFrontCardLoaded) return;
+    if (hasHeldForFrontCard.current || !frontCardKey || isFrontCardLoaded) {
+      return;
+    }
+    hasHeldForFrontCard.current = true;
     return holdBackgroundStatusChecks(FRONT_CARD_MAX_HOLD_MS);
   }, [frontCardKey, isFrontCardLoaded]);
   const hasStartedCardTour = useRef(false);
