@@ -15,9 +15,3 @@ protocol JWEEncryption {
     /// `aad` is the additional authenticated data; for a JWE it is the ASCII of the encoded protected header.
     func encrypt(_ data: Data, with key: SymmetricKey, aad: Data) throws -> (ciphertext: Data, nonce: Data, tag: Data)
 }
-
-extension JWEEncryption {
-    func encrypt(_ data: Data, with key: SymmetricKey) throws -> (ciphertext: Data, nonce: Data, tag: Data) {
-        try encrypt(data, with: key, aad: Data())
-    }
-}
