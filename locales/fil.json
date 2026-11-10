@@ -91,6 +91,15 @@
     "cameraPermissionGuideLabel": "Pumunta sa mga setting ng telepono at manual na paganahin ang access ng camera.",
     "flipCamera": "I-flip ang Camera"
   },
+  "AddToWallet": {
+    "title": "Idagdag sa Wallet",
+    "subtitle": "Paano mo gustong magdagdag ng credential?",
+    "scanToAdd": {
+      "title": "I-scan para Idagdag",
+      "description": "I-scan ang credential offer mula sa screen, sulat o SMS ng issuer."
+    },
+    "signedNote": "Direktang nagmumula ang mga credential sa nag-isyung awtoridad at digitally signed ang mga ito. Hindi ito mababago ng CredIssuer."
+  },
   "ScanToAdd": {
     "title": "I-scan para Idagdag",
     "close": "Isara",

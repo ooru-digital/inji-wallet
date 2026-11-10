@@ -79,16 +79,6 @@ export const ScanScreen: React.FC = () => {
   // Remounts the add-only scanner, which stops reading after its first code.
   const [addOnlyScanKey, setAddOnlyScanKey] = useState(0);
 
-  useFocusEffect(
-    useCallback(
-      () => () => {
-        setIsNotCardOffer(false);
-        setIsTorchOn(false);
-      },
-      [],
-    ),
-  );
-
   const onQrFound = (qrCode: string) => {
     if (isCredentialOffer(qrCode)) {
       scanScreenController.ADD_CREDENTIAL(qrCode);
@@ -105,6 +95,9 @@ export const ScanScreen: React.FC = () => {
   };
 
   // This tab is dark, so the status bar switches to light icons while it is in focus.
+  // Leaving the tab also closes the add-only scanner's popup and turns its torch off: the
+  // add-only scanner never enters the scan machine's scanning state, so the effect below
+  // doesn't do it.
   useFocusEffect(
     useCallback(() => {
       StatusBar.setBarStyle('light-content');
@@ -116,10 +109,13 @@ export const ScanScreen: React.FC = () => {
         if (Platform.OS === 'android') {
           StatusBar.setBackgroundColor(Theme.Colors.whiteBackgroundColor);
         }
+        setIsNotCardOffer(false);
+        setIsTorchOn(false);
       };
     }, []),
   );
 
+  // Turns the torch off when the share scanner stops scanning while the tab is still open.
   useEffect(() => {
     if (!scanScreenController.isScanning) {
       setIsTorchOn(false);
@@ -286,12 +282,12 @@ export const ScanScreen: React.FC = () => {
           title={t('notCardOfferTitle')}
           message={t('notCardOfferMessage')}
           primary={{
-            testID: 'scanAgain',
+            testID: 'notCardOfferScanAgain',
             title: t('scanAgain'),
             onPress: scanAgainToAdd,
           }}
           secondary={{
-            testID: 'backToWallet',
+            testID: 'notCardOfferBackToWallet',
             title: t('backToWallet'),
             onPress: scanScreenController.GOTO_HOME,
           }}

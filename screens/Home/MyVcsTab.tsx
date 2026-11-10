@@ -239,13 +239,22 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
    * left a copy of the overlay frozen on step 1 under the live one.
    */
   const isTourStarting = useRef(false);
-  const isWalletEmpty = controller.vcMetadatas.length === 0;
+  // A start asked for while the cards are still loading, run once they have loaded.
+  const isTourWaitingForCards = useRef(false);
   const startTour = () => {
     if (isTourVisible || isTourStarting.current) {
       return;
     }
+    // The first step depends on whether the wallet has cards, and while they load it reads as
+    // empty: starting then would begin on "Add a card" for someone who has cards.
+    if (controller.isRefreshingVcs) {
+      isTourWaitingForCards.current = true;
+      return;
+    }
+    isTourWaitingForCards.current = false;
     isTourStarting.current = true;
     // The "Add a card" step is only there while the wallet is empty.
+    const isWalletEmpty = controller.vcMetadatas.length === 0;
     start(t(isWalletEmpty ? 'copilot:addCardTitle' : 'copilot:historyTitle'));
     // `start` retries until the step has registered and then gives up without a word, so
     // the guard lapses rather than blocking every later start.
@@ -253,6 +262,12 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
       isTourStarting.current = false;
     }, TOUR_START_GUARD_MS);
   };
+
+  useEffect(() => {
+    if (!controller.isRefreshingVcs && isTourWaitingForCards.current) {
+      startTour();
+    }
+  }, [controller.isRefreshingVcs]);
 
   // The tour starts automatically only while onboarding (a fresh install, until the first tour is
   // finished or dismissed), or when isTourGuide is turned on by the Settings "tour guide" button.
@@ -430,10 +445,10 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
           the step uses the library's wait-for-it path instead: it retries via
           requestAnimationFrame until that step exists.
 
-          That retry has no timeout, so the name must match a step that actually exists —
-          naming a removed step leaves the tour retrying forever and looking like a dead
-          button. Keep startTour in sync with whichever step is first on screen (see
-          copilotTestID). */}
+          That retry gives up silently after about 2 seconds (120 frames), so the name must
+          match a step that is actually on screen — naming a removed step means no tour and
+          a button that looks dead. Keep startTour in sync with whichever step is first on
+          screen (see copilotTestID). */}
       <Column
         fill
         style={{display: props.isVisible ? 'flex' : 'none'}}

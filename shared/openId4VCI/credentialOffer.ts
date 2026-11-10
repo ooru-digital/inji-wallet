@@ -2,7 +2,7 @@ import type {displayType} from '../../machines/Issuers/IssuersMachine';
 import {getDisplayObjectForCurrentLanguage} from './Utils';
 
 const OFFER_FETCH_TIMEOUT_MS = 5000;
-const CREDENTIAL_OFFER_SCHEME = 'openid-credential-offer://';
+export const CREDENTIAL_OFFER_SCHEME = 'openid-credential-offer://';
 
 /**
  * Whether a scanned QR is an issuer's credential offer, rather than a verifier's request. The

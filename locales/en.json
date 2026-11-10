@@ -93,6 +93,15 @@
     "cameraPermissionGuideLabel": "Go to phone settings and enable the camera access manually.",
     "flipCamera": "Flip Camera"
   },
+  "AddToWallet": {
+    "title": "Add to Wallet",
+    "subtitle": "How would you like to add a credential?",
+    "scanToAdd": {
+      "title": "Scan to Add",
+      "description": "Scan a credential offer from an issuer's screen, letter or SMS."
+    },
+    "signedNote": "Credentials come straight from the issuing authority, digitally signed. CredIssuer can't change them."
+  },
   "ScanToAdd": {
     "title": "Scan to Add",
     "close": "Close",

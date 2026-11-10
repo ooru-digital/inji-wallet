@@ -504,6 +504,8 @@ fileignoreconfig:
     checksum: 39be8534394d7390eeace2dafd41581dddde546c4225b75f419d0672b135b5e6
   - filename: machines/backupAndRestore/backupAndRestoreSetup/backupAndRestoreSetupActions.ts
     checksum: f0596bb2b6116856602cee2af796865bd7f90b856a3d5b71c9ccb2af1ead6c35
+  - filename: components/addCredential/AddToWalletSheet.test.tsx
+    checksum: 2c7e2b0b75d80cf2f46cd4a1b8647813c358ae28d13cabcaeb142245d2058eb9
   - filename: components/addCredential/TrustIssuerSheet.test.tsx
     checksum: 5ffddb63f338014f73608b99b8ca699451dc63f4ff254aff157c768e6b30237b
   - filename: screens/Issuers/IssuersScreen.test.tsx

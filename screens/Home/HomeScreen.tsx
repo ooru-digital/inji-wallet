@@ -1,3 +1,5 @@
+// To bring back the Add to Wallet sheet, uncomment every block marked "Add to Wallet sheet"
+// below and add `useState` back to this import.
 import React, {useEffect, useRef} from 'react';
 import {Column} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
@@ -15,8 +17,9 @@ import {VerifiableCredential} from '../../machines/VerifiableCredential/VCMetaMa
 import {IssuerScreenTabEvents} from '../../machines/Issuers/IssuersMachine';
 import type {IssuersScreenParams} from '../Issuers/IssuersScreen';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
-
-const CREDENTIAL_OFFER_SCHEME = 'openid-credential-offer://';
+import {CREDENTIAL_OFFER_SCHEME} from '../../shared/openId4VCI/credentialOffer';
+// Add to Wallet sheet:
+// import {AddToWalletSheet} from '../../components/addCredential/AddToWalletSheet';
 
 // getInitialURL keeps returning the launch link for the life of the process, and HomeScreen
 // remounts after a logout, so the launch link must only be handled once.
@@ -25,6 +28,22 @@ let isInitialUrlHandled = false;
 export const HomeScreen: React.FC<HomeRouteProps> = props => {
   const controller = useHomeScreen(props);
   const pendingCredentialOffer = useRef('');
+
+  // Add to Wallet sheet:
+  // const [isAddToWalletVisible, setIsAddToWalletVisible] = useState(false);
+  // const shouldScanAfterSheetCloses = useRef(false);
+  //
+  // const startScanToAdd = () => {
+  //   shouldScanAfterSheetCloses.current = true;
+  //   setIsAddToWalletVisible(false);
+  // };
+  //
+  // const onAddToWalletClosed = () => {
+  //   if (shouldScanAfterSheetCloses.current) {
+  //     shouldScanAfterSheetCloses.current = false;
+  //     controller.GOTO_ISSUERS();
+  //   }
+  // };
 
   const startCredentialOfferDownload = (url: string) => {
     pendingCredentialOffer.current = url;
@@ -93,6 +112,8 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
           <Column fill>
             <MyVcsTab
               isVisible={controller.activeTab === 0}
+              // Add to Wallet sheet: use this instead of the line below.
+              // onAddCredential={() => setIsAddToWalletVisible(true)}
               onAddCredential={() =>
                 props.navigation.navigate(BOTTOM_TAB_ROUTES.share)
               }
@@ -111,6 +132,14 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
           </Column>
         )}
       </Column>
+
+      {/* Add to Wallet sheet:
+      <AddToWalletSheet
+        isVisible={isAddToWalletVisible}
+        onScanToAdd={startScanToAdd}
+        onCancel={() => setIsAddToWalletVisible(false)}
+        onClosed={onAddToWalletClosed}
+      /> */}
 
       <ErrorMessageOverlay
         translationPath={'MyVcsTab'}

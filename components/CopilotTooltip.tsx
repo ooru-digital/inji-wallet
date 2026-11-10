@@ -82,6 +82,7 @@ export const CopilotTooltip = () => {
 
       <View style={styles.actions}>
         {isQuickTip ? (
+          // Keeps "Got it" right-aligned.
           <View />
         ) : showPrevious ? (
           <Pressable
