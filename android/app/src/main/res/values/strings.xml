@@ -2,6 +2,8 @@
   <string name="mdoc_proximity_notif_title">mDL proximity</string>
   <string name="mdoc_proximity_notif_text">Bluetooth presentation active — return here when the reader finishes.</string>
   <string name="mdoc_proximity_channel_name">mDL Bluetooth</string>
+  <string name="mdoc_nfc_service_label">CredIssuer Wallet</string>
+  <string name="mdoc_nfc_aid_group">Share a digital ID by tapping a reader</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">cover</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
   <string name="ExpoLocalization_supportsRTL" translatable="false">undefined</string>

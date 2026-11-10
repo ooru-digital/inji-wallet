@@ -34,8 +34,29 @@ export function useAutoLockSetting(): [number, (minutes: number) => void] {
  * Whether the wallet should be locked: true once it comes back to the foreground after spending
  * longer than the chosen time in the background. The screens underneath stay as they were.
  */
+const lockListeners = new Set<(locked: boolean) => void>();
+let lockedNow = false;
+
+/** Whether the lock page is up, for things that must wait behind it (e.g. a reader's tap). */
+export function useIsAppLocked(): boolean {
+  const [locked, setLocked] = useState(lockedNow);
+  useEffect(() => {
+    lockListeners.add(setLocked);
+    setLocked(lockedNow);
+    return () => {
+      lockListeners.delete(setLocked);
+    };
+  }, []);
+  return locked;
+}
+
 export function useAutoLock(): [boolean, () => void] {
-  const [locked, setLocked] = useState(false);
+  const [locked, setLockedState] = useState(false);
+  const setLocked = (next: boolean) => {
+    lockedNow = next;
+    lockListeners.forEach(l => l(next));
+    setLockedState(next);
+  };
   const leftAt = useRef<number | null>(null);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
+import {ScrollView, StyleSheet, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {HomeRouteProps} from '../../routes/routeTypes';
 import {RootRouteProps} from '../../routes';
@@ -12,17 +12,10 @@ import {
   PageButton,
   PageHeader,
 } from '../../components/revamp/Page';
-import {CheckIcon} from '../../components/revamp/Icons';
 import {ScaledText} from '../../components/revamp/ScaledText';
-import {
-  CredentialCardFront,
-  ScaledCard,
-} from '../../components/revamp/CredentialCard';
-import {validUntil} from '../../components/revamp/CredentialParts';
-import {useCredentialCard} from '../../components/revamp/useCredentialCard';
-import {fonts, radii} from '../../components/revamp/tokens';
+import {CardRow} from '../../components/revamp/CardRow';
+import {fonts} from '../../components/revamp/tokens';
 import {useRevampTheme} from '../../components/revamp/useRevampTheme';
-import testIDProps from '../../shared/commonUtil';
 
 /**
  * Lets the user choose which of their existing cards to replace with the one just downloaded.
@@ -103,8 +96,9 @@ export const ReplaceCredentialSelectionScreen: React.FC<
             {duplicates.map(vcMetadata => {
               const vcKey = vcMetadata.getVcKey();
               return (
-                <ReplaceRow
+                <CardRow
                   key={vcKey}
+                  testID={`replaceCandidate-${vcKey}`}
                   vcMetadata={vcMetadata}
                   selected={selectedKeys.includes(vcKey)}
                   onPress={() => controller.TOGGLE_DUPLICATE_SELECTION(vcKey)}
@@ -118,54 +112,6 @@ export const ReplaceCredentialSelectionScreen: React.FC<
   );
 };
 
-const ReplaceRow: React.FC<{
-  vcMetadata: VCMetadata;
-  selected: boolean;
-  onPress: () => void;
-}> = ({vcMetadata, selected, onPress}) => {
-  const {t} = useTranslation('IssuersScreen');
-  const {c} = useRevampTheme();
-  const {data} = useCredentialCard(vcMetadata);
-  const until = data ? validUntil(data) : undefined;
-  const detail = [
-    data?.holderName,
-    until ? t('validUntil', {date: until}) : undefined,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  return (
-    <Pressable
-      {...testIDProps(`replaceCandidate-${vcMetadata.getVcKey()}`)}
-      accessibilityRole="checkbox"
-      accessibilityState={{checked: selected}}
-      onPress={onPress}
-      style={[styles.row, selected && {backgroundColor: c.tintAzure}]}>
-      <View style={[styles.thumb, {backgroundColor: c.sand}]}>
-        {data ? (
-          <ScaledCard width={64}>
-            <CredentialCardFront data={data} />
-          </ScaledCard>
-        ) : null}
-      </View>
-      <View style={styles.rowText}>
-        <ScaledText style={[styles.rowTitle, {color: c.ink}]}>
-          {data?.title ?? vcMetadata.credentialType}
-        </ScaledText>
-        {detail ? (
-          <ScaledText style={[styles.rowDetail, {color: c.inkMuted}]}>
-            {detail}
-          </ScaledText>
-        ) : null}
-      </View>
-      {selected ? (
-        <CheckIcon color={c.ink} />
-      ) : (
-        <View style={[styles.box, {borderColor: c.lineStrong}]} />
-      )}
-    </Pressable>
-  );
-};
-
 const styles = StyleSheet.create({
   content: {paddingTop: 8, paddingBottom: 24, gap: 14},
   lead: {fontFamily: fonts.regular, fontSize: 15, lineHeight: 22},
@@ -176,17 +122,4 @@ const styles = StyleSheet.create({
   },
   count: {fontFamily: fonts.regular, fontSize: 13},
   selectAll: {fontFamily: fonts.semibold, fontSize: 13, padding: 4},
-  row: {
-    minHeight: 72,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  thumb: {width: 64, height: 40, borderRadius: 6, overflow: 'hidden'},
-  rowText: {flex: 1, gap: 2},
-  rowTitle: {fontFamily: fonts.semibold, fontSize: 15, lineHeight: 19},
-  rowDetail: {fontFamily: fonts.regular, fontSize: 12, lineHeight: 16},
-  box: {width: 20, height: 20, borderRadius: radii.chip / 2, borderWidth: 1.5},
 });

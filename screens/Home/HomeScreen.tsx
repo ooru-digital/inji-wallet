@@ -10,6 +10,7 @@ import {useHomeScreen} from './HomeScreenController';
 import {TabRef} from './HomeScreenMachine';
 import {ActorRefFrom} from 'xstate';
 import {ErrorMessageOverlay} from '../../components/MessageOverlay';
+import {NfcTapShare} from './NfcTapShare';
 import {Linking} from 'react-native';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
@@ -107,6 +108,7 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
   return (
     <React.Fragment>
       <BannerNotificationContainer />
+      <NfcTapShare />
       <Column fill backgroundColor={Theme.Colors.lightGreyBackgroundColor}>
         {controller.haveTabsLoaded && (
           <Column fill>
