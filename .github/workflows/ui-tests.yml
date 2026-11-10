@@ -104,39 +104,11 @@ jobs:
             mkdir -p maestro-output
             maestro test .maestro --format junit --output maestro-output/report.xml --debug-output maestro-output/debug --flatten-debug-output
 
-      # A table of the flows on the run page. Each flow's screenshots and screen recording are in
-      # the maestro-results download, in debug/<flow>/takeScreenshot and startRecording.
-      - name: Summary
+      # report.html (each flow's result, recording, screenshots and steps) in the download, and a
+      # table of the flows on the run page.
+      - name: Report
         if: always()
-        shell: python
-        run: |
-          import os
-          import xml.etree.ElementTree as ET
-
-          lines = []
-          if os.path.exists('maestro-output/report.xml'):
-              cases = ET.parse('maestro-output/report.xml').getroot().iter('testcase')
-              rows = []
-              for case in cases:
-                  failure = case.find('failure')
-                  if failure is None:
-                      result = '✅ passed'
-                  else:
-                      message = (failure.get('message') or failure.text or '').strip().splitlines()
-                      result = '❌ ' + (message[0] if message else 'failed')
-                  rows.append((case.get('name'), result, float(case.get('time', 0))))
-              passed = sum(r[1].startswith('✅') for r in rows)
-              lines.append(f'### UI tests: {passed} of {len(rows)} flows passed')
-              lines.append('')
-              lines.append('| Flow | Result | Time |')
-              lines.append('|---|---|---|')
-              lines += [f'| {name} | {result} | {secs:.0f} s |' for name, result, secs in rows]
-              lines.append('')
-              lines.append('Screenshots and a screen recording of each flow: the **maestro-results** download below.')
-          else:
-              lines.append('### UI tests did not run')
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf8') as f:
-              f.write('\n'.join(lines) + '\n')
+        run: python3 .maestro/report.py maestro-output
 
       - uses: actions/upload-artifact@v4
         if: always()
