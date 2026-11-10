@@ -2,11 +2,11 @@ name: UI tests (Maestro)
 
 # Builds the release APK, boots an Android emulator and runs the Maestro flows in .maestro/.
 # Every flow starts from a fresh install and sets the passcode itself, so nothing is shared
-# between runs. The report, and screenshots and recordings of any failure, are attached to the run.
+# between runs. report.html, with each flow's recording, screenshots and steps, is attached to
+# the run.
 #
-# Secrets: the Android build's (CREDISSUER_API_TOKEN, CREDISSUER_ANDROID_KEYSTORE_BASE64,
-# CREDISSUER_ANDROID_KEYSTORE_ALIAS, CREDISSUER_ANDROID_KEYSTORE_PASSWORD, ARTIFACTORY_USERNAME,
-# ARTIFACTORY_PASSWORD).
+# Secrets: CREDISSUER_API_TOKEN, ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD. The APK is signed
+# with a key made for the run, never the release key, so it can't install over the real app.
 
 on:
   workflow_dispatch:
@@ -58,18 +58,21 @@ jobs:
       - name: Write the files the build reads but git ignores
         env:
           CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
-          KEYSTORE_BASE64: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_BASE64 }}
         run: |
           printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          password=$(openssl rand -hex 16)
+          echo "::add-mask::$password"
+          echo "RELEASE_KEYSTORE_PASSWORD=$password" >> "$GITHUB_ENV"
+          keytool -genkeypair -keystore android/app/release.keystore -storetype PKCS12 \
+            -alias uitests -keyalg RSA -keysize 2048 -validity 1 -dname CN=ui-tests \
+            -storepass "$password" -keypass "$password"
 
       # The emulator is x86_64, so only that CPU type's native code is built. Its keystore is
       # software-only, which the app refuses unless built with allowSoftwareKeystore.
       - name: Build the APK
         working-directory: android
         env:
-          RELEASE_KEYSTORE_ALIAS: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_ALIAS }}
-          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_KEYSTORE_ALIAS: uitests
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: ./gradlew -PallowSoftwareKeystore=true -PreactNativeArchitectures=x86_64 generateCodegenArtifactsFromSchema :app:assembleResidentappRelease

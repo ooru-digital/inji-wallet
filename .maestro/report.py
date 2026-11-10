@@ -5,6 +5,9 @@
 Reads <output>/report.xml (--format junit) and <output>/debug/<flow>/ (--debug-output with
 --flatten-debug-output). report.html links to the recordings and screenshots next to it, so open
 it from the unzipped maestro-results download.
+
+A flow is also marked failed if the app crashed or froze (ANR) during it, by its phone log; the
+script then exits with an error.
 """
 import html
 import json
@@ -16,6 +19,7 @@ from urllib.parse import quote
 
 out = Path(sys.argv[1])
 report = out / 'report.xml'
+APP_ID = 'io.ooru.credissuerwallet'
 
 STEP_TEXT = {
     'launchAppCommand': lambda c: 'Open the app' + (' (fresh install)' if c.get('clearState') else ''),
@@ -48,6 +52,21 @@ def steps(flow_dir):
     return result
 
 
+def app_problem(flow_dir):
+    """The first crash or ANR of the app in the flow's phone log, or ''."""
+    path = flow_dir / 'logs' / 'device-logcat.txt'
+    if not path.exists():
+        return ''
+    lines = path.read_text(encoding='utf8', errors='replace').splitlines()
+    for i, line in enumerate(lines):
+        if f'ANR in {APP_ID}' in line:
+            return 'App not responding (ANR)'
+        if 'FATAL EXCEPTION' in line and any(f'Process: {APP_ID},' in l for l in lines[i + 1:i + 3]):
+            cause = lines[i + 2].split('AndroidRuntime:', 1)[-1].strip() if i + 2 < len(lines) else ''
+            return 'App crashed' + (f': {cause}' if cause else '')
+    return ''
+
+
 def link(path):
     return quote(path.relative_to(out).as_posix())
 
@@ -61,9 +80,13 @@ if report.exists():
             lines = (failure.get('message') or failure.text or 'failed').strip().splitlines()
             message = lines[0] if lines else 'failed'
         flow_dir = out / 'debug' / case.get('name')
+        problem = app_problem(flow_dir)
+        if problem:
+            message = problem + (f' ({message})' if message else '')
         flows.append({
             'name': case.get('name'),
-            'passed': failure is None,
+            'passed': failure is None and not problem,
+            'crashed': bool(problem),
             'message': message,
             'time': float(case.get('time', 0)),
             'videos': sorted(flow_dir.glob('startRecording/*.mp4')),
@@ -128,3 +151,6 @@ parts.append('</body></html>')
 out.mkdir(parents=True, exist_ok=True)
 (out / 'report.html').write_text('\n'.join(parts), encoding='utf8')
 print(title)
+crashed = [f['name'] for f in flows if f['crashed']]
+if crashed:
+    sys.exit('The app crashed or froze in: ' + ', '.join(crashed))
