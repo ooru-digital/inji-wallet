@@ -12,6 +12,24 @@ type Job = {run: () => Promise<void>; cancelled: boolean};
 
 const queue: Job[] = [];
 let draining = false;
+const holds = new Set<symbol>();
+let resumeDrain: (() => void) | undefined;
+
+/**
+ * Keeps queued background checks from starting until the returned function is called, or
+ * `maxMs` has passed. Home holds them while the card in front loads: a check started at the
+ * same moment competes with it and keeps the card on its skeleton for seconds.
+ */
+export function holdBackgroundStatusChecks(maxMs: number): () => void {
+  const hold = Symbol('hold');
+  holds.add(hold);
+  const release = () => {
+    clearTimeout(timer);
+    if (holds.delete(hold) && holds.size === 0) resumeDrain?.();
+  };
+  const timer = setTimeout(release, maxMs);
+  return release;
+}
 
 /** Queues a background check; returns a function that drops it if it hasn't started yet. */
 export function queueBackgroundStatusCheck(
@@ -29,6 +47,13 @@ async function drain() {
   if (draining) return;
   draining = true;
   while (queue.length) {
+    if (holds.size) {
+      await new Promise<void>(resolve => {
+        resumeDrain = resolve;
+      });
+      resumeDrain = undefined;
+      continue;
+    }
     const job = queue.shift()!;
     if (job.cancelled) continue;
     try {

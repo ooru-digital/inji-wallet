@@ -24,6 +24,7 @@ import Storage from '../shared/storage';
 import ShortUniqueId from 'short-unique-id';
 import {__AppId} from '../shared/GlobalVariables';
 import {isHardwareKeystoreExists} from '../shared/cryptoutil/cryptoUtil';
+import {clearApiMemoryCache} from '../shared/apiMemoryCache';
 
 const model = createModel(
   {
@@ -307,6 +308,7 @@ export const settingsMachine = model.createMachine(
       resetInjiProps: async (context, event) => {
         try {
           await Storage.removeItem(COMMON_PROPS_KEY);
+          clearApiMemoryCache();
           return await getAllConfigurations(event.credentialRegistry, false);
         } catch (error) {
           console.error('Error from resetInjiProps ', error);
