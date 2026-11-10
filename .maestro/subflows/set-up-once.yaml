@@ -1,0 +1,15 @@
+# Opens the wallet as an earlier flow left it, onboarding only if it isn't set up yet (a fresh
+# device, or the flow run on its own). Ends on the lock screen or Home.
+appId: io.ooru.credissuerwallet
+---
+- launchApp:
+    permissions:
+      all: allow
+- extendedWaitUntil:
+    visible: "Choose your language|Your cards are locked.|No cards yet"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: "Choose your language"
+    commands:
+      - runFlow: onboard.yaml

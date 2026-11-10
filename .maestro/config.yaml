@@ -1,7 +1,8 @@
 # Maestro UI tests for CredIssuer Wallet, run by .github/workflows/ui-tests.yml.
 # Locally, with an Android phone or emulator connected (it is reset by the tests):
 #   maestro test .maestro
-# Every flow starts from a fresh install, so they can run in any order.
+# Onboarding starts from a fresh install and takes the quick tour. The other flows carry on from
+# the wallet it set up, and set one up themselves when there isn't one, so each still runs alone.
 flows:
   - flows/*
 executionOrder:

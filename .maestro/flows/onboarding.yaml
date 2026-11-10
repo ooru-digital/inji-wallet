@@ -2,7 +2,32 @@ appId: io.ooru.credissuerwallet
 name: Onboarding with a passcode
 ---
 - startRecording: recording
-- runFlow: ../subflows/onboard.yaml
-- assertVisible: "No cards yet"
+- runFlow: ../subflows/set-up.yaml
+# The quick tour starts by itself on a new wallet. Every step is screenshot; Previous is on all
+# but the first, and the last one's button is Done. The step count isn't fixed, so the tour can
+# change without this flow.
+- extendedWaitUntil:
+    visible: "Quick tour · 1 of .*"
+    timeout: 30000
+- assertVisible: "Skip tour"
+- takeScreenshot: 3-tour-1
+- evalScript: ${output.tourStep = 1}
+- repeat:
+    while:
+      notVisible: "Done"
+    commands:
+      - tapOn: "Next"
+      - evalScript: ${output.tourStep = output.tourStep + 1}
+      - extendedWaitUntil:
+          visible: "Quick tour · ${output.tourStep} of .*"
+          timeout: 10000
+      - assertVisible: "Previous"
+      - takeScreenshot: 3-tour-${output.tourStep}
+- tapOn: "Done"
+- extendedWaitUntil:
+    visible: "No cards yet"
+    timeout: 30000
+- assertNotVisible: "Quick tour.*"
 - assertVisible: "Add a card"
+- takeScreenshot: 4-home
 - stopRecording

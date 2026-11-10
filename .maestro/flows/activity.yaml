@@ -2,12 +2,12 @@ appId: io.ooru.credissuerwallet
 name: Activity
 ---
 - startRecording: recording
-- runFlow: ../subflows/onboard.yaml
+- runFlow: ../subflows/home.yaml
 - tapOn: "Activity"
 - extendedWaitUntil:
     visible: "Notifications"
     timeout: 15000
 - assertVisible: "Credentials"
 - assertVisible: "Sharing"
-- takeScreenshot: 4-activity
+- takeScreenshot: 1-activity
 - stopRecording

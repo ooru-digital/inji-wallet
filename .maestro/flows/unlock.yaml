@@ -2,13 +2,13 @@ appId: io.ooru.credissuerwallet
 name: Unlock with the passcode
 ---
 - startRecording: recording
-- runFlow: ../subflows/onboard.yaml
+- runFlow: ../subflows/set-up-once.yaml
 - stopApp
 - launchApp
 - extendedWaitUntil:
     visible: "Your cards are locked."
     timeout: 30000
-- takeScreenshot: 4-locked
+- takeScreenshot: 1-locked
 - tapOn: "Unlock"
 - extendedWaitUntil:
     visible: "Enter your passcode"
@@ -17,5 +17,5 @@ name: Unlock with the passcode
 - extendedWaitUntil:
     visible: "No cards yet"
     timeout: 30000
-- takeScreenshot: 5-unlocked
+- takeScreenshot: 2-unlocked
 - stopRecording
