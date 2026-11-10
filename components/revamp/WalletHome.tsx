@@ -76,7 +76,6 @@ export const WalletHome: React.FC<{
   vcMetadatas: VCMetadata[];
   /** Lowercased searchable text of each credential's claims, by credential key. */
   searchIndex: Record<string, string>;
-  onAdd: () => void;
   refreshing: boolean;
   onRefresh: () => void;
   /** The shown card is a tour step: while the tour is replayed from Settings, or until the
@@ -94,7 +93,6 @@ export const WalletHome: React.FC<{
 }> = ({
   vcMetadatas,
   searchIndex,
-  onAdd,
   refreshing,
   onRefresh,
   isCardTourStep = false,
@@ -121,7 +119,7 @@ export const WalletHome: React.FC<{
 
   // The card step measures the card where it sits on screen, so a page scrolled down to the
   // card's details put the highlight off the top. Scroll back to the top when the tour starts
-  // (steps 1-5 aren't in this scroll view, so by the card step it has settled) and again if
+  // (the earlier steps aren't in this scroll view, so by the card step it has settled) and again if
   // the card step comes up some other way.
   const scrollRef = useRef<ScrollView>(null);
   const {
@@ -375,7 +373,6 @@ export const WalletHome: React.FC<{
       <WalletHeader
         countText={countText}
         onAvatar={() => navigation.navigate(BOTTOM_TAB_ROUTES.settings)}
-        onAdd={onAdd}
         searching={searching}
         onToggleSearch={toggleSearch}
         search={{query, onQuery: setQuery, chips, chip, onChip: setChip}}
