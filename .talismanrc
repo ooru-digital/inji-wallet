@@ -549,6 +549,6 @@ fileignoreconfig:
   - filename: .maestro/subflows/onboard.yaml
     checksum: 354831bffe1121e8f91e2ccfb248781b385b616bf1e9c751c6f5f768fd5088fe
   - filename: .github/workflows/ui-tests.yml
-    checksum: 5446f3fa6b4bccd07e42a4deba3a663ffc861c36fc75f41d598c092fc4e780ef
+    checksum: 9b860ed477b49f7f6f7e708d77fd90b2863df5f4117d57682b78be67b20577f5
     version: "1.0"
 

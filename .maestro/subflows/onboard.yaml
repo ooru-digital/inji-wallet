@@ -8,6 +8,7 @@ appId: io.ooru.credissuerwallet
 - extendedWaitUntil:
     visible: "Choose your language"
     timeout: 30000
+- takeScreenshot: 1-language
 - tapOn: "English"
 - tapOn: "Continue"
 # Phones with biometrics are asked how to unlock first, with fingerprint preselected.
@@ -23,6 +24,7 @@ appId: io.ooru.credissuerwallet
 - extendedWaitUntil:
     visible: "Choose a 6-digit passcode"
     timeout: 30000
+- takeScreenshot: 2-passcode
 - runFlow: type-passcode.yaml
 - extendedWaitUntil:
     visible: "Enter it once more"
@@ -44,3 +46,4 @@ appId: io.ooru.credissuerwallet
 - extendedWaitUntil:
     visible: "No cards yet"
     timeout: 30000
+- takeScreenshot: 3-home

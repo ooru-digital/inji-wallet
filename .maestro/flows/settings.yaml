@@ -1,6 +1,7 @@
 appId: io.ooru.credissuerwallet
 name: Settings
 ---
+- startRecording: recording
 - runFlow: ../subflows/onboard.yaml
 - tapOn: "Settings"
 - extendedWaitUntil:
@@ -8,6 +9,9 @@ name: Settings
     timeout: 15000
 - assertVisible: "Change PIN"
 - assertVisible: "Auto-lock"
+- takeScreenshot: 4-settings
 - scrollUntilVisible:
     element: "About CredIssuer Wallet"
     direction: DOWN
+- takeScreenshot: 5-settings-bottom
+- stopRecording
