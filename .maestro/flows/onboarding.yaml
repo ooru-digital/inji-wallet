@@ -1,0 +1,6 @@
+appId: io.ooru.credissuerwallet
+name: Onboarding with a passcode
+---
+- runFlow: ../subflows/onboard.yaml
+- assertVisible: "No cards yet"
+- assertVisible: "Add a card"

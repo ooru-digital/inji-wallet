@@ -1,0 +1,13 @@
+appId: io.ooru.credissuerwallet
+name: Settings
+---
+- runFlow: ../subflows/onboard.yaml
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Security and Privacy"
+    timeout: 15000
+- assertVisible: "Change PIN"
+- assertVisible: "Auto-lock"
+- scrollUntilVisible:
+    element: "About CredIssuer Wallet"
+    direction: DOWN

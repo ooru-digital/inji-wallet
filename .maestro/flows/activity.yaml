@@ -1,0 +1,10 @@
+appId: io.ooru.credissuerwallet
+name: Activity
+---
+- runFlow: ../subflows/onboard.yaml
+- tapOn: "Activity"
+- extendedWaitUntil:
+    visible: "Notifications"
+    timeout: 15000
+- assertVisible: "Credentials"
+- assertVisible: "Sharing"

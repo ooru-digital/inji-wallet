@@ -544,5 +544,11 @@ fileignoreconfig:
     checksum: 3d0bbbc136bc39978efed756143dad900302e7e05ebe0fa27ddb262adc8e1c3f
   - filename: screens/PasscodeScreenController.ts
     checksum: bc68b007b199190752cf6228c689fadf99faf530ed81dbfd10cc1124bb02fa73
+  - filename: .maestro/subflows/type-passcode.yaml
+    checksum: 940e1cb22b34459619c960d26422871da0cc2b0c16aa0f7b34cfee6c10f772e5
+  - filename: .maestro/subflows/onboard.yaml
+    checksum: 354831bffe1121e8f91e2ccfb248781b385b616bf1e9c751c6f5f768fd5088fe
+  - filename: .github/workflows/ui-tests.yml
+    checksum: 79ccfd908799874a9541b29e6c824407ac2e5de0148f14dd27d9d7fe93beb8c3
     version: "1.0"
 

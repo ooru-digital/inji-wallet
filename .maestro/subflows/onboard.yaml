@@ -1,0 +1,46 @@
+# A fresh install up to the empty Home screen: English, passcode 111111, tour skipped.
+appId: io.ooru.credissuerwallet
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+- extendedWaitUntil:
+    visible: "Choose your language"
+    timeout: 30000
+- tapOn: "English"
+- tapOn: "Continue"
+# Phones with biometrics are asked how to unlock first, with fingerprint preselected.
+- extendedWaitUntil:
+    visible: "Protect your wallet|Choose a 6-digit passcode"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: "Protect your wallet"
+    commands:
+      - tapOn: "6-digit passcode"
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Choose a 6-digit passcode"
+    timeout: 30000
+- runFlow: type-passcode.yaml
+- extendedWaitUntil:
+    visible: "Enter it once more"
+    timeout: 30000
+- runFlow: type-passcode.yaml
+- extendedWaitUntil:
+    visible: "Skip tour|No cards yet"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Skip tour"
+    commands:
+      - tapOn: "Skip tour"
+- runFlow:
+    when:
+      visible: "Some security features will be unavailable"
+    commands:
+      - tapOn: "Ok"
+- extendedWaitUntil:
+    visible: "No cards yet"
+    timeout: 30000

@@ -1,0 +1,123 @@
+name: UI tests (Maestro)
+
+# Builds the release APK, boots an Android emulator and runs the Maestro flows in .maestro/.
+# Every flow starts from a fresh install and sets the passcode itself, so nothing is shared
+# between runs. The report, and screenshots and recordings of any failure, are attached to the run.
+#
+# Secrets: the Android build's (CREDISSUER_API_TOKEN, CREDISSUER_ANDROID_KEYSTORE_BASE64,
+# CREDISSUER_ANDROID_KEYSTORE_ALIAS, CREDISSUER_ANDROID_KEYSTORE_PASSWORD, ARTIFACTORY_USERNAME,
+# ARTIFACTORY_PASSWORD).
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [CredIssuer-revamp]
+  schedule:
+    # Nightly, 02:00 UTC
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  MAESTRO_VERSION: '2.12.1'
+  APK_PATH: android/app/build/outputs/apk/residentapp/release/CredIssuerWallet_universal.apk
+
+jobs:
+  android:
+    name: Android emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install JS dependencies
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          npm ci
+
+      - name: Write the files the build reads but git ignores
+        env:
+          CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
+          KEYSTORE_BASE64: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+
+      # The emulator is x86_64; the universal APK carries every CPU type.
+      - name: Build the APK
+        working-directory: android
+        env:
+          RELEASE_KEYSTORE_ALIAS: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_ALIAS }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_PASSWORD }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: ./gradlew generateCodegenArtifactsFromSchema :app:assembleResidentappRelease
+
+      - name: Remove secret files
+        if: always()
+        run: rm -f .env.local android/app/release.keystore
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | MAESTRO_VERSION="$MAESTRO_VERSION" bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the flows on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          disk-size: 6G
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            adb install -r "$APK_PATH"
+            mkdir -p maestro-output
+            maestro test .maestro --format junit --output maestro-output/report.xml --debug-output maestro-output/debug --flatten-debug-output
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f maestro-output/report.xml ]; then
+            tests=$(grep -o 'tests="[0-9]*"' maestro-output/report.xml | head -1 | grep -o '[0-9]*')
+            failures=$(grep -o 'failures="[0-9]*"' maestro-output/report.xml | head -1 | grep -o '[0-9]*')
+            echo "### UI tests: $((tests - failures)) of $tests flows passed" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### UI tests did not run" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maestro-results
+          path: maestro-output
+          if-no-files-found: ignore
+          retention-days: 14
