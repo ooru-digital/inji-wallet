@@ -1,4 +1,12 @@
 fileignoreconfig:
+  - filename: .maestro/subflows/type-passcode.yaml
+    checksum: 940e1cb22b34459619c960d26422871da0cc2b0c16aa0f7b34cfee6c10f772e5
+  - filename: .maestro/subflows/onboard.yaml
+    checksum: 354831bffe1121e8f91e2ccfb248781b385b616bf1e9c751c6f5f768fd5088fe
+  - filename: .github/workflows/ui-tests.yml
+    checksum: fe3bc8db64f93ea0f39c1ac456e87ab69e83b863e55b1df87882cad4c33c2499
+  - filename: .maestro/report.py
+    checksum: 4ed6f9b80391bcd6f2c5f03efb979ea28b1d84593a38fef076737c2352ed0724
   - filename: components/VC/common/StatusInfoModal.tsx
     checksum: 5db61aa419e0c1c70b067993272da93822917daa55523371fc196022bd7c25a3
   - filename: components/VC/Views/ShareableInfoModal.tsx
@@ -544,13 +552,5 @@ fileignoreconfig:
     checksum: 3d0bbbc136bc39978efed756143dad900302e7e05ebe0fa27ddb262adc8e1c3f
   - filename: screens/PasscodeScreenController.ts
     checksum: bc68b007b199190752cf6228c689fadf99faf530ed81dbfd10cc1124bb02fa73
-  - filename: .maestro/subflows/type-passcode.yaml
-    checksum: 940e1cb22b34459619c960d26422871da0cc2b0c16aa0f7b34cfee6c10f772e5
-  - filename: .maestro/subflows/onboard.yaml
-    checksum: 354831bffe1121e8f91e2ccfb248781b385b616bf1e9c751c6f5f768fd5088fe
-  - filename: .github/workflows/ui-tests.yml
-    checksum: fe3bc8db64f93ea0f39c1ac456e87ab69e83b863e55b1df87882cad4c33c2499
-  - filename: .maestro/report.py
-    checksum: 4ed6f9b80391bcd6f2c5f03efb979ea28b1d84593a38fef076737c2352ed0724
     version: "1.0"
 
