@@ -52,6 +52,37 @@ public class JWEHandlerTests: XCTestCase {
         XCTAssertEqual(claims["state"] as? String, "s-123")
         XCTAssertThrowsError(try AES.GCM.open(box, using: SymmetricKey(data: cek)), "Opening without the header as AAD must fail")
     }
+
+    // Only X25519 (OKP) verifier keys are supported; an EC P-256 key fails with a clear error.
+    func testCreateResponseThrowsForP256VerifierKey() throws {
+        let p256Key = P256.KeyAgreement.PrivateKey().publicKey.rawRepresentation
+        let jwkJson = """
+        {"kty":"EC","use":"enc","crv":"P-256","alg":"ECDH-ES","kid":"p256-key",
+         "x":"\(p256Key.prefix(32).toBase64UrlEncoded())","y":"\(p256Key.suffix(32).toBase64UrlEncoded())"}
+        """
+        let p256Jwk = try JSONDecoder().decode(JWK.self, from: Data(jwkJson.utf8))
+        let jweHandler = JWEHandler(contentEncryptionAlgorithm: "A256GCM", keyEncryptionAlgorithm: "ECDH-ES", publicKey: p256Jwk, producerInfo: "mock-nonce", recipientInfo: "verifier-nonce")
+
+        XCTAssertThrowsError(try jweHandler.generateEncryptedResponse(payload: ["state": "s-123"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Required Key Agreement algorithm is not supported.",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testCreateResponseThrowsForUnsupportedEnc() {
+        let jweHandler = JWEHandler(contentEncryptionAlgorithm: "A256CBC-HS512", keyEncryptionAlgorithm: jweKeyEncryptionAlgorithm, publicKey: verifierPublicKey, producerInfo: "mock-nonce", recipientInfo: "verifier-nonce")
+
+        XCTAssertThrowsError(try jweHandler.generateEncryptedResponse(payload: ["key": "value"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Required Encryption algorithm is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
 }
 
 
