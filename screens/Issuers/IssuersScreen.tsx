@@ -418,6 +418,18 @@ export const IssuersScreen: React.FC<
       ErrorMessage.PRE_AUTHORIZED_CODE_INVALID,
       ErrorMessage.OFFER_ALREADY_USED,
     ].includes(errorType as ErrorMessage);
+    // Retrying straight away would only run into the issuer's rate limit again.
+    const retryIsSecondary = errorType === ErrorMessage.TOO_MANY_REQUESTS;
+    const retryAction = {
+      testID: 'tryAgain',
+      title: t('common:tryAgain'),
+      onPress: tryAgain,
+    };
+    const backAction = {
+      testID: 'backToWallet',
+      title: t('backToWallet'),
+      onPress: props.navigation.goBack,
+    };
     return (
       <DownloadFailed
         testID={`${errorType}Error`}
@@ -425,27 +437,9 @@ export const IssuersScreen: React.FC<
         title={t('couldNotAddCard')}
         message={t(`errors.${errorType}.message`)}
         onClose={goBack}
-        primary={
-          canRetry
-            ? {
-                testID: 'tryAgain',
-                title: t('common:tryAgain'),
-                onPress: tryAgain,
-              }
-            : {
-                testID: 'backToWallet',
-                title: t('backToWallet'),
-                onPress: props.navigation.goBack,
-              }
-        }
+        primary={canRetry && !retryIsSecondary ? retryAction : backAction}
         secondary={
-          canRetry
-            ? {
-                testID: 'backToWallet',
-                title: t('backToWallet'),
-                onPress: props.navigation.goBack,
-              }
-            : undefined
+          !canRetry ? undefined : retryIsSecondary ? retryAction : backAction
         }
       />
     );

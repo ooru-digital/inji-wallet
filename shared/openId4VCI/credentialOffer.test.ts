@@ -98,6 +98,7 @@ describe('isCredentialOfferAlreadyUsed', () => {
 
   afterEach(() => {
     (global as any).fetch = undefined;
+    jest.useRealTimers();
   });
 
   it('is true when the issuer answers 409', async () => {
@@ -129,6 +130,31 @@ describe('isCredentialOfferAlreadyUsed', () => {
     (global as any).fetch = jest
       .fn()
       .mockRejectedValue(new Error('Network request failed'));
+    await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(false);
+  });
+
+  it('is false when the issuer does not answer within 5 seconds', async () => {
+    jest.useFakeTimers();
+    (global as any).fetch = jest.fn(
+      (_uri: string, {signal}: {signal: AbortSignal}) =>
+        new Promise((_resolve, reject) =>
+          signal.addEventListener('abort', () => reject(new Error('aborted'))),
+        ),
+    );
+
+    const result = isCredentialOfferAlreadyUsed(qr);
+    jest.advanceTimersByTime(5000);
+    await expect(result).resolves.toBe(false);
+  });
+
+  it('is false when the body is not JSON', async () => {
+    (global as any).fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => {
+        throw new SyntaxError('Unexpected token < in JSON');
+      },
+    });
     await expect(isCredentialOfferAlreadyUsed(qr)).resolves.toBe(false);
   });
 

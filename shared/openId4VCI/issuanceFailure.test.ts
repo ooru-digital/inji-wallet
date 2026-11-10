@@ -40,6 +40,22 @@ describe('classifyTokenRequestFailure', () => {
     });
   });
 
+  it.each(['', '   ', 'abc', -1])(
+    'ignores an unusable attempts count (%p) instead of locking the code',
+    count => {
+      expect(
+        classifyTokenRequestFailure(400, {
+          error: 'invalid_grant',
+          error_description: 'Invalid or expired transaction code.',
+          tx_code_attempts_remaining: count,
+        }),
+      ).toEqual({
+        failure: IssuanceFailure.TX_CODE_EXPIRED,
+        attemptsRemaining: null,
+      });
+    },
+  );
+
   it('treats an invalid or expired code without a count as expired', () => {
     expect(
       classifyTokenRequestFailure(400, {
@@ -102,6 +118,17 @@ describe('classifyTokenRequestFailure', () => {
         error_description: 'grant_type is missing',
       }).failure,
     ).toBe(IssuanceFailure.OTHER);
+  });
+});
+
+describe('a 409 from the token endpoint', () => {
+  it('counts as an already-used offer whatever the body says', () => {
+    expect(classifyTokenRequestFailure(409, {error: 'conflict'}).failure).toBe(
+      IssuanceFailure.OFFER_ALREADY_USED,
+    );
+    expect(classifyTokenRequestFailure(409, null).failure).toBe(
+      IssuanceFailure.OFFER_ALREADY_USED,
+    );
   });
 });
 

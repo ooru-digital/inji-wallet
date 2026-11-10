@@ -121,6 +121,7 @@ function parseBody(text: string): Record<string, unknown> | null {
 }
 
 function toCount(value: unknown): number | null {
+  if (typeof value === 'string' && value.trim() === '') return null;
   const count = typeof value === 'string' ? Number(value) : value;
   return typeof count === 'number' && Number.isFinite(count) && count >= 0
     ? count

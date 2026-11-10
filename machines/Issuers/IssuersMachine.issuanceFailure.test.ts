@@ -20,18 +20,22 @@ import {
   TokenRequestError,
 } from '../../shared/openId4VCI/issuanceFailure';
 
-const tokenRequest = JSON.stringify({
+const tokenRequestWithoutCode = {
   grantType: 'urn:ietf:params:oauth:grant-type:pre-authorized_code',
   tokenEndpoint: 'https://issuer.example/token',
   preAuthCode: 'pre-auth-code',
-  txCode: '111111',
-});
+};
 
 function rejection(status: number, body: object) {
   return Promise.reject(new TokenRequestError(status, JSON.stringify(body)));
 }
 
-function startAtTokenRequest(sendTokenRequest: jest.Mock) {
+const sendDownloadingFailedToVcMeta = jest.fn();
+
+function startAtTokenRequest(
+  sendTokenRequest: jest.Mock,
+  {withTxCode = true} = {},
+) {
   const service = interpret(
     IssuersMachine.withConfig({
       services: {
@@ -40,20 +44,33 @@ function startAtTokenRequest(sendTokenRequest: jest.Mock) {
         sendTokenRequest,
         sendTokenResponse: () => new Promise(jest.fn()),
       },
-      actions: {sendDownloadingFailedToVcMeta: jest.fn()},
+      actions: {sendDownloadingFailedToVcMeta},
     }),
   ).start();
 
   service.send('SCAN_CREDENTIAL_OFFER_QR_CODE');
   service.send({type: 'QR_CODE_SCANNED', data: 'openid-credential-offer://'});
-  service.send({type: 'TX_CODE_REQUEST', inputMode: 'numeric', length: 6});
-  service.send({type: 'TX_CODE_RECEIVED', txCode: '111111'});
-  service.send({type: 'TOKEN_REQUEST', tokenRequest});
+  if (withTxCode) {
+    service.send({type: 'TX_CODE_REQUEST', inputMode: 'numeric', length: 6});
+    service.send({type: 'TX_CODE_RECEIVED', txCode: '111111'});
+  }
+  service.send({
+    type: 'TOKEN_REQUEST',
+    tokenRequest: JSON.stringify(
+      withTxCode
+        ? {...tokenRequestWithoutCode, txCode: '111111'}
+        : tokenRequestWithoutCode,
+    ),
+  });
   return service;
 }
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 const originalFetch = global.fetch;
+
+beforeEach(() => {
+  sendDownloadingFailedToVcMeta.mockClear();
+});
 
 describe('IssuersMachine transaction code retries', () => {
   it('keeps the code screen up after a wrong code and sends the next one with the same offer', async () => {
@@ -119,9 +136,42 @@ describe('IssuersMachine transaction code retries', () => {
     await flush();
 
     const state = service.getSnapshot();
+    expect(state.matches('credentialDownloadFromOffer.reenteringTxCode')).toBe(
+      true,
+    );
     expect(state.context.txCodeError).toBe(IssuanceFailure.RATE_LIMITED);
     expect(state.context.txCodeInputResetKey).toBe(0);
     expect(sendTokenRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the error screen when the first request is rate limited and no code was sent', async () => {
+    const sendTokenRequest = jest.fn(() =>
+      rejection(429, {error: 'rate_limit_exceeded'}),
+    );
+    const service = startAtTokenRequest(sendTokenRequest, {withTxCode: false});
+    await flush();
+
+    const state = service.getSnapshot();
+    expect(state.matches('error')).toBe(true);
+    expect(state.context.errorMessage).toBe('tooManyRequests');
+    expect(state.context.isTransactionCodeRequested).toBe(false);
+    expect(sendTokenRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a failed download when the holder cancels after a wrong code', async () => {
+    const sendTokenRequest = jest.fn(() =>
+      rejection(400, {error: 'invalid_grant', tx_code_attempts_remaining: 2}),
+    );
+    const service = startAtTokenRequest(sendTokenRequest);
+    await flush();
+
+    service.send('CANCEL');
+
+    const state = service.getSnapshot();
+    expect(state.matches('selectingIssuer')).toBe(true);
+    expect(sendDownloadingFailedToVcMeta).toHaveBeenCalledTimes(1);
+    expect(state.context.isTransactionCodeRequested).toBe(false);
+    expect(state.context.txCodeError).toBe('');
   });
 
   it('retries once without the code when the issuer does not expect one', async () => {
@@ -144,6 +194,22 @@ describe('IssuersMachine transaction code retries', () => {
     expect(state.matches('credentialDownloadFromOffer.sendTokenResponse')).toBe(
       true,
     );
+  });
+
+  it('retries without the code only once, then shows the error', async () => {
+    const sendTokenRequest = jest.fn(() =>
+      rejection(400, {
+        error: 'invalid_request',
+        error_description: 'tx_code is not expected',
+      }),
+    );
+    const service = startAtTokenRequest(sendTokenRequest);
+    await flush();
+    await flush();
+    await flush();
+
+    expect(sendTokenRequest).toHaveBeenCalledTimes(2);
+    expect(service.getSnapshot().matches('error')).toBe(true);
   });
 
   it('says the offer was already used when the token endpoint answers 409', async () => {

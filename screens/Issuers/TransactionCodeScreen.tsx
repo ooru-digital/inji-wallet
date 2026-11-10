@@ -67,7 +67,8 @@ export const TransactionCodeModal: React.FC<ExtendedModalProps> = props => {
   };
 
   const handleChange = (text: string) => {
-    // The PIN boxes report '' again when they're cleared after a rejected code.
+    // The PIN boxes report '' again when they're cleared after a rejected code. Returning early
+    // also leaves `touched` false on purpose: a clear the wallet made isn't the holder editing.
     if (text === transactionCode) return;
     if (!touched) setTouched(true);
     setTransactionCode(text);
