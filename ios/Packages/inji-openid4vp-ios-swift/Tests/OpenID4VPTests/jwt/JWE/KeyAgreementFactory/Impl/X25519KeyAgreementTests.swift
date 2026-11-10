@@ -67,6 +67,26 @@ final class X25519KeyAgreementTests: XCTestCase {
         XCTAssertEqual(key.toBase64UrlEncoded(), "VqqN6vgjbSBcIijNcacQGg")
     }
 
+    // Expected bytes are what Nimbus' Base64URL.decode() (Android library) returns for the same input.
+    func testPartyInfoDecodesUnpaddedBase64Url() throws {
+        XCTAssertEqual(try X25519KeyAgreement.partyInfo("-_8", name: "apv"), Data([0xFB, 0xFF]))
+        XCTAssertEqual(try X25519KeyAgreement.partyInfo("+/8=", name: "apv"), Data([0xFB, 0xFF]))
+        XCTAssertEqual(try X25519KeyAgreement.partyInfo("VbRRB/LTxLiXmVNZuyMO8A==", name: "apv").count, 16)
+    }
+
+    // Not valid base64 (length mod 4 == 1): Nimbus drops the leftover character instead of failing,
+    // so a verifier nonce like "nonce" still gives the same key on both platforms, never empty info.
+    func testPartyInfoWithInvalidLengthMatchesNimbus() throws {
+        XCTAssertEqual(try X25519KeyAgreement.partyInfo("nonce", name: "apv"), Data([0x9E, 0x89, 0xDC]))
+        XCTAssertEqual(try X25519KeyAgreement.partyInfo("abcde", name: "apu"), Data([0x69, 0xB7, 0x1D]))
+
+        let z = Data(count: 32)
+        XCTAssertNotEqual(
+            try X25519KeyAgreement.concatKDF(z: z, enc: "A256GCM", apu: "", apv: "nonce"),
+            try X25519KeyAgreement.concatKDF(z: z, enc: "A256GCM", apu: "", apv: "")
+        )
+    }
+
     func testConcatKDFThrowsForUnsupportedEnc() {
         XCTAssertThrowsError(try X25519KeyAgreement.concatKDF(z: Data(count: 32), enc: "A256CBC-HS512", apu: "", apv: ""))
     }
