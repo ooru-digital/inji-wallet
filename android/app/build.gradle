@@ -166,6 +166,9 @@ android {
                 APP_NAME             : APP_NAME,
                 appAuthRedirectScheme: 'io.mosip.residentapp.inji'
         ]
+        // Only for the UI tests' emulator, whose keystore isn't hardware-backed: without this the
+        // app can't create its storage key there. Never set for a build that ships.
+        buildConfigField 'boolean', 'ALLOW_SOFTWARE_KEYSTORE', (findProperty('allowSoftwareKeystore') == 'true').toString()
     }
 
     splits {

@@ -63,7 +63,8 @@ jobs:
           printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
 
-      # The emulator is x86_64; the universal APK carries every CPU type.
+      # The emulator is x86_64; the universal APK carries every CPU type. Its keystore is
+      # software-only, which the app refuses unless built with allowSoftwareKeystore.
       - name: Build the APK
         working-directory: android
         env:
@@ -71,7 +72,7 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CREDISSUER_ANDROID_KEYSTORE_PASSWORD }}
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-        run: ./gradlew generateCodegenArtifactsFromSchema :app:assembleResidentappRelease
+        run: ./gradlew -PallowSoftwareKeystore=true generateCodegenArtifactsFromSchema :app:assembleResidentappRelease
 
       - name: Remove secret files
         if: always()
