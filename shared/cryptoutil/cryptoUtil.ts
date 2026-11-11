@@ -17,7 +17,6 @@ import {hmac} from '@noble/hashes/hmac';
 import {sha256} from '@noble/hashes/sha256';
 import {sha512} from '@noble/hashes/sha512';
 import * as secp from '@noble/secp256k1';
-import {p256} from '@noble/curves/p256';
 import * as ed from '@noble/ed25519';
 import base64 from 'react-native-base64';
 import {KeyTypes} from './KeyTypes';
@@ -75,26 +74,43 @@ export function generateKeyPairECK1() {
   };
 }
 
+/**
+ * The ES256 holder key lives in hardware on both platforms: the Android keystore, or the iOS
+ * Secure Enclave. Only the public key reaches JS. With biometrics set up, every signature asks
+ * for them and re-enrolling invalidates the key.
+ */
 export async function generateKeyPairECR1() {
-  if (isAndroid()) {
-    const isBiometricsEnabled =
-      await RNSecureKeystoreModule.hasBiometricsEnabled();
-    return {
-      publicKey: await RNSecureKeystoreModule.generateKeyPair(
+  const isBiometricsEnabled =
+    await RNSecureKeystoreModule.hasBiometricsEnabled();
+  // The two bridges take different arguments: Android (type, alias, auth, timeout),
+  // iOS (type, auth, timeout).
+  const publicKey = isAndroid()
+    ? await RNSecureKeystoreModule.generateKeyPair(
         KeyTypes.ES256,
         KeyTypes.ES256,
         isBiometricsEnabled,
         0,
-      ),
-      privateKey: '',
-    };
+      )
+    : await RNSecureKeystoreModule.generateKeyPair(
+        KeyTypes.ES256,
+        isBiometricsEnabled,
+        0,
+      );
+  return {publicKey, privateKey: ''};
+}
+
+/**
+ * Whether a key pair of this type is kept as a Keychain/keystore generic item, i.e. generated in
+ * JS. ES256 never is (it lives in hardware on both platforms); RS256 only on iOS.
+ */
+export function isStoredAsGenericKey(keyType: string): boolean {
+  if (keyType === KeyTypes.ES256) {
+    return false;
   }
-  const privKey = p256.utils.randomPrivateKey();
-  const pubKey = p256.getPublicKey(privKey, false);
-  return {
-    publicKey: Buffer.from(pubKey).toString('base64'),
-    privateKey: Buffer.from(privKey).toString('base64'),
-  };
+  if (keyType === KeyTypes.RS256) {
+    return isIOS();
+  }
+  return true;
 }
 
 export async function generateKeyPairED() {
@@ -133,7 +149,7 @@ export async function checkAllKeyPairs() {
 export async function generateKeyPairsAndStoreOrder() {
   const {RNSecureKeystoreModule} = NativeModules;
   const RSAKeyPair = await generateKeyPair(KeyTypes.RS256);
-  const ECR1KeyPair = await generateKeyPair(KeyTypes.ES256);
+  await generateKeyPair(KeyTypes.ES256);
   const ECK1KeyPair = await generateKeyPair(KeyTypes.ES256K);
   const EDKeyPair = await generateKeyPair(KeyTypes.ED25519);
   const keys = Object.entries(SUPPORTED_KEY_TYPES).map(([label, value]) => ({
@@ -156,16 +172,12 @@ export async function generateKeyPairsAndStoreOrder() {
     KeyTypes.ED25519,
   );
 
-  if (isIOS()) {
+  // ES256 (ECR1KeyPair) is already in hardware on both platforms; nothing to store.
+  if (isStoredAsGenericKey(KeyTypes.RS256)) {
     await RNSecureKeystoreModule.storeGenericKey(
       RSAKeyPair.publicKey,
       RSAKeyPair.privateKey,
       KeyTypes.RS256,
-    );
-    await RNSecureKeystoreModule.storeGenericKey(
-      ECR1KeyPair.publicKey,
-      ECR1KeyPair.privateKey,
-      KeyTypes.ES256,
     );
   }
   console.warn(TelemetryConstants.FlowType.keyGeneration);
@@ -252,32 +264,21 @@ export async function createSignatureED(privateKey, payloadBytes) {
   return replaceCharactersInB64(Buffer.from(sign).toString('base64'));
 }
 
-export async function createSignatureECR1(privateKey, payload) {
+/**
+ * Signs with the hardware ES256 key (Android keystore / iOS Secure Enclave). The native side
+ * returns DER; JWS wants raw `r || s`. `privateKey` is unused: it never leaves the hardware.
+ */
+export async function createSignatureECR1(_privateKey, payload) {
   if (!isHardwareKeystoreExists) {
     throw Error;
-  } else {
-    if (isAndroid()) {
-      let signature64 = await RNSecureKeystoreModule.sign(
-        KeyTypes.ES256,
-        KeyTypes.ES256,
-        payload,
-      );
-      const base64DeodedSignature = base64.decode(
-        signature64.replace(/\n/g, ''),
-      );
-      const derSignature = Uint8Array.from(base64DeodedSignature, char =>
-        char.charCodeAt(0),
-      );
-      signature64 = convertDerToRsFormat(derSignature);
-      return replaceCharactersInB64(signature64);
-    }
   }
-  const sha = sha256(payload);
-
-  const sign = await p256.sign(sha, Buffer.from(privateKey, 'base64'), {
-    lowS: false,
-  });
-  return base64url(Buffer.from(sign.toCompactRawBytes()));
+  const derBase64 = await RNSecureKeystoreModule.sign(
+    KeyTypes.ES256,
+    KeyTypes.ES256,
+    payload,
+  );
+  const derSignature = Buffer.from(derBase64.replace(/\s/g, ''), 'base64');
+  return replaceCharactersInB64(convertDerToRsFormat(derSignature));
 }
 
 export function replaceCharactersInB64(encodedB64: string) {
@@ -401,6 +402,14 @@ export function hmacSHA(encryptionKey: string, data: string) {
 export async function fetchKeyPair(keyType: any) {
   try {
     const {RNSecureKeystoreModule} = NativeModules;
+    if (keyType == KeyTypes.ES256 && isIOS()) {
+      // Secure Enclave: the public key only, as the 65-byte uncompressed point.
+      const publicKey = await RNSecureKeystoreModule.retrieveKey(keyType);
+      return {
+        publicKey: Buffer.from(publicKey, 'base64'),
+        privateKey: '',
+      };
+    }
     if (keyType == KeyTypes.RS256 || keyType == KeyTypes.ES256) {
       if (isAndroid()) {
         const publicKey = await RNSecureKeystoreModule.retrieveKey(keyType);
@@ -412,15 +421,9 @@ export async function fetchKeyPair(keyType: any) {
         const keyPair = await RNSecureKeystoreModule.retrieveGenericKey(
           keyType,
         );
-        let publicKey = keyPair[1];
-        let privateKey = keyPair[0];
-        if (keyType == KeyTypes.ES256) {
-          publicKey = Buffer.from(publicKey, 'base64');
-          privateKey = Buffer.from(privateKey, 'base64');
-        }
         return {
-          publicKey: publicKey,
-          privateKey: privateKey,
+          publicKey: keyPair[1],
+          privateKey: keyPair[0],
         };
       }
     } else {

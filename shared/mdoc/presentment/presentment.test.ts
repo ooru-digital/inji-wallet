@@ -27,7 +27,11 @@ import {
   decodeCbor,
   DecodedTag,
 } from './cbor';
-import {buildSigStructure, softwareEs256Signer} from './cose';
+import {
+  buildSigStructure,
+  derSignatureToCoseRaw,
+  softwareEs256Signer,
+} from './cose';
 import {buildDeviceResponse} from './deviceResponse';
 import {parseDeviceRequest, selectDocRequestForDocType} from './deviceRequest';
 import {findElement, parseIssuerSignedCredential} from './issuerSigned';
@@ -572,5 +576,30 @@ describe('CBOR codec', () => {
       0x5f, 0x42, 0x01, 0x02, 0x41, 0x03, 0xff,
     ]);
     expect(Array.from(decodeCbor(indefinite) as Uint8Array)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('hardware DeviceAuth signature', () => {
+  // The Secure Enclave returns DER, possibly high-S; COSE wants 64-byte low-S r || s.
+  const privateKey = p256.utils.randomPrivateKey();
+  const publicKey = p256.getPublicKey(privateKey, false);
+  const toBeSigned = new TextEncoder().encode('DeviceAuthentication');
+  const digest = sha256(toBeSigned);
+
+  it('converts a DER signature to a verifiable 64-byte r || s', () => {
+    const signature = p256.sign(digest, privateKey);
+    const raw = derSignatureToCoseRaw(signature.toDERRawBytes());
+    expect(raw.length).toBe(64);
+    expect(p256.verify(raw, digest, publicKey)).toBe(true);
+  });
+
+  it('normalises a high-S signature to low-S', () => {
+    const low = p256.sign(digest, privateKey);
+    const high = new p256.Signature(low.r, p256.CURVE.n - low.s);
+    expect(high.hasHighS()).toBe(true);
+    const raw = derSignatureToCoseRaw(high.toDERRawBytes());
+    expect(Buffer.from(raw).equals(Buffer.from(low.toCompactRawBytes()))).toBe(
+      true,
+    );
   });
 });

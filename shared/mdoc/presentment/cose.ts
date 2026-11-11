@@ -32,20 +32,29 @@ const PROTECTED_ES256 = encodeCbor(
 /**
  * Signs raw bytes with ES256, returning the 64-byte `r || s` COSE signature.
  *
- * Asynchronous and injected rather than called directly so the same protocol code works on both
- * platforms: iOS can hand the P-256 private key to JS (`useSoftwareDeviceKey`), but Android keeps
- * the device key non-extractable in the hardware keystore and can only sign across the bridge.
- * Whatever implements this is also where a biometric prompt would surface.
+ * Asynchronous and injected rather than called directly: the device key is non-extractable on
+ * both platforms (Android keystore, iOS Secure Enclave) and can only sign across the bridge.
+ * Whatever implements this is also where a biometric prompt surfaces.
  */
 export type Es256Signer = (toBeSigned: Uint8Array) => Promise<Uint8Array>;
 
-/** Signer backed by a raw 32-byte P-256 private key held in JS. */
+/** Signer backed by a raw 32-byte P-256 private key held in JS. Tests only. */
 export function softwareEs256Signer(privateKey32: Uint8Array): Es256Signer {
   return async (toBeSigned: Uint8Array) => {
     // noble signs a digest, and defaults to low-S normalisation, which is what COSE expects.
     const signature = p256.sign(sha256(toBeSigned), privateKey32);
     return signature.toCompactRawBytes();
   };
+}
+
+/**
+ * Turns a DER ECDSA P-256 signature (what the hardware keystores return) into the 64-byte
+ * `r || s` COSE wants, with `s` normalised to the low half of the curve order, the same form the
+ * software signer produces. A high-S signature is equally valid, but some readers reject it.
+ */
+export function derSignatureToCoseRaw(der: Uint8Array): Uint8Array {
+  const signature = p256.Signature.fromDER(der).normalizeS();
+  return signature.toCompactRawBytes();
 }
 
 /**

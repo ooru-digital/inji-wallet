@@ -68,10 +68,6 @@ export interface Iso18013PresentmentParams {
   deviceEngagementCbor: Uint8Array;
   /** Ephemeral P-256 private key bytes (must pair with COSE_Key in engagement). */
   ephemeralPresentationPrivateKey: Uint8Array;
-  /** When true, native uses software-imported device key (e.g. iOS ES256 material). */
-  useSoftwareDeviceKey?: boolean;
-  /** Standard base64 of raw P-256 device private key (32 bytes) for software path. */
-  deviceKeyPrivateBase64?: string;
 }
 
 export interface Iso18013PresentmentCallbacks {
@@ -449,8 +445,8 @@ export async function startIso18013ProximityPresentment(
         ephemeralPrivateKeyBase64: Buffer.from(
           params.ephemeralPresentationPrivateKey,
         ).toString('base64'),
-        useSoftwareDeviceKey: !!params.useSoftwareDeviceKey,
-        deviceKeyPrivateBase64: params.deviceKeyPrivateBase64,
+        // The device key is the hardware keystore key; never a key held in JS.
+        useSoftwareDeviceKey: false,
       });
       callbacks?.onPhase?.('completed');
     }

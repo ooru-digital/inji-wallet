@@ -11,8 +11,9 @@
  */
 
 import {Buffer} from 'buffer';
+import {NativeModules} from 'react-native';
 
-import {softwareEs256Signer, type Es256Signer} from './cose';
+import {derSignatureToCoseRaw, type Es256Signer} from './cose';
 import {isMdocBleTransportAvailable} from './bleTransport';
 import {
   MdocPresentmentSession,
@@ -75,29 +76,33 @@ function emit(event: PresentmentEventName, payload: unknown): void {
 let activeSession: MdocPresentmentSession | null = null;
 
 /**
- * Builds the DeviceAuth signer.
- *
- * iOS exports its ES256 private key to JS (`useSoftwareDeviceKey`), which is why a software
- * signer is enough here. Android keeps the device key non-extractable in the hardware keystore,
- * so when it adopts this engine it supplies a signer that calls across the bridge instead —
- * that is the whole reason {@link Es256Signer} is injected rather than constructed inline.
+ * Builds the DeviceAuth signer: the ES256 holder key, which never leaves the Secure Enclave, signs
+ * the binary COSE input across the bridge (`signBytes`). This engine runs on iOS only; Android
+ * presents through its native Multipaz module.
  */
-function signerFor(params: Iso18013PresentmentParams): Es256Signer {
-  if (!params.useSoftwareDeviceKey || !params.deviceKeyPrivateBase64) {
+function signerFor(): Es256Signer {
+  const keystore = (
+    NativeModules as {
+      RNSecureKeystoreModule?: {
+        signBytes?: (alias: string, dataBase64: string) => Promise<string>;
+      };
+    }
+  ).RNSecureKeystoreModule;
+  const signBytes = keystore?.signBytes;
+  if (!signBytes) {
     throw new Error(
-      'No device key available for DeviceAuth. iOS proximity presentment needs the ES256 ' +
-        'private key (useSoftwareDeviceKey); a hardware-keystore signer is not wired on this platform.',
+      'No device key signer for DeviceAuth: RNSecureKeystoreModule.signBytes is missing.',
     );
   }
-  const raw = new Uint8Array(
-    Buffer.from(params.deviceKeyPrivateBase64, 'base64'),
-  );
-  if (raw.length !== 32) {
-    throw new Error(
-      `DeviceAuth private key must be 32 raw P-256 bytes, got ${raw.length}`,
+  return async (toBeSigned: Uint8Array) => {
+    const derBase64 = await signBytes(
+      'ES256',
+      Buffer.from(toBeSigned).toString('base64'),
     );
-  }
-  return softwareEs256Signer(raw);
+    return derSignatureToCoseRaw(
+      new Uint8Array(Buffer.from(derBase64.replace(/\s/g, ''), 'base64')),
+    );
+  };
 }
 
 /**
@@ -118,7 +123,7 @@ export async function startMdocPresentmentSession(
     docType: params.docType,
     deviceEngagementCbor: params.deviceEngagementCbor,
     ephemeralPrivateKey: params.ephemeralPresentationPrivateKey,
-    signer: signerFor(params),
+    signer: signerFor(),
     emit,
     onPhase,
   });
