@@ -167,7 +167,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionName "1.0.0"
-        versionCode 11
+        versionCode 12
         manifestPlaceholders = [
                 APP_NAME             : APP_NAME,
                 appAuthRedirectScheme: 'io.mosip.residentapp.inji'
