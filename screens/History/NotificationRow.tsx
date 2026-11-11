@@ -143,10 +143,10 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   title: {
-    flexShrink: 1,
+    flex: 1,
     fontFamily: 'Montserrat_500Medium',
     fontSize: 17,
     lineHeight: 22,
@@ -159,7 +159,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginLeft: 8,
+    marginLeft: 12,
+    marginTop: 7,
     backgroundColor: colors.azureInk,
   },
   body: {

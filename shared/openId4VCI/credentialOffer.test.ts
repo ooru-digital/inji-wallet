@@ -2,6 +2,7 @@
 import {
   getCredentialConfigurationNames,
   getOfferedCredentialConfigurationIds,
+  isCredentialOffer,
   isCredentialOfferAlreadyUsed,
 } from './credentialOffer';
 
@@ -200,5 +201,49 @@ describe('getCredentialConfigurationNames', () => {
     expect(
       getCredentialConfigurationNames(metadata, ['Unnamed', 'Missing']),
     ).toEqual([]);
+  });
+});
+
+describe('isCredentialOffer', () => {
+  it('accepts the credential offer scheme', () => {
+    expect(
+      isCredentialOffer(
+        'openid-credential-offer://?credential_offer_uri=https%3A%2F%2Fissuer.example.com%2Foffer',
+      ),
+    ).toBe(true);
+  });
+
+  it('accepts a link carrying the offer inline or by reference', () => {
+    expect(
+      isCredentialOffer(
+        `https://issuer.example.com/offer?credential_offer=${encodeURIComponent(
+          JSON.stringify(offer),
+        )}`,
+      ),
+    ).toBe(true);
+    expect(
+      isCredentialOffer(
+        'https://wallet.example.com/?credential_offer_uri=https%3A%2F%2Fissuer.example.com%2Foffer',
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects verifier and login codes', () => {
+    expect(
+      isCredentialOffer(
+        'openid4vp://authorize?client_id=verifier&request_uri=x',
+      ),
+    ).toBe(false);
+    expect(
+      isCredentialOffer('OPENID4VP://connect:?name=OVPMOSIP&key=abc'),
+    ).toBe(false);
+    expect(
+      isCredentialOffer('inji://landing-page-name?linkCode=sTjp0XVH3t3dGCU'),
+    ).toBe(false);
+  });
+
+  it('rejects text that is not a link', () => {
+    expect(isCredentialOffer('hello')).toBe(false);
+    expect(isCredentialOffer('100%?credential_offer=%E0%A4%A')).toBe(false);
   });
 });

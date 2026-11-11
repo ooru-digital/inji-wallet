@@ -78,6 +78,16 @@ export function useScanScreen() {
     scanService.send(ScanEvents.RESET());
     navigation.navigate(BOTTOM_TAB_ROUTES.home);
   };
+  /** Hands a scanned credential offer to the home screen, which downloads it. */
+  const ADD_CREDENTIAL = (credentialOfferUrl: string) => {
+    scanService.send(ScanEvents.RESET());
+    navigation.navigate(
+      ...([
+        BOTTOM_TAB_ROUTES.home,
+        {screen: 'HomeScreen', params: {credentialOfferUrl}},
+      ] as never),
+    );
+  };
   const ALLOWED = () => scanService.send(ScanEvents.ALLOWED());
   const DENIED = () => scanService.send(ScanEvents.DENIED());
   const isLocalPermissionRational = useSelector(
@@ -115,6 +125,7 @@ export function useScanScreen() {
     START_PERMISSION_CHECK: () =>
       scanService.send(ScanEvents.START_PERMISSION_CHECK()),
     SCAN: (qrCode: string) => scanService.send(ScanEvents.SCAN(qrCode)),
+    ADD_CREDENTIAL,
     GOTO_HOME,
     ALLOWED,
     DENIED,

@@ -37,6 +37,27 @@ import {
   resolveCredissuerCredentialId,
 } from '../../shared/credissuer/credentialsApi';
 
+/**
+ * The issuer's metadata for the download in progress, requested as soon as the download says who
+ * the issuer is (its trust consent or proof request). It then arrives while the holder
+ * authenticates and the issuer signs, instead of being fetched again after the credential. The
+ * consent screen and the caching step share the one request.
+ */
+const issuerMetadataRequests = new Map<string, Promise<issuerType>>();
+
+export function requestIssuerMetadata(issuer: string): Promise<issuerType> {
+  let request = issuerMetadataRequests.get(issuer);
+  if (!request) {
+    request = VciClient.getInstance().getIssuerMetadata(
+      issuer,
+    ) as Promise<issuerType>;
+    issuerMetadataRequests.set(issuer, request);
+    // A failed request isn't kept, so the next caller asks again.
+    request.catch(() => issuerMetadataRequests.delete(issuer));
+  }
+  return request;
+}
+
 export const IssuersService = () => {
   return {
     isUserSignedAlready: () => async () => {
@@ -180,6 +201,8 @@ export const IssuersService = () => {
       }
     },
     downloadCredentialFromOffer: (context: any) => async (sendBack: any) => {
+      // Never the metadata of an earlier download.
+      issuerMetadataRequests.clear();
       const navigateToAuthView = (authorizationEndpoint: string) => {
         sendBack({
           type: 'AUTH_ENDPOINT_RECEIVED',
@@ -191,6 +214,7 @@ export const IssuersService = () => {
         cNonce: string | null,
         proofSigningAlgosSupported: string[] | null,
       ) => {
+        requestIssuerMetadata(credentialIssuer);
         sendBack({
           type: 'PROOF_REQUEST',
           cNonce: cNonce,
@@ -217,6 +241,7 @@ export const IssuersService = () => {
         issuerDisplay: object[],
       ) => {
         const issuerDisplayObject = issuerDisplay as displayType[];
+        requestIssuerMetadata(credentialIssuer);
 
         sendBack({
           type: 'TRUST_ISSUER_CONSENT_REQUEST',
@@ -315,16 +340,14 @@ export const IssuersService = () => {
       if (configurationIds.length === 0) {
         return [];
       }
-      const issuerMetadata = await VciClient.getInstance().getIssuerMetadata(
+      const issuerMetadata = await requestIssuerMetadata(
         context.credentialOfferCredentialIssuer,
       );
       return getCredentialConfigurationNames(issuerMetadata, configurationIds);
     },
     cacheIssuerWellknown: async (context: any) => {
       const credentialIssuer = context.credentialOfferCredentialIssuer;
-      const issuerMetadata = (await VciClient.getInstance().getIssuerMetadata(
-        credentialIssuer,
-      )) as issuerType;
+      const issuerMetadata = await requestIssuerMetadata(credentialIssuer);
       if (issuerMetadata) {
         const wellknownCacheObject = createCacheObject(issuerMetadata);
         await setItem(
