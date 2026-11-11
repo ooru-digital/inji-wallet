@@ -1,4 +1,4 @@
-# A fresh install up to the quick tour (or Home): English, passcode 111111.
+# A fresh install up to the tour (or Home): English, passcode 111111.
 appId: io.ooru.credissuerwallet
 ---
 - launchApp:
@@ -31,5 +31,5 @@ appId: io.ooru.credissuerwallet
     timeout: 30000
 - runFlow: type-passcode.yaml
 - extendedWaitUntil:
-    visible: "Skip tour|No cards yet"
+    visible: "Quick tip|Quick tour.*|No cards yet"
     timeout: 60000

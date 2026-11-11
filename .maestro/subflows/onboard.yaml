@@ -1,12 +1,14 @@
-# A fresh install up to the empty Home screen, tour skipped.
+# A fresh install up to the empty Home screen, tour tapped through.
 appId: io.ooru.credissuerwallet
 ---
 - runFlow: set-up.yaml
-- runFlow:
-    when:
-      visible: "Skip tour"
+# A new wallet's tour opens with a tip on "Add a card" and has no Skip after it.
+- repeat:
+    while:
+      visible: "Quick tip|Quick tour.*"
+    times: 10
     commands:
-      - tapOn: "Skip tour"
+      - tapOn: "Got It|Next|Done"
 - runFlow:
     when:
       visible: "Some security features will be unavailable"
