@@ -205,13 +205,16 @@ jobs:
 
       - name: Upload to Google Play${{ env.PLAY_TRACK && format(' ({0})', env.PLAY_TRACK) || '' }}
         if: steps.play.outputs.upload == 'true'
-        uses: r0adkll/upload-google-play@v1
+        # Pinned to a commit: this step gets the key that publishes the app, and a tag can be moved.
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ env.ANDROID_PACKAGE }}
           releaseFiles: ${{ env.AAB_PATH }}
           track: ${{ env.PLAY_TRACK }}
-          status: completed
+          # Production starts with 10% of users; widen, finish or halt the rollout in Play Console.
+          status: ${{ env.PLAY_TRACK == 'production' && 'inProgress' || 'completed' }}
+          userFraction: ${{ env.PLAY_TRACK == 'production' && '0.1' || '' }}
 
       - name: Remove secret files
         if: always()

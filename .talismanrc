@@ -300,7 +300,7 @@ fileignoreconfig:
   - filename: injitest/src/test/java/androidTestCases/VerifyHistoryTest.java
     checksum: dffc4741b251b42c81d5bdac7d649c02b37bb9045285590b29f86c2d5f526fd1
   - filename: .github/workflows/credissuer-build.yml
-    checksum: 035ee01071a2602f40021d99fed19ecaa83d49963b5ce4b05f3e8706241e2793
+    checksum: af338db67ac4b3d6ccc0454d4c0834b19e5c889cbd14ef845b5d10e7e1cede97
   - filename: injitest/src/test/java/androidTestCases/VcDownloadAndVerifyUsingUinTest.java
     checksum: ca06dd901386edcd914bd39b301629589d82269b79e80fad5e3562968532b590
   - filename: machines/bleShare/scan/scanGuards.ts
