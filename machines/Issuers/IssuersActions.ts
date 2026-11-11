@@ -38,8 +38,19 @@ import {RevocationStatus} from '../../shared/vcVerifier/VcVerifier';
 import {logState} from '../../shared/commonUtil';
 import {createOpenID4VPMachine} from '../openID4VP/openID4VPMachine';
 import VciClient from '../../shared/vciClient/VciClient';
+import {IssuanceFailure} from '../../shared/openId4VCI/issuanceFailure';
 
 const {RNSecureKeystoreModule} = NativeModules;
+
+// Failures that end the download with their own message rather than the generic one.
+const ISSUANCE_FAILURE_ERROR_MESSAGES: Partial<
+  Record<IssuanceFailure, ErrorMessage>
+> = {
+  [IssuanceFailure.PRE_AUTHORIZED_CODE_INVALID]:
+    ErrorMessage.PRE_AUTHORIZED_CODE_INVALID,
+  [IssuanceFailure.OFFER_ALREADY_USED]: ErrorMessage.OFFER_ALREADY_USED,
+  [IssuanceFailure.RATE_LIMITED]: ErrorMessage.TOO_MANY_REQUESTS,
+};
 
 const OPENID4VP_REF_ID = 'Presentation_During_Issuance_OpenID4VP_Service';
 export const IssuersActions = (model: any) => {
@@ -114,6 +125,13 @@ export const IssuersActions = (model: any) => {
       errorMessage: (_: any, event: any) => {
         const error: string = event.data?.message ?? String(event.data ?? '');
         console.error(`Error occurred while ${event.type} -> `, error);
+        const failureMessage =
+          ISSUANCE_FAILURE_ERROR_MESSAGES[
+            event.data?.failure as IssuanceFailure
+          ];
+        if (failureMessage) {
+          return failureMessage;
+        }
         if (error.includes(NO_INTERNET)) {
           return ErrorMessage.NO_INTERNET;
         }
@@ -451,6 +469,44 @@ export const IssuersActions = (model: any) => {
     setTxCode: model.assign({
       txCode: (_: any, event: any) => {
         return event.txCode;
+      },
+    }),
+    setTxCodeVerifying: model.assign({
+      isTxCodeVerifying: true,
+    }),
+    // A wrong or expired code is cleared so the holder starts fresh; after a rate limit the code
+    // they typed is kept so they can send it again once the limit lifts.
+    setTxCodeFailure: model.assign({
+      isTransactionCodeRequested: true,
+      txCodeError: (_: any, event: any) =>
+        event.data?.failure === IssuanceFailure.TX_CODE_REQUIRED
+          ? ''
+          : event.data?.failure,
+      txCodeAttemptsRemaining: (_: any, event: any) =>
+        event.data?.attemptsRemaining ?? null,
+      txCodeInputResetKey: (context: any, event: any) =>
+        event.data?.failure === IssuanceFailure.RATE_LIMITED
+          ? context.txCodeInputResetKey
+          : context.txCodeInputResetKey + 1,
+      isTxCodeVerifying: false,
+    }),
+    // Closes the code screen and forgets any failure shown on it.
+    resetTxCodeEntry: model.assign({
+      isTransactionCodeRequested: false,
+      txCodeError: '',
+      txCodeAttemptsRemaining: null,
+      isTxCodeVerifying: false,
+    }),
+    setTxCodeOnTokenRequest: model.assign({
+      tokenRequestObject: (context: any, event: any) => ({
+        ...context.tokenRequestObject,
+        txCode: event.txCode,
+      }),
+    }),
+    removeTxCodeFromTokenRequest: model.assign({
+      tokenRequestObject: (context: any) => {
+        const {txCode: _txCode, ...tokenRequest} = context.tokenRequestObject;
+        return tokenRequest;
       },
     }),
     setRequestConsentToTrustIssuer: model.assign({

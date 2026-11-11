@@ -32,7 +32,7 @@ export const IssuersMachine = model.createMachine(
     states: {
       error: {
         description: 'reaches here when any error happens',
-        entry: ['resetAuthorization'],
+        entry: ['resetAuthorization', 'resetTxCodeEntry'],
         on: {
           TRY_AGAIN: [
             {
@@ -100,6 +100,7 @@ export const IssuersMachine = model.createMachine(
           // The CredIssuer credential_id is read from this flow's token response, so one left
           // over from an earlier download must never be attached to this credential.
           model.assign({tokenResponse: {}}),
+          'resetTxCodeEntry',
         ],
         invoke: {
           src: 'downloadCredentialFromOffer',
@@ -163,7 +164,7 @@ export const IssuersMachine = model.createMachine(
             target: '.checkingIssuerTrust',
           },
           CANCEL: {
-            actions: ['resetLoadingReason'],
+            actions: ['resetLoadingReason', 'resetTxCodeEntry'],
             target: '#issuersMachine.selectingIssuer',
           },
         },
@@ -229,16 +230,51 @@ export const IssuersMachine = model.createMachine(
             invoke: {
               src: 'sendTokenRequest',
               onDone: {
-                actions: ['setTokenResponseObject'],
+                actions: ['setTokenResponseObject', 'resetTxCodeEntry'],
                 target: 'sendTokenResponse',
               },
-              onError: {
+              onError: [
+                {
+                  cond: 'shouldReenterTxCode',
+                  actions: ['setTxCodeFailure'],
+                  target: 'reenteringTxCode',
+                },
+                {
+                  cond: 'isTxCodeNotExpected',
+                  actions: ['removeTxCodeFromTokenRequest'],
+                  target: 'tokenRequest',
+                },
+                {
+                  actions: [
+                    'setError',
+                    'resetLoadingReason',
+                    'resetRequestConsentToTrustIssuer',
+                  ],
+                  target: '#issuersMachine.error',
+                },
+              ],
+            },
+          },
+          reenteringTxCode: {
+            description:
+              'the issuer turned down the transaction code; the library is still waiting for a token response, so the new code goes straight to the token endpoint with the same offer',
+            on: {
+              CANCEL: {
                 actions: [
-                  'setError',
                   'resetLoadingReason',
-                  'resetRequestConsentToTrustIssuer',
+                  'resetTxCodeEntry',
+                  'sendDownloadingFailedToVcMeta',
                 ],
-                target: '#issuersMachine.error',
+                target: '#issuersMachine.selectingIssuer',
+              },
+              TX_CODE_RECEIVED: {
+                cond: 'canSubmitTxCode',
+                actions: [
+                  'setTxCode',
+                  'setTxCodeOnTokenRequest',
+                  'setTxCodeVerifying',
+                ],
+                target: 'tokenRequest',
               },
             },
           },
@@ -385,13 +421,15 @@ export const IssuersMachine = model.createMachine(
               CANCEL: {
                 actions: [
                   'resetLoadingReason',
-                  'resetRequestTxCode',
+                  'resetTxCodeEntry',
                   'sendDownloadingFailedToVcMeta',
                 ],
                 target: '#issuersMachine.selectingIssuer',
               },
+              // The code screen stays up until the token endpoint accepts the code, so a wrong
+              // one can be retried in place.
               TX_CODE_RECEIVED: {
-                actions: ['setTxCode', 'resetRequestTxCode'],
+                actions: ['setTxCode', 'setTxCodeVerifying'],
                 target: 'sendTxCode',
               },
             },

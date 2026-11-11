@@ -590,6 +590,18 @@
         "title": "Network request failed",
         "message": "We are unable to precess your request at the moment."
       },
+      "preAuthorizedCodeInvalid": {
+        "title": "Offer no longer valid",
+        "message": "This offer has expired or has already been used. Ask the issuer to send you a new one."
+      },
+      "tooManyRequests": {
+        "title": "Too many attempts",
+        "message": "Too many attempts. Try again in a minute."
+      },
+      "offerAlreadyUsed": {
+        "title": "Offer already used",
+        "message": "This QR code has already been used to add a card. Check your wallet for it. If it isn't there, ask the issuer to send you a new offer."
+      },
       "biometricsCancelled": {
         "title": "Stop adding this card?",
         "message": "Your fingerprint is needed to finish. If you stop now, nothing is saved; you can scan the code again later.",
@@ -1666,7 +1678,14 @@
     "title": "Enter the code from the issuer",
     "continue": "Continue",
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "close": "Close",
+    "incorrectCode": "Incorrect code. Please try again.",
+    "incorrectCodeAttemptsLeft": "Incorrect code. {{count}} attempt left.",
+    "incorrectCodeAttemptsLeft_plural": "Incorrect code. {{count}} attempts left.",
+    "attemptsExhausted": "Too many incorrect attempts. Ask the issuer to resend the code.",
+    "codeExpired": "This code has expired or hasn't arrived yet. Check your email for the latest code, or ask the issuer to resend it.",
+    "tooManyAttempts": "Too many attempts. Try again in a minute."
   },
   "trustScreen": {
     "Description": "Make sure you recognize or trust this issuer. Once you trust this issuer:",
