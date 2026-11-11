@@ -53,8 +53,18 @@ def steps(flow_dir):
 
 
 def app_problem(flow_dir):
-    """The first crash or ANR of the app in the flow's phone log, or ''."""
-    path = flow_dir / 'logs' / 'device-logcat.txt'
+    """The app's first crash or ANR during the flow, or ''.
+
+    Maestro's own crash and ANR reports first, then the phone log, which Maestro collects
+    separately and can be missing.
+    """
+    logs = flow_dir / 'logs'
+    for name, label in (('crash-report.txt', 'App crashed'), ('anr-report.txt', 'App not responding (ANR)')):
+        report = logs / name
+        if report.exists() and report.read_text(encoding='utf8', errors='replace').strip():
+            first = report.read_text(encoding='utf8', errors='replace').strip().splitlines()[0].strip()
+            return label + (f': {first}' if label == 'App crashed' and first else '')
+    path = logs / 'device-logcat.txt'
     if not path.exists():
         return ''
     lines = path.read_text(encoding='utf8', errors='replace').splitlines()

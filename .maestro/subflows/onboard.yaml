@@ -2,18 +2,22 @@
 appId: io.ooru.credissuerwallet
 ---
 - runFlow: set-up.yaml
-# A new wallet's tour opens with a tip on "Add a card" and has no Skip after it.
+- runFlow:
+    when:
+      visible: "Some security features will be unavailable"
+    commands:
+      - tapOn: "Ok"
+# A new wallet's tour opens with a tip on "Add a card" and has no Skip after it. Home can show
+# before the tour does, so wait for the tour rather than tap through whatever is there.
+- extendedWaitUntil:
+    visible: "Quick tip|Quick tour.*"
+    timeout: 30000
 - repeat:
     while:
       visible: "Quick tip|Quick tour.*"
     times: 10
     commands:
       - tapOn: "Got It|Next|Done"
-- runFlow:
-    when:
-      visible: "Some security features will be unavailable"
-    commands:
-      - tapOn: "Ok"
 - extendedWaitUntil:
     visible: "No cards yet"
     timeout: 30000

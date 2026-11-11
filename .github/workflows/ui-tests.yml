@@ -31,6 +31,8 @@ env:
 jobs:
   android:
     name: Android emulator
+    # A fork's pull request gets no secrets, and its code mustn't: skip it rather than fail.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:

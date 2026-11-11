@@ -24,6 +24,10 @@ name: Onboarding with a passcode
       - assertVisible: "Previous"
       - takeScreenshot: 3-tour-${output.tourStep}
       - tapOn: "Next|Done"
+# "Got It" must lead into the numbered steps, not close the tour.
+- assertTrue:
+    condition: ${output.tourStep > 1}
+    label: The numbered tour steps were shown
 - extendedWaitUntil:
     visible: "No cards yet"
     timeout: 30000
