@@ -92,7 +92,7 @@ describe('issuer metadata during an offer download', () => {
   });
 
   it("keeps a newer download's request when an older one fails", async () => {
-    let failOlder: (error: Error) => void = () => {};
+    let failOlder!: (error: Error) => void;
     client.getIssuerMetadata.mockImplementationOnce(
       () => new Promise((_, reject) => (failOlder = reject)),
     );
@@ -103,6 +103,25 @@ describe('issuer metadata during an offer download', () => {
 
     failOlder(new Error('offline'));
     await older;
+
+    expect(requestIssuerMetadata(issuer)).toBe(newer);
+    expect(client.getIssuerMetadata).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a newer download's request when an older caching step finishes", async () => {
+    let finishOlder!: (value: typeof metadata) => void;
+    client.getIssuerMetadata.mockImplementationOnce(
+      () => new Promise(resolve => (finishOlder = resolve)),
+    );
+    const olderCaching = IssuersService().cacheIssuerWellknown({
+      credentialOfferCredentialIssuer: issuer,
+    });
+    await startOfferDownload();
+    client.getIssuerMetadata.mockClear();
+    const newer = requestIssuerMetadata(issuer);
+
+    finishOlder(metadata);
+    await olderCaching;
 
     expect(requestIssuerMetadata(issuer)).toBe(newer);
     expect(client.getIssuerMetadata).toHaveBeenCalledTimes(1);
