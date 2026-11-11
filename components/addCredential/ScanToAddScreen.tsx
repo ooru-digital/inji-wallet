@@ -31,9 +31,18 @@ const FRAME_SIZE = Math.min(Dimensions.get('window').width - 96, 300);
 export const ScanToAddScreen: React.FC<ScanToAddScreenProps> = props => {
   const {t} = useTranslation('ScanToAdd');
   const insets = useSafeAreaInsets();
-  const {hasCameraPermission, openSettings} = useCameraPermission();
+  const {hasCameraPermission, isPromptDenied, openSettings} =
+    useCameraPermission();
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
+
+  // Refusing the camera prompt means the user doesn't want to scan, so go back to where they
+  // came from, the same as tapping close.
+  useEffect(() => {
+    if (isPromptDenied) {
+      props.onClose();
+    }
+  }, [isPromptDenied]);
 
   const isScanning =
     props.isCameraActive && hasCameraPermission === true && !hasScanned;

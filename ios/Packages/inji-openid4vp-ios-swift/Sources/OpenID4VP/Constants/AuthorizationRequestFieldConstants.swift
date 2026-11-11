@@ -1,0 +1,18 @@
+public enum AuthorizationRequestFieldConstants: String {
+    case clientId = "client_id"
+    case clientIdScheme = "client_id_scheme"
+    case responseType = "response_type"
+    case responseMode = "response_mode"
+    case presentationDefinition = "presentation_definition"
+    case presentationDefinitionUri = "presentation_definition_uri"
+    case responseUri = "response_uri"
+    case redirectUri = "redirect_uri"
+    case requestUri = "request_uri"
+    case request = "request"
+    case requestUriMethod = "request_uri_method"
+    case nonce = "nonce"
+    case state = "state"
+    case clientMetadata = "client_metadata"
+    case walletNonce = "wallet_nonce"
+    case transactionData = "transaction_data"
+}

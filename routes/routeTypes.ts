@@ -4,7 +4,13 @@ import {ScanStackParamList} from './routesConstants';
 
 export type MainBottomTabParamList = {
   home:
-    | {activeTab?: number; openVcKey?: string; highlightVcKey?: string}
+    | {
+        activeTab?: number;
+        openVcKey?: string;
+        highlightVcKey?: string;
+        /** A credential offer scanned on the Scan tab, to download. */
+        credentialOfferUrl?: string;
+      }
     | undefined;
   share: undefined;
   history: undefined;

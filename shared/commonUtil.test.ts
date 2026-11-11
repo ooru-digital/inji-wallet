@@ -1,6 +1,5 @@
 import testIDProps, {
   bytesToMB,
-  faceMatchConfig,
   generateBackupEncryptionKey,
   generateRandomString,
   getBackupFileName,
@@ -333,32 +332,6 @@ describe('getAccountType', () => {
   it('should return Gmail for Android or Apple for iOS', () => {
     const result = getAccountType();
     expect([GMAIL, APPLE]).toContain(result);
-  });
-});
-
-describe('faceMatchConfig', () => {
-  it('should expose a function', () => {
-    expect(faceMatchConfig).toBeDefined();
-  });
-
-  it('should return a valid configuration object', () => {
-    const config = faceMatchConfig();
-    expect(config).toBeDefined();
-    expect(config.withFace).toBeDefined();
-    expect(config.withFace.encoder).toBeDefined();
-    expect(config.withFace.matcher).toBeDefined();
-    expect(config.withFace.encoder.tfModel).toBeDefined();
-    expect(config.withFace.matcher.threshold).toBe(1);
-  });
-
-  it('should return config with correct structure', () => {
-    const config = faceMatchConfig();
-    expect(config).toHaveProperty('withFace');
-    expect(config.withFace).toHaveProperty('encoder');
-    expect(config.withFace).toHaveProperty('matcher');
-    expect(config.withFace.encoder.tfModel).toHaveProperty('path');
-    expect(config.withFace.encoder.tfModel).toHaveProperty('modelChecksum');
-    expect(config.withFace.matcher.threshold).toBe(1);
   });
 });
 

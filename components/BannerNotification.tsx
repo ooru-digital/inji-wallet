@@ -6,6 +6,10 @@ import {Icon} from 'react-native-elements';
 import testIDProps from '../shared/commonUtil';
 
 export const BannerNotification: React.FC<BannerNotificationProps> = props => {
+  // Green success banners are not shown. Error and in-progress banners still are.
+  if (props.type === BannerStatusType.SUCCESS) {
+    return null;
+  }
   return (
     <View {...testIDProps(props.testId)}>
       <Row

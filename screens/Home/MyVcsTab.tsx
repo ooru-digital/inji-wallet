@@ -7,7 +7,14 @@ import {HomeScreenTabProps} from './HomeScreen';
 import {AddVcModal} from './MyVcs/AddVcModal';
 import {GetVcModal} from './MyVcs/GetVcModal';
 import {useTranslation} from 'react-i18next';
-import {GET_INDIVIDUAL_ID} from '../../shared/constants';
+import {
+  COPILOT_ADD_CARD_STEP,
+  COPILOT_FINAL_STEP,
+  COPILOT_MORE_STEP,
+  GET_INDIVIDUAL_ID,
+} from '../../shared/constants';
+import {Copilot} from '../../components/ui/Copilot';
+import {radii} from '../../components/revamp/tokens';
 import {MessageOverlay} from '../../components/MessageOverlay';
 import {VcItemContainer} from '../../components/VC/VcItemContainer';
 import {
@@ -204,7 +211,25 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
     setClearSearchIcon(false);
     setShowPinVc(true);
   };
-  const {start, visible: isTourVisible} = useCopilot();
+  const {start, visible: isTourVisible, copilotEvents} = useCopilot();
+
+  // A replay from Settings stays on Settings while the tour is on the bottom bar, which is
+  // on screen there too; Home is opened only for the steps that live on it.
+  useEffect(() => {
+    const showHomeForStep = (step?: {order?: number}) => {
+      const order = step?.order ?? 0;
+      const isStepOnHome =
+        order === COPILOT_ADD_CARD_STEP ||
+        (order >= COPILOT_MORE_STEP && order <= COPILOT_FINAL_STEP);
+      if (isStepOnHome && !navigation.isFocused()) {
+        navigation.navigate(BOTTOM_TAB_ROUTES.home);
+      }
+    };
+    copilotEvents.on('stepChange', showHomeForStep);
+    return () => {
+      copilotEvents.off('stepChange', showHomeForStep);
+    };
+  }, [copilotEvents]);
 
   /**
    * Starts the tour unless it is already showing or starting. A replay from Settings asks
@@ -214,18 +239,35 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
    * left a copy of the overlay frozen on step 1 under the live one.
    */
   const isTourStarting = useRef(false);
+  // A start asked for while the cards are still loading, run once they have loaded.
+  const isTourWaitingForCards = useRef(false);
   const startTour = () => {
     if (isTourVisible || isTourStarting.current) {
       return;
     }
+    // The first step depends on whether the wallet has cards, and while they load it reads as
+    // empty: starting then would begin on "Add a card" for someone who has cards.
+    if (controller.isRefreshingVcs) {
+      isTourWaitingForCards.current = true;
+      return;
+    }
+    isTourWaitingForCards.current = false;
     isTourStarting.current = true;
-    start(t('copilot:downloadTitle'));
+    // The "Add a card" step is only there while the wallet is empty.
+    const isWalletEmpty = controller.vcMetadatas.length === 0;
+    start(t(isWalletEmpty ? 'copilot:addCardTitle' : 'copilot:historyTitle'));
     // `start` retries until the step has registered and then gives up without a word, so
     // the guard lapses rather than blocking every later start.
     setTimeout(() => {
       isTourStarting.current = false;
     }, TOUR_START_GUARD_MS);
   };
+
+  useEffect(() => {
+    if (!controller.isRefreshingVcs && isTourWaitingForCards.current) {
+      startTour();
+    }
+  }, [controller.isRefreshingVcs]);
 
   // The tour starts automatically only while onboarding (a fresh install, until the first tour is
   // finished or dismissed), or when isTourGuide is turned on by the Settings "tour guide" button.
@@ -249,8 +291,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
    * fire as well, startTour ignores the second start.
    *
    * Only the off->on transition, never the mount: on mount previous and current already
-   * agree, so this stays out of the way and leaves the first-launch path to onLayout. If
-   * the tab was unmounted while in Settings it remounts instead, and onLayout covers it.
+   * agree, so this stays out of the way and leaves the first-launch path to onLayout.
    */
   const wasStartingTourRef = useRef(shouldStartTour);
   useEffect(() => {
@@ -404,9 +445,10 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
           the step uses the library's wait-for-it path instead: it retries via
           requestAnimationFrame until that step exists.
 
-          That retry has no timeout, so the name must match a step that actually exists —
-          naming a removed step leaves the tour retrying forever and looking like a dead
-          button. Keep this in sync with whichever step holds order 1 (see copilotTestID). */}
+          That retry gives up silently after about 2 seconds (120 frames), so the name must
+          match a step that is actually on screen — naming a removed step means no tour and
+          a button that looks dead. Keep startTour in sync with whichever step is first on
+          screen (see copilotTestID). */}
       <Column
         fill
         style={{display: props.isVisible ? 'flex' : 'none'}}
@@ -427,7 +469,6 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
           <WalletHome
             vcMetadatas={vcMetadataOrderedByPinStatus}
             searchIndex={searchIndex}
-            onAdd={() => props.onAddCredential?.()}
             refreshing={controller.isRefreshingVcs}
             onRefresh={controller.REFRESH}
             isCardTourStep={controller.isTourGuide || isFirstCardTourDue}
@@ -441,7 +482,6 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
           <WalletHeader
             countText={cardsAvailableText}
             onAvatar={() => navigation.navigate(BOTTOM_TAB_ROUTES.settings)}
-            onAdd={() => props.onAddCredential?.()}
             searching={false}
             menu={[
               {
@@ -630,12 +670,19 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                     body={t('emptyBody')}
                   />
                   <View style={emptyStyles.button}>
-                    <PageButton
-                      testID="addFirstCard"
-                      title={t('addCard')}
-                      icon={colour => <PlusIcon color={colour} size={18} />}
-                      onPress={() => props.onAddCredential?.()}
-                    />
+                    <Copilot
+                      title={t('copilot:addCardTitle')}
+                      description={t('copilot:addCardMessage')}
+                      order={COPILOT_ADD_CARD_STEP}
+                      tooltipPosition="top"
+                      targetStyle={{borderRadius: radii.pill}}>
+                      <PageButton
+                        testID="addFirstCard"
+                        title={t('addCard')}
+                        icon={colour => <PlusIcon color={colour} size={18} />}
+                        onPress={() => props.onAddCredential?.()}
+                      />
+                    </Copilot>
                   </View>
                 </View>
               </Column>

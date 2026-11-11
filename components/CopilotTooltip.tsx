@@ -32,7 +32,7 @@ export const CopilotTooltip = () => {
     settingsController.BACK();
   });
 
-  const {showPrevious, isDoneStep} = controller;
+  const {showPrevious, isDoneStep, isQuickTip} = controller;
 
   // The dots follow the same count as the "n of total" label.
   const dotCount = controller.stepTotal;
@@ -44,24 +44,28 @@ export const CopilotTooltip = () => {
         <Text
           {...testIDProps(`${controller.CURRENT_STEP}stepCount`)}
           style={[styles.stepCount, {color: c.azureInk}]}>
-          {`${t('quickTour')} · ${controller.stepCount}`}
+          {isQuickTip
+            ? t('quickTip')
+            : `${t('quickTour')} · ${controller.stepCount}`}
         </Text>
-        <View
-          style={styles.dots}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants">
-          {Array.from({length: dotCount}, (_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === activeDot
-                  ? [styles.dotActive, {backgroundColor: c.primary}]
-                  : {backgroundColor: c.line},
-              ]}
-            />
-          ))}
-        </View>
+        {!isQuickTip && (
+          <View
+            style={styles.dots}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants">
+            {Array.from({length: dotCount}, (_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === activeDot
+                    ? [styles.dotActive, {backgroundColor: c.primary}]
+                    : {backgroundColor: c.line},
+                ]}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       <Text
@@ -77,7 +81,10 @@ export const CopilotTooltip = () => {
       </Text>
 
       <View style={styles.actions}>
-        {showPrevious ? (
+        {isQuickTip ? (
+          // Keeps "Got it" right-aligned.
+          <View />
+        ) : showPrevious ? (
           <Pressable
             {...testIDProps('copilot-prev-action')}
             accessibilityRole="button"
@@ -118,9 +125,9 @@ export const CopilotTooltip = () => {
             pressed && styles.pressed,
           ]}>
           <Text style={[styles.primaryButtonLabel, {color: c.onPrimary}]}>
-            {isDoneStep ? t('done') : t('next')}
+            {isQuickTip ? t('gotIt') : isDoneStep ? t('done') : t('next')}
           </Text>
-          {!isDoneStep && (
+          {!isDoneStep && !isQuickTip && (
             <View style={styles.primaryButtonIcon}>
               <ArrowRightIcon color={c.onPrimary} size={18} strokeWidth={2.4} />
             </View>
