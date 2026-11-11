@@ -77,4 +77,34 @@ describe('issuer metadata during an offer download', () => {
     await expect(requestIssuerMetadata(issuer)).resolves.toEqual(metadata);
     expect(client.getIssuerMetadata).toHaveBeenCalledTimes(2);
   });
+
+  it('is asked for once more when it fails while the caching step waits on it', async () => {
+    client.getIssuerMetadata
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(metadata);
+
+    const cached = await IssuersService().cacheIssuerWellknown({
+      credentialOfferCredentialIssuer: issuer,
+    });
+
+    expect(cached).toEqual(metadata);
+    expect(client.getIssuerMetadata).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a newer download's request when an older one fails", async () => {
+    let failOlder: (error: Error) => void = () => {};
+    client.getIssuerMetadata.mockImplementationOnce(
+      () => new Promise((_, reject) => (failOlder = reject)),
+    );
+    const older = requestIssuerMetadata(issuer).catch(() => undefined);
+    await startOfferDownload();
+    client.getIssuerMetadata.mockClear();
+    const newer = requestIssuerMetadata(issuer);
+
+    failOlder(new Error('offline'));
+    await older;
+
+    expect(requestIssuerMetadata(issuer)).toBe(newer);
+    expect(client.getIssuerMetadata).toHaveBeenCalledTimes(1);
+  });
 });

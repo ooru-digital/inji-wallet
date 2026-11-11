@@ -46,8 +46,14 @@ export function requestIssuerMetadata(issuer: string): Promise<issuerType> {
       issuer,
     ) as Promise<issuerType>;
     issuerMetadataRequests.set(issuer, request);
-    // A failed request isn't kept, so the next caller asks again.
-    request.catch(() => issuerMetadataRequests.delete(issuer));
+    // A failed request isn't kept, so the next caller asks again. A newer download may have
+    // stored its own request under the same issuer meanwhile; that one stays.
+    const failed = request;
+    failed.catch(() => {
+      if (issuerMetadataRequests.get(issuer) === failed) {
+        issuerMetadataRequests.delete(issuer);
+      }
+    });
   }
   return request;
 }
@@ -332,7 +338,12 @@ export const IssuersService = () => {
     },
     cacheIssuerWellknown: async (context: any) => {
       const credentialIssuer = context.credentialOfferCredentialIssuer;
-      const issuerMetadata = await requestIssuerMetadata(credentialIssuer);
+      // The shared request may have started long before (at consent, before the holder
+      // authenticated) and failed while this step waited on it. The credential has already
+      // downloaded by now, so ask once more rather than lose it.
+      const issuerMetadata = await requestIssuerMetadata(credentialIssuer)
+        .catch(() => requestIssuerMetadata(credentialIssuer))
+        .finally(() => issuerMetadataRequests.delete(credentialIssuer));
       if (issuerMetadata) {
         const wellknownCacheObject = createCacheObject(issuerMetadata);
         await setItem(

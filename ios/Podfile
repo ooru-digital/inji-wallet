@@ -27,11 +27,7 @@ prepare_react_native_project!
 # ```
 
 target 'Inji' do
-  # expo-face-detector pulls in GoogleMLKit/FaceDetection, which ships no
-  # arm64 iOS Simulator slice. Set NO_MLKIT=1 before `pod install` to drop it
-  # locally so Simulator builds can link on Apple Silicon; the liveness check
-  # screen won't work in that build, everything else is unaffected.
-  use_expo_modules!(ENV['NO_MLKIT'] == '1' ? {exclude: ['expo-face-detector']} : {})
+  use_expo_modules!
   config = use_native_modules!
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
@@ -182,13 +178,6 @@ target 'Inji' do
       end
       target.build_configurations.each do |config|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = podfile_properties['ios.deploymentTarget'] || '14.0'
-        # GoogleMLKit ships no arm64 iOS Simulator slice, so Simulator builds
-        # are normally pinned to x86_64. Skip that when NO_MLKIT=1 has excluded
-        # expo-face-detector (and its GoogleMLKit dependency) so arm64 Apple
-        # Silicon Simulator builds can link.
-        unless ENV['NO_MLKIT'] == '1'
-          config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] =  "arm64"
-        end
       end
     end
     # get team-id from project's first target
@@ -220,11 +209,6 @@ target 'Inji' do
           phase = target.shell_script_build_phases.find { |bp| bp.name == '[CP] Copy Pods Resources' }
           if !phase.nil?
             phase.output_paths.delete('${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Assets.car')
-          end
-          if ENV['NO_MLKIT'] == '1'
-            target.build_configurations.each do |config|
-              config.build_settings.delete("EXCLUDED_ARCHS[sdk=iphonesimulator*]")
-            end
           end
         end
     end

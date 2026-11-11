@@ -3,7 +3,6 @@ export const TelemetryConstants = {
     vcDownload: 'VC Download',
     presentationAuthorizationForVcDownload:
       'Presentation Authorization for VC Download',
-    faceModelInit: 'Face SDK initialize',
     qrLogin: 'QR Login',
     vpSharing: 'VP Sharing',
     senderVcShare: 'Sender VC Share',
@@ -38,7 +37,6 @@ export const TelemetryConstants = {
   }),
 
   ErrorMessage: Object.freeze({
-    faceModelInitFailed: 'Face model init failed',
     authenticationCancelled: 'Authentication Cancelled',
     passcodeDidNotMatch: 'Pass code did not match',
     resendOtp: 'Otp is requested multiple times',

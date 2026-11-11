@@ -9,14 +9,14 @@
 
 ## 1. Prerequisites
 
-| Tool | Version | Notes |
-|---|---|---|
-| **Node.js** | 20 LTS or newer | `react-native@0.79` requires `>=18`. The `engines` field in `package.json` still says `>=16` — that is stale, ignore it. Verified working on 24.19.0. |
-| **npm** | 10 or newer | Verified on 11.17.0. |
-| **JDK** | **17** | Required by AGP 8.9. Verified on Amazon Corretto 17.0.13. JDK 21 is not validated here. |
-| **Gradle** | *don't install* | The wrapper pins **8.13** and downloads it for you. Always use `./gradlew`. |
-| **Xcode** | 15+ | iOS only. Deployment target 14.0. |
-| **CocoaPods** | > 1.12 | iOS only. |
+| Tool          | Version         | Notes                                                                                                                                                 |
+| ------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Node.js**   | 20 LTS or newer | `react-native@0.79` requires `>=18`. The `engines` field in `package.json` still says `>=16` — that is stale, ignore it. Verified working on 24.19.0. |
+| **npm**       | 10 or newer     | Verified on 11.17.0.                                                                                                                                  |
+| **JDK**       | **17**          | Required by AGP 8.9. Verified on Amazon Corretto 17.0.13. JDK 21 is not validated here.                                                               |
+| **Gradle**    | _don't install_ | The wrapper pins **8.13** and downloads it for you. Always use `./gradlew`.                                                                           |
+| **Xcode**     | 15+             | iOS only. Deployment target 14.0.                                                                                                                     |
+| **CocoaPods** | > 1.12          | iOS only.                                                                                                                                             |
 
 Kotlin **2.0.21** and Android Gradle Plugin **8.9.2** are resolved by Gradle automatically — you do
 not install them. Kotlin 2.x is **not optional**: Expo 53's `expo-modules-core` applies
@@ -37,13 +37,13 @@ java -version   # must print 17.x
 
 Install these exact components through Android Studio's SDK Manager (or `sdkmanager`):
 
-| Component | Version |
-|---|---|
-| Compile SDK | **36** |
-| Target SDK | **36** |
-| Min SDK | **26** |
-| Build-Tools | **36.0.0** |
-| NDK | **29.0.14206865** |
+| Component   | Version           |
+| ----------- | ----------------- |
+| Compile SDK | **36**            |
+| Target SDK  | **36**            |
+| Min SDK     | **26**            |
+| Build-Tools | **36.0.0**        |
+| NDK         | **29.0.14206865** |
 
 The NDK version must match exactly — the upstream guide's `21.4.7075529` is eight majors behind and
 will not work.
@@ -103,9 +103,7 @@ APPLICATION_LANGUAGE=   # en, fil, ar, hi, kn, ta
 CREDENTIAL_REGISTRY_EDIT=
 DEBUG_MODE=
 
-LIVENESS_DETECTION=     # generic liveness toggle
-SNAPKYC_LIVENESS=       # SnapKYC native liveness after mDOC proximity consent (Android only)
-SNAPKYC_RELAYING_PARTY_NAME=
+SNAPKYC_RELAYING_PARTY_NAME=   # tenant id for the BioChq face SDK
 SNAPKYC_DEBUG_SKIP_FACE_IMAGE=   # debug only: skip credential portrait
 
 GOOGLE_ANDROID_CLIENT_ID=
@@ -137,7 +135,7 @@ CI can supply `ARTIFACTORY_USERNAME` / `ARTIFACTORY_PASSWORD` as environment var
 Both AARs are pinned to fixed release versions (`1.0.1`), so **the Nexus is contacted only on the
 first build**. Afterwards Gradle serves them from its local cache and builds work offline. Do not add
 `changing = true` or a `-SNAPSHOT` version to these dependencies: that makes Gradle re-check the
-server on *every* build and fail outright whenever it is unreachable.
+server on _every_ build and fail outright whenever it is unreachable.
 
 ---
 
@@ -209,10 +207,12 @@ npm run lint
 
 **`expo/scripts/autolinking.gradle` not found (from `android/settings.gradle`)**
 `node_modules` has drifted from `package.json` — usually the result of an `npm install`. Check the
-*installed* version before assuming corruption:
+_installed_ version before assuming corruption:
+
 ```bash
 node -p "require('./node_modules/expo/package.json').version"   # must be 53.x
 ```
+
 Fix with `rm -rf node_modules && npm ci`.
 
 **`Read timed out` fetching from `www.jitpack.io`**
@@ -229,10 +229,12 @@ in `-SNAPSHOT` as mutable and re-checks it every build, regardless of naming int
 release version instead.
 
 **Clearing caches**
+
 ```bash
 cd android && ./gradlew clean && cd ..     # build outputs only — does NOT clear downloaded deps
 npm start -- --reset-cache                 # Metro cache
 ```
+
 `./gradlew clean` does **not** evict the cached SnapKYC AARs; those live in `~/.gradle/caches`.
 
 ---
@@ -252,9 +254,9 @@ npm start -- --reset-cache                 # Metro cache
 
 When this document and the build files disagree, **the build files win**:
 
-| Fact | File |
-|---|---|
-| SDK levels, NDK, Kotlin, AGP | [`android/build.gradle`](android/build.gradle) |
-| Gradle version | `android/gradle/wrapper/gradle-wrapper.properties` |
+| Fact                                 | File                                                   |
+| ------------------------------------ | ------------------------------------------------------ |
+| SDK levels, NDK, Kotlin, AGP         | [`android/build.gradle`](android/build.gradle)         |
+| Gradle version                       | `android/gradle/wrapper/gradle-wrapper.properties`     |
 | applicationId, flavors, dependencies | [`android/app/build.gradle`](android/app/build.gradle) |
-| JS dependencies | `package.json` / `package-lock.json` |
+| JS dependencies                      | `package.json` / `package-lock.json`                   |
