@@ -57,8 +57,6 @@
     "Wallet": "Wallet"
   },
   "FaceScanner": {
-    "livenessCaptureGuide": "Hold the phone steady, keep your face focused in the centre.",
-    "faceProcessingInfo": "Please wait while we process the data.",
     "faceVerificationTitle": "Face verification",
     "verifyingTitle": "Verifying your face",
     "verifyingMessage": "This takes a few seconds. Please don’t close the app.",
@@ -71,12 +69,7 @@
     "tipCoverings": "Remove glasses, a mask or a cap",
     "tipSteady": "Keep your face in the centre and hold steady",
     "tryAgain": "Try again",
-    "faceOutGuide": "Keep your face inside the oval!",
-    "faceInGuide": "Capturing in progress!",
-    "imageCaptureGuide": "Hold the phone steady, keep your face focused in the centre and click on Capture.",
-    "capture": "Capture",
     "cancel": "Cancel",
-    "flipCamera": "Flip Camera",
     "missingPermissionText": "Camera access is needed to verify your identity. Please allow it in Settings.",
     "allowCameraButton": "Open Settings"
   },
@@ -1291,14 +1284,7 @@
       }
     },
     "postFaceCapture": {
-      "captureSuccessMessage": "Face Verification is successful! Credential sharing is initiated.",
-      "captureFailureTitle": "We couldn’t match your face",
-      "captureFailureMessage": "Nothing was shared. For the next try:",
-      "retakeSelfie": "Take the selfie again",
-      "cancelSharing": "Cancel sharing",
-      "faceTipLight": "Face the light, not a window behind you",
-      "faceTipGlasses": "Take off glasses and hats",
-      "faceTipFrame": "Keep your whole face in the frame"
+      "captureSuccessMessage": "Face Verification is successful! Credential sharing is initiated."
     },
     "rational": {
       "title": "Turn on your location",
@@ -1473,8 +1459,7 @@
     "errors": {
       "invalidIdentity": {
         "title": "Face recognition failed",
-        "message": "The scanned face does not match with the photo on the card. Please try again.",
-        "messageNoRetry": "Face not recognised."
+        "message": "The scanned face does not match with the photo on the card. Please try again."
       }
     }
   },

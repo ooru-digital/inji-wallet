@@ -36,8 +36,9 @@ export type FaceMatchOutcome = 'match' | 'mismatch' | 'unusable';
 /**
  * Compare the SnapKYC probe (live capture) against the credential portrait(s).
  *
- * Both sides are validated as real image bytes first — `faceExtractAndEncode` throws an
- * uncatchable native exception on undecodable input rather than rejecting its promise.
+ * Both sides are validated as real image bytes first: undecodable data makes `decodeByteArray`
+ * return null inside the native face match (`SnapKycLivenessModule.matchFace`), so it's caught
+ * here rather than as an error from inside the call.
  */
 export async function compareProbeWithVcFace(
   probeImageBase64: string,

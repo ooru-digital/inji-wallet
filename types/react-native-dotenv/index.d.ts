@@ -41,16 +41,7 @@ declare module 'react-native-dotenv' {
   export const GOOGLE_ANDROID_CLIENT_ID: string;
 
   /**
-   * Flag for Toggling for Liveness Detection
-   */
-  export const LIVENESS_DETECTION: string;
-
-  /**
-   * Flag for toggling the SnapKYC native liveness check (Android only)
-   */
-
-  /**
-   * Tenant id passed to the SnapKYC liveness SDK as `relayingPartyName`
+   * Tenant id passed to the BioChq face SDK as `relayingPartyName`
    */
   export const SNAPKYC_RELAYING_PARTY_NAME: string;
 

@@ -33,9 +33,9 @@ configurations.all {
         // surface across 18.x/21.x. Forcing an old floor here previously stripped
         // OptionalModuleApi that play-services-mlkit-barcode-scanning (expo-camera's QR
         // scanner) needs -> NoClassDefFoundError on camera open. Let it resolve naturally.
-        // Multipaz → ktor-client-core 3.x; Iris biometric SDK still pulls ktor-client-okhttp 2.x.
-        // Gradle then upgrades only core → 3.x; OkHttpEngine (2.x) still references
-        // io.ktor.client.plugins.HttpTimeout removed/relocated → crash on BiometricSdkFactory.initialize.
+        // Multipaz needs ktor 3.x. Every ktor module is held to the same version, so no library can
+        // bring in a 2.x module (e.g. ktor-client-okhttp) next to the 3.x core: 2.x engines reference
+        // io.ktor.client.plugins.HttpTimeout, which moved in 3.x, and crash at runtime.
         eachDependency { details ->
             if (details.requested.group == "io.ktor") {
                 details.useVersion("3.3.3")

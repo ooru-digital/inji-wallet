@@ -22,7 +22,6 @@ import {VPShareCredentialCard} from '../../components/VC/VPShareCredentialCard';
 import {VerifierAvatar} from '../../components/VerifierAvatar';
 import {
   isIOS,
-  LIVENESS_CHECK,
   OVP_ERROR_MESSAGES,
   OVP_ERROR_CODE,
 } from '../../shared/constants';
@@ -536,7 +535,6 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
             isInvalidIdentity={controller.isInvalidIdentity}
             onNavigateHome={controller.GO_TO_HOME}
             onRetryVerification={controller.RETRY_VERIFICATION}
-            isLivenessEnabled={LIVENESS_CHECK}
           />
 
           {controller.overlayDetails !== null && !isSelfieShareConsent && (
