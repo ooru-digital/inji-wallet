@@ -85,6 +85,16 @@ jobs:
           name: residentapp
           path: android/app/build/outputs/apk/residentapp/release/Inji_universal.apk
           retention-days: 10
+      - name: Upload APK to Nexus
+        continue-on-error: true
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+        run: |
+          curl -sS --fail --retry 3 --max-time 1800 -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" \
+            --upload-file android/app/build/outputs/apk/residentapp/release/Inji_universal.apk \
+            "$NEXUS_URL/repository/Inji-wallet-artifacts/${{ github.event.repository.name }}/ui-automation-android/${{ github.run_id }}/Inji_universal.apk"
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
@@ -117,6 +127,20 @@ jobs:
         run: |
           S3_OBJECT_KEY=$(echo $GITHUB_REPOSITORY | cut -d '/' -f 2)
           aws s3 cp injitest/target/surefire-reports s3://$S3_BUCKET/$S3_OBJECT_KEY/android-ui/ --recursive
+
+      - name: Upload test reports to Nexus
+        if: success() || failure()
+        continue-on-error: true
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+        run: |
+          cd injitest/target/surefire-reports
+          find . -type f | while read -r f; do
+            curl -sS --fail --retry 3 -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" --upload-file "$f" \
+              "$NEXUS_URL/repository/Inji-wallet-artifacts/${{ github.event.repository.name }}/ui-automation-android/${{ github.run_id }}/test-reports/${f#./}"
+          done
 
   ios-ui-automation:
     if: ${{ github.event.inputs.buildFor == 'IOS' }}
@@ -166,6 +190,17 @@ jobs:
           name: residentapp
           path: ios/Inji.ipa
           retention-days: 10
+
+      - name: Upload IPA to Nexus
+        continue-on-error: true
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+        run: |
+          curl -sS --fail --retry 3 --max-time 1800 -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" \
+            --upload-file ios/Inji.ipa \
+            "$NEXUS_URL/repository/Inji-wallet-artifacts/${{ github.event.repository.name }}/ui-automation-ios/${{ github.run_id }}/Inji.ipa"
   
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -200,3 +235,18 @@ jobs:
         run: |
           S3_OBJECT_KEY=$(echo $GITHUB_REPOSITORY | cut -d '/' -f 2)
           aws s3 cp injitest/target/surefire-reports s3://$S3_BUCKET/$S3_OBJECT_KEY/ios-ui/ --recursive          
+
+
+      - name: Upload test reports to Nexus
+        if: success() || failure()
+        continue-on-error: true
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+        run: |
+          cd injitest/target/surefire-reports
+          find . -type f | while read -r f; do
+            curl -sS --fail --retry 3 -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" --upload-file "$f" \
+              "$NEXUS_URL/repository/Inji-wallet-artifacts/${{ github.event.repository.name }}/ui-automation-ios/${{ github.run_id }}/test-reports/${f#./}"
+          done
