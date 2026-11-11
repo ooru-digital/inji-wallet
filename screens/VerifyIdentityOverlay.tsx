@@ -9,13 +9,6 @@ import {Theme} from '../components/ui/styleUtils';
 import {VerifiableCredential} from '../machines/VerifiableCredential/VCMetaMachine/vc';
 import {Modal} from '../components/ui/Modal';
 import {useTranslation} from 'react-i18next';
-import {AlertSheet, ChoiceList} from '../components/revamp/Page';
-import {WarningIcon} from '../components/revamp/Icons';
-import {ScaledText} from '../components/revamp/ScaledText';
-import {fonts} from '../components/revamp/tokens';
-import {useRevampTheme} from '../components/revamp/useRevampTheme';
-import {StyleSheet, View} from 'react-native';
-import {SNAPKYC_LIVENESS_ENABLED} from '../shared/constants';
 
 export const VerifyIdentityOverlay: React.FC<
   VerifyIdentityOverlayProps
@@ -31,24 +24,17 @@ export const VerifyIdentityOverlay: React.FC<
     props.onFaceInvalid();
   };
 
+  // The face verification page draws its own header.
   const modalProps = {
     isVisible: props.isVerifyingIdentity,
     onDismiss: props.onCancel,
     animationType: 'slide',
-    arrowLeft: true,
-    headerTitle: t('faceAuth'),
+    arrowLeft: false,
+    headerTitle: '',
     presentationStyle: 'overFullScreen',
-    showClose: true,
-    showHeader: true,
+    showClose: false,
+    showHeader: false,
   };
-
-  // The SnapKYC face verification page draws its own header.
-  if (props.isLivenessEnabled || SNAPKYC_LIVENESS_ENABLED) {
-    modalProps.arrowLeft = false;
-    modalProps.headerTitle = '';
-    modalProps.showClose = false;
-    modalProps.showHeader = false;
-  }
 
   return (
     <>
@@ -57,9 +43,9 @@ export const VerifyIdentityOverlay: React.FC<
           fill
           style={[
             Theme.VerifyIdentityOverlayStyles.content,
-            // A box the size of the whole screen would push the SnapKYC page's Cancel button
+            // A box the size of the whole screen would push the face page's Cancel button
             // under Android's navigation bar; that page lays itself out.
-            SNAPKYC_LIVENESS_ENABLED && {height: undefined},
+            {height: undefined},
           ]}
           align="center">
           {credential != null && (
@@ -69,43 +55,18 @@ export const VerifyIdentityOverlay: React.FC<
                 .filter(face => face !== undefined)}
               onValid={props.onFaceValid}
               onInvalid={onFaceInvalid}
-              isLiveness={props.isLivenessEnabled}
               onCancel={props.onCancel}
             />
           )}
         </Column>
       </Modal>
 
-      {SNAPKYC_LIVENESS_ENABLED ? (
-        <FaceVerificationFailedView
-          isVisible={props.isInvalidIdentity}
-          reason={failureReason}
-          onRetry={props.onRetryVerification}
-          onCancel={props.onNavigateHome}
-        />
-      ) : (
-        <AlertSheet
-          testID="shareWithSelfieError"
-          isVisible={props.isInvalidIdentity}
-          tone="warn"
-          icon={colour => <WarningIcon color={colour} />}
-          title={t('ScanScreen:postFaceCapture.captureFailureTitle')}
-          message={t('ScanScreen:postFaceCapture.captureFailureMessage')}
-          primary={{
-            testID: 'retry',
-            title: t('ScanScreen:postFaceCapture.retakeSelfie'),
-            onPress: props.onRetryVerification,
-          }}
-          secondary={{
-            testID: 'home',
-            title: t('ScanScreen:postFaceCapture.cancelSharing'),
-            onPress: props.onNavigateHome,
-          }}
-          dismissOnBackdropPress={false}
-          onRequestClose={props.onNavigateHome}>
-          <FaceTips />
-        </AlertSheet>
-      )}
+      <FaceVerificationFailedView
+        isVisible={props.isInvalidIdentity}
+        reason={failureReason}
+        onRetry={props.onRetryVerification}
+        onCancel={props.onNavigateHome}
+      />
     </>
   );
 };
@@ -122,33 +83,3 @@ export interface VerifyIdentityOverlayProps {
   onRetryVerification: () => void;
   isLivenessEnabled: boolean;
 }
-
-const FaceTips: React.FC = () => {
-  const {t} = useTranslation('ScanScreen');
-  const {c} = useRevampTheme();
-  const tips = ['faceTipLight', 'faceTipGlasses', 'faceTipFrame'];
-  return (
-    <ChoiceList>
-      {tips.map(tip => (
-        <View key={tip} style={tipStyles.row}>
-          <View style={[tipStyles.dot, {backgroundColor: c.azureInk}]} />
-          <ScaledText style={[tipStyles.text, {color: c.ink}]}>
-            {t(`postFaceCapture.${tip}`)}
-          </ScaledText>
-        </View>
-      ))}
-    </ChoiceList>
-  );
-};
-
-const tipStyles = StyleSheet.create({
-  row: {
-    minHeight: 46,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  dot: {width: 6, height: 6, borderRadius: 3},
-  text: {flex: 1, fontFamily: fonts.regular, fontSize: 14, lineHeight: 19},
-});

@@ -7,8 +7,6 @@ import {
   isAndroid,
   GMAIL,
   APPLE,
-  FACE_SDK_MODEL_PATH,
-  FACE_SDK_MODEL_CHECKSUM,
 } from './constants';
 import {generateSecureRandom} from 'react-native-securerandom';
 import forge from 'node-forge';
@@ -87,25 +85,6 @@ export function logState(state: AnyState) {
 
 export const getMaskedText = (id: string): string => {
   return '*'.repeat(id.length - 4) + id.slice(-4);
-};
-
-export const faceMatchConfig = () => {
-  return {
-    withFace: {
-      encoder: {
-        tfModel: {
-          path: FACE_SDK_MODEL_PATH,
-          inputWidth: 160,
-          inputHeight: 160,
-          outputLength: 512,
-          modelChecksum: FACE_SDK_MODEL_CHECKSUM,
-        },
-      },
-      matcher: {
-        threshold: 1,
-      },
-    },
-  };
 };
 
 export const getBackupFileName = () => {

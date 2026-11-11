@@ -126,11 +126,6 @@ jest.mock('react-i18next', () => ({
   },
 }));
 
-jest.mock('@iriscan/biometric-sdk-react-native', () => ({
-  configure: jest.fn(),
-  // Add other functions or constants you need to mock here
-}));
-
 jest.mock('react-native-gesture-handler', () => {
   const mockScrollView = jest.fn().mockReturnValue(null); // Mock ScrollView component
   return {

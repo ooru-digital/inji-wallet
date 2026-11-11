@@ -35,7 +35,6 @@ export type FaceMatchOutcome = 'match' | 'mismatch' | 'unusable';
 
 /**
  * Compare the SnapKYC probe (live capture) against the credential portrait(s).
- * Argument order matches machines/faceScanner.ts verifyImage.
  *
  * Both sides are validated as real image bytes first — `faceExtractAndEncode` throws an
  * uncatchable native exception on undecodable input rather than rejecting its promise.

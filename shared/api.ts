@@ -8,8 +8,6 @@ import {
 } from './constants';
 import {INITIAL_CONFIG} from './InitialConfig';
 import {getItem, setItem} from '../machines/store';
-import {faceMatchConfig} from './commonUtil';
-import {configure} from '@iriscan/biometric-sdk-react-native';
 import {
   getErrorEventData,
   getImpressionEventData,
@@ -363,54 +361,6 @@ export default async function getAllConfigurations(
 ) {
   host && changeCrendetialRegistry(host);
   return await CACHED_API.getAllProperties(isCachePreferred);
-}
-
-/** The latest face-match model setup; resolves to whether it succeeded. */
-let faceModelSetup: Promise<boolean> | null = null;
-
-export function initializeFaceModel(): Promise<boolean> {
-  faceModelSetup = configureFaceModel();
-  return faceModelSetup;
-}
-
-/**
- * Whether the face-match model is set up, waiting for a setup still in progress and trying once
- * more if the last one failed. Call before any face compare: the native compare force-unwraps
- * the SDK instance and crashes the app (iOS) when the model was never set up.
- */
-export async function ensureFaceModelReady(): Promise<boolean> {
-  if (faceModelSetup && (await faceModelSetup)) {
-    return true;
-  }
-  return initializeFaceModel();
-}
-
-/** Never rejects: a setup that throws counts as failed, so `ensureFaceModelReady` tries again. */
-async function configureFaceModel(): Promise<boolean> {
-  let result = false;
-  try {
-    result = await configure(faceMatchConfig());
-  } catch (error) {
-    console.warn('Face model setup threw', error);
-  }
-  if (result) {
-    sendImpressionEvent(
-      getImpressionEventData(
-        TelemetryConstants.FlowType.faceModelInit,
-        TelemetryConstants.Screens.home,
-        {status: TelemetryConstants.EndEventStatus.success},
-      ),
-    );
-  } else {
-    sendErrorEvent(
-      getErrorEventData(
-        TelemetryConstants.FlowType.faceModelInit,
-        TelemetryConstants.ErrorId.failure,
-        TelemetryConstants.ErrorMessage.faceModelInitFailed,
-      ),
-    );
-  }
-  return result;
 }
 
 type Api_Params = {
