@@ -1,5 +1,9 @@
 import i18next from 'i18next';
-import {getClientNameForCurrentLanguage} from './i18n';
+import {
+  getClientNameForCurrentLanguage,
+  getThreeLetterLanguageCode,
+  SUPPORTED_LANGUAGES,
+} from './i18n';
 
 // The server labels text with ISO 639-3 codes; each app language must find its own.
 describe('three-letter language codes', () => {
@@ -24,4 +28,11 @@ describe('three-letter language codes', () => {
     await i18next.changeLanguage(language);
     expect(getClientNameForCurrentLanguage(names)).toBe(expected);
   });
+
+  it.each(Object.keys(SUPPORTED_LANGUAGES))(
+    '%s, like every supported language, has one',
+    language => {
+      expect(getThreeLetterLanguageCode(language)).toMatch(/^[a-z]{3}$/);
+    },
+  );
 });

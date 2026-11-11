@@ -102,27 +102,30 @@ export function getClientNameForCurrentLanguage(
 // The server sends ISO 639-3 (three-letter) language codes; the app's languages use ISO 639-1
 // (two-letter) codes where one exists. Only the supported languages need converting, so this is a
 // fixed list rather than the iso-639-3 package, whose full table is half a megabyte.
-const THREE_LETTER_LANGUAGE_CODES: Record<string, string> = {
+// Every language in SUPPORTED_LANGUAGES needs an entry.
+const THREE_LETTER_LANGUAGE_CODES: Record<
+  keyof typeof SUPPORTED_LANGUAGES,
+  string
+> = {
   en: 'eng',
+  fil: 'fil',
   ar: 'ara',
   hi: 'hin',
   kn: 'kan',
   ta: 'tam',
 };
 
-function getThreeLetterLanguageCode(twoLetterLanguageCode: string) {
-  return THREE_LETTER_LANGUAGE_CODES[twoLetterLanguageCode];
+export function getThreeLetterLanguageCode(languageCode: string): string {
+  return (
+    THREE_LETTER_LANGUAGE_CODES[
+      languageCode as keyof typeof SUPPORTED_LANGUAGES
+    ] ?? languageCode
+  );
 }
 
 function populateLanguageCodeMap() {
-  const supportedLanguages = Object.keys(SUPPORTED_LANGUAGES);
-  supportedLanguages.forEach(languageCode => {
-    let threeLetterLanguageCode = languageCode;
-
-    if (isTwoLetterLanguageCode(languageCode)) {
-      threeLetterLanguageCode = getThreeLetterLanguageCode(languageCode);
-    }
-    languageCodeMap[languageCode] = threeLetterLanguageCode;
+  Object.keys(SUPPORTED_LANGUAGES).forEach(languageCode => {
+    languageCodeMap[languageCode] = getThreeLetterLanguageCode(languageCode);
   });
 }
 
@@ -151,8 +154,4 @@ export function getLocalizedField(
   } catch (e) {
     return '';
   }
-}
-
-function isTwoLetterLanguageCode(languageCode: string) {
-  return languageCode.length == 2;
 }
