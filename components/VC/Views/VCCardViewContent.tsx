@@ -26,7 +26,7 @@ import {RemoveVcWarningOverlay} from '../../../screens/Home/MyVcs/RemoveVcWarnin
 import {HistoryTab} from '../../../screens/Home/MyVcs/HistoryTab';
 import {useCopilot} from 'react-native-copilot';
 import {useTranslation} from 'react-i18next';
-import testIDProps from '../../../shared/commonUtil';
+import testIDProps, {toLogoUrl} from '../../../shared/commonUtil';
 
 export const VCCardViewContent: React.FC<VCItemContentProps> = ({
   isPinned = false,
@@ -61,7 +61,11 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = ({
       onPress={() => onPress()}
     />
   );
-  const issuerLogo = verifiableCredentialData.issuerLogo;
+  const storedIssuerLogo = verifiableCredentialData.issuerLogo;
+  const issuerLogo = storedIssuerLogo && {
+    ...storedIssuerLogo,
+    url: toLogoUrl(storedIssuerLogo.url),
+  };
   const faceImage = verifiableCredentialData.face;
   const {start} = useCopilot();
   const {t} = useTranslation();

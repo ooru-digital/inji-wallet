@@ -4,11 +4,12 @@ import {Pressable, Text} from 'react-native';
 import {fireEvent, render} from '@testing-library/react-native';
 import {IssuersScreen} from './IssuersScreen';
 
-// The shared jest setup stubs out useEffect and useState; this screen's scan flow needs them.
+// The shared jest setup stubs out useEffect and useState; this screen's flows need them.
 const {useEffect, useState} = jest.requireActual('react');
 Object.assign(React, {useEffect, useState});
 
 let mockController: Record<string, any>;
+const mockFetchIssuerWellknownConfig = jest.fn();
 
 jest.mock('expo-localization', () => ({
   getLocales: () => [{languageTag: 'en-US', languageCode: 'en'}],
@@ -17,6 +18,9 @@ jest.mock('react-i18next', () => ({
   initReactI18next: {type: '3rdParty', init: jest.fn()},
   useTranslation: () => ({t: (key: string) => key}),
 }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({top: 0, bottom: 0, left: 0, right: 0}),
+}));
 jest.mock('@react-navigation/native', () => {
   const {useEffect} = jest.requireActual('react');
   return {useFocusEffect: (effect: () => () => void) => useEffect(effect, [])};
@@ -24,7 +28,15 @@ jest.mock('@react-navigation/native', () => {
 jest.mock('./IssuerScreenController', () => ({
   useIssuerScreenController: () => mockController,
 }));
+jest.mock('../../shared/api', () => ({
+  CACHED_API: {
+    fetchIssuerWellknownConfig: (...args: any[]) =>
+      mockFetchIssuerWellknownConfig(...args),
+  },
+}));
 jest.mock('../../shared/openId4VCI/Utils', () => ({
+  Protocols: {OpenId4VCI: 'OpenId4VCI', OTP: 'OTP'},
+  getDisplayObjectForCurrentLanguage: (display: any[]) => display[0],
   ErrorMessage: {
     GENERIC: 'generic',
     TECHNICAL_DIFFICULTIES: 'technicalDifficulty',
@@ -34,11 +46,37 @@ jest.mock('../../shared/openId4VCI/Utils', () => ({
     NETWORK_REQUEST_FAILED: 'networkRequestFailed',
   },
 }));
-jest.mock('../../shared/telemetry/TelemetryUtils', () => ({}));
-jest.mock('../../shared/telemetry/TelemetryConstants', () => ({}));
+jest.mock('../../shared/telemetry/TelemetryUtils', () => ({
+  getInteractEventData: jest.fn(),
+  getStartEventData: jest.fn(),
+  sendInteractEvent: jest.fn(),
+  sendStartEvent: jest.fn(),
+}));
+jest.mock('../../shared/telemetry/TelemetryConstants', () => ({
+  TelemetryConstants: {
+    FlowType: {vcDownload: 'vcDownload'},
+    InteractEventSubtype: {click: 'click'},
+  },
+}));
 jest.mock('../../components/ui/svg', () => ({
   SvgImage: new Proxy({}, {get: () => () => null}),
+  IssuerLogo: () => null,
 }));
+jest.mock('../../components/revamp/Page', () => {
+  const {Pressable, View} = jest.requireActual('react-native');
+  return {
+    Page: (props: any) => (
+      <View testID={props.testID}>
+        {props.header}
+        {props.children}
+      </View>
+    ),
+    PageButton: (props: any) => (
+      <Pressable testID={props.testID} onPress={props.onPress} />
+    ),
+    AlertSheet: () => null,
+  };
+});
 jest.mock('../Scan/SendVPScreen', () => ({SendVPScreen: () => null}));
 jest.mock('./CredentialTypeSelectionScreen', () => ({
   CredentialTypeSelectionScreen: () => null,
@@ -69,18 +107,9 @@ jest.mock('../../components/ui/Error', () => ({
     </>
   ),
 }));
-jest.mock('../../components/addCredential/ScanToAddScreen', () => ({
-  ScanToAddScreen: (props: any) => (
-    <>
-      <Text testID="scanToAddScreen">
-        {`camera:${props.isCameraActive} processing:${props.isProcessing}`}
-      </Text>
-      <Pressable
-        testID="scanQr"
-        onPress={() => props.onQrFound('openid-credential-offer://?x')}
-      />
-      <Pressable testID="closeScanner" onPress={props.onClose} />
-    </>
+jest.mock('../../components/addCredential/DownloadingCard', () => ({
+  DownloadingCard: (props: any) => (
+    <Text testID="downloadingCard">{props.reason}</Text>
   ),
 }));
 jest.mock('../../components/addCredential/TrustIssuerSheet', () => ({
@@ -108,6 +137,11 @@ const baseController = () => ({
   isSelectingCredentialsToReplace: false,
   isTxCodeRequested: false,
   isBiometricsCancelled: false,
+  isFetchingIssuers: false,
+  issuersFetchFailed: false,
+  issuers: [],
+  selectedIssuer: {},
+  selectedCredentialType: {},
   issuerName: 'Ministry of Transport',
   issuerLogo: undefined,
   offeredCredentialTypeNames: ['Driving Licence'],
@@ -118,9 +152,38 @@ const baseController = () => ({
   CANCEL: jest.fn(),
   TRY_AGAIN: jest.fn(),
   RESET_ERROR: jest.fn(),
+  SELECTED_ISSUER: jest.fn(),
+  DOWNLOAD_ID: jest.fn(),
+  FETCH_ISSUERS: jest.fn(),
 });
 
-describe('IssuersScreen scan flow', () => {
+const transport = {
+  issuer_id: 'RoadTransport',
+  protocol: 'OpenId4VCI',
+  credential_issuer_host: 'https://transport.example',
+  display: [{name: 'Road Transport Authority', logo: {url: ''}}],
+};
+const university = {
+  issuer_id: 'NationalUniversity',
+  protocol: 'OpenId4VCI',
+  credential_issuer_host: 'https://university.example',
+  display: [{name: 'National University', logo: {url: ''}}],
+};
+const wellknowns: Record<string, any> = {
+  'https://transport.example': {
+    credential_configurations_supported: {
+      dl: {display: [{name: 'Driving Licence'}]},
+      vr: {display: [{name: 'Vehicle Registration'}]},
+    },
+  },
+  'https://university.example': {
+    credential_configurations_supported: {
+      degree: {display: [{name: 'Degree Certificate'}]},
+    },
+  },
+};
+
+describe('IssuersScreen issuer list (the wallet’s + button)', () => {
   const tabs = {setOptions: jest.fn()};
   const navigation = {
     setOptions: jest.fn(),
@@ -128,29 +191,127 @@ describe('IssuersScreen scan flow', () => {
     goBack: jest.fn(),
     navigate: jest.fn(),
   };
-  const renderScreen = () =>
-    render(<IssuersScreen navigation={navigation as any} route={{} as any} />);
+  const screen = () => (
+    <IssuersScreen navigation={navigation as any} route={{} as any} />
+  );
+  // The screen asks for the list as it opens; this answers it with `issuers`.
+  const renderLoadedList = (issuers: any[]) => {
+    mockController.isFetchingIssuers = true;
+    const rendered = render(screen());
+    mockController = {
+      ...mockController,
+      isFetchingIssuers: false,
+      isSelectingIssuer: true,
+      issuers,
+    };
+    rendered.rerender(screen());
+    return rendered;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockController = baseController();
-  });
-
-  it('starts the scanner as soon as the screen opens', () => {
-    mockController.isSelectingIssuer = true;
-
-    const {getByTestId} = renderScreen();
-
-    expect(getByTestId('scanToAddScreen')).toBeTruthy();
-    expect(mockController.SCAN_CREDENTIAL_OFFER_QR_CODE).toHaveBeenCalledTimes(
-      1,
+    mockFetchIssuerWellknownConfig.mockImplementation((_key, host) =>
+      Promise.resolve(wellknowns[host]),
     );
   });
 
-  it('hides the bottom tab bar while open and brings it back on leaving', () => {
-    mockController.isQrScanning = true;
+  it('asks for the issuers once, and shows placeholder rows while they load', () => {
+    mockController.isSelectingIssuer = true;
 
-    const {unmount} = renderScreen();
+    const {getByTestId, getAllByTestId} = render(screen());
+
+    expect(mockController.FETCH_ISSUERS).toHaveBeenCalledTimes(1);
+    expect(getByTestId('issuerListPage')).toBeTruthy();
+    expect(getAllByTestId('issuerSkeleton')).toHaveLength(3);
+    expect(mockController.SCAN_CREDENTIAL_OFFER_QR_CODE).not.toHaveBeenCalled();
+  });
+
+  it('lists each issuer with its credential types, and picking one starts its download', async () => {
+    const {findByText, getByTestId, getByText} = renderLoadedList([
+      transport,
+      university,
+    ]);
+
+    expect(getByText('issuerList.count')).toBeTruthy();
+    expect(
+      await findByText('Driving Licence · Vehicle Registration'),
+    ).toBeTruthy();
+    expect(getByText('2')).toBeTruthy();
+    expect(getByTestId('issuersTrustNote')).toBeTruthy();
+
+    fireEvent.press(getByTestId('RoadTransport'));
+    expect(mockController.SELECTED_ISSUER).toHaveBeenCalledWith(
+      'RoadTransport',
+    );
+  });
+
+  it('lists the issuers again on coming back from one, without placeholders', () => {
+    const {getByTestId, queryByTestId, rerender} = renderLoadedList([
+      transport,
+    ]);
+
+    // An issuer is opened: its credential types replace the list.
+    mockController = {
+      ...mockController,
+      isSelectingIssuer: false,
+      isSelectingCredentialType: true,
+    };
+    rerender(screen());
+    expect(queryByTestId('issuerListPage')).toBeNull();
+
+    // Back from the credential types.
+    mockController = {
+      ...mockController,
+      isSelectingIssuer: true,
+      isSelectingCredentialType: false,
+    };
+    rerender(screen());
+
+    expect(getByTestId('RoadTransport')).toBeTruthy();
+    expect(queryByTestId('issuerSkeleton')).toBeNull();
+    expect(mockController.FETCH_ISSUERS).toHaveBeenCalledTimes(1);
+  });
+
+  it('searches by credential type as well as issuer name', async () => {
+    const {findByText, getByTestId, queryByTestId} = renderLoadedList([
+      transport,
+      university,
+    ]);
+    await findByText('Degree Certificate');
+
+    fireEvent.changeText(getByTestId('issuerSearchBar'), 'degree');
+    expect(queryByTestId('NationalUniversity')).toBeTruthy();
+    expect(queryByTestId('RoadTransport')).toBeNull();
+
+    fireEvent.changeText(getByTestId('issuerSearchBar'), 'passport');
+    expect(getByTestId('noIssuersMatch')).toBeTruthy();
+  });
+
+  it('offers a retry when the issuers fail to load', () => {
+    mockController.isSelectingIssuer = true;
+    mockController.issuersFetchFailed = true;
+
+    const {getByTestId, queryByTestId} = render(screen());
+    expect(queryByTestId('issuerSkeleton')).toBeNull();
+    fireEvent.press(getByTestId('retryIssuers'));
+
+    expect(mockController.FETCH_ISSUERS).toHaveBeenCalledTimes(2);
+  });
+
+  it('goes back to the wallet from the back button', () => {
+    mockController.isSelectingIssuer = true;
+
+    const {getByTestId} = render(screen());
+    fireEvent.press(getByTestId('goBack'));
+
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the bottom tab bar while open and brings it back on leaving', () => {
+    mockController.isSelectingIssuer = true;
+
+    const {unmount} = render(screen());
     expect(tabs.setOptions).toHaveBeenLastCalledWith({
       tabBarStyle: {display: 'none'},
     });
@@ -161,68 +322,16 @@ describe('IssuersScreen scan flow', () => {
     });
   });
 
-  it('passes a scanned QR code to the issuers machine', () => {
-    mockController.isQrScanning = true;
-
-    const {getByTestId} = renderScreen();
-    expect(getByTestId('scanToAddScreen')).toHaveTextContent(
-      'camera:true processing:false',
-    );
-    fireEvent.press(getByTestId('scanQr'));
-
-    expect(mockController.QR_CODE_SCANNED).toHaveBeenCalledWith(
-      'openid-credential-offer://?x',
-    );
-  });
-
-  it('closes back to Home from the scanner', () => {
-    mockController.isQrScanning = true;
-
-    const {getByTestId} = renderScreen();
-    fireEvent.press(getByTestId('closeScanner'));
-
-    expect(navigation.goBack).toHaveBeenCalledTimes(1);
-  });
-
-  it('shows the trust sheet over the scanner, and cancelling it goes back to scanning', () => {
+  it('shows an offer’s trust sheet over the download, with no scanner', () => {
     mockController.isConsentRequested = true;
     mockController.loadingReason = 'preparingRequest';
 
-    const {getByTestId, getByText} = renderScreen();
+    const {getByTestId, getByText} = render(screen());
 
-    expect(getByTestId('scanToAddScreen')).toHaveTextContent(
-      'camera:false processing:false',
-    );
+    expect(getByTestId('downloadingCard')).toBeTruthy();
     expect(getByText('Ministry of Transport Driving Licence')).toBeTruthy();
     fireEvent.press(getByTestId('trustIssuerSheet'));
     expect(mockController.CANCEL).toHaveBeenCalledTimes(1);
-  });
-
-  it('resumes scanning after a QR code that is not a credential offer', () => {
-    mockController.isError = true;
-    mockController.errorMessageType = 'generic';
-
-    const {getByTestId, queryByTestId, rerender} = renderScreen();
-    expect(getByTestId('errorView')).toBeTruthy();
-    expect(queryByTestId('scanToAddScreen')).toBeNull();
-
-    fireEvent.press(getByTestId('errorView'));
-    expect(mockController.TRY_AGAIN).toHaveBeenCalledTimes(1);
-
-    mockController = {
-      ...mockController,
-      isError: false,
-      errorMessageType: '',
-      isSelectingIssuer: true,
-    };
-    rerender(
-      <IssuersScreen navigation={navigation as any} route={{} as any} />,
-    );
-
-    expect(getByTestId('scanToAddScreen')).toBeTruthy();
-    expect(mockController.SCAN_CREDENTIAL_OFFER_QR_CODE).toHaveBeenCalledTimes(
-      1,
-    );
   });
 });
 
@@ -260,7 +369,7 @@ describe('IssuersScreen opened from an Add to Wallet link', () => {
 
     const {getByTestId, queryByTestId} = renderScreen();
 
-    expect(getByTestId('loader')).toBeTruthy();
+    expect(getByTestId('downloadingCard')).toBeTruthy();
     expect(queryByTestId('scanToAddScreen')).toBeNull();
     expect(mockController.SCAN_CREDENTIAL_OFFER_QR_CODE).not.toHaveBeenCalled();
   });

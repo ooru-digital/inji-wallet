@@ -67,6 +67,9 @@ export const IssuersActions = (model: any) => {
           isRevoked: RevocationStatus.FALSE,
         }),
     }),
+    setIssuers: model.assign({
+      issuers: (_: any, event: any) => event.data as issuerType[],
+    }),
     setLoadingReasonAsDownloadingCredentials: model.assign({
       loadingReason: 'downloadingCredentials',
     }),
@@ -581,6 +584,15 @@ export const IssuersActions = (model: any) => {
           TelemetryConstants.FlowType.vcDownload,
           TelemetryConstants.EndEventStatus.failure,
           {'VC Key': context.keyType},
+        ),
+      );
+    },
+
+    sendImpressionEvent: () => {
+      sendImpressionEvent(
+        getImpressionEventData(
+          TelemetryConstants.FlowType.vcDownload,
+          TelemetryConstants.Screens.issuerList,
         ),
       );
     },

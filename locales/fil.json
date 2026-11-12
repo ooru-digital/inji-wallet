@@ -543,7 +543,21 @@
     "thisCard": "card na ito",
     "validUntil": "Valid hanggang {{date}}",
     "downloadFailedPill": "Hindi na-download",
-    "verificationFailedPill": "Hindi ma-verify"
+    "verificationFailedPill": "Hindi ma-verify",
+    "issuerList": {
+      "title": "Hanapin ang Iyong Kredensyal",
+      "lead": "Piliin kung sino ang nag-isyu nito, saka piliin ang ida-download.",
+      "searchPlaceholder": "Subukan ang “driving licence” o “unibersidad”",
+      "count": "{{count}} nag-isyu",
+      "count_plural": "{{count}} na nag-isyu",
+      "credentialTypes": "{{count}} kredensyal",
+      "credentialTypes_plural": "{{count}} na kredensyal",
+      "trustNote": "Nasa pambansang trust registry ang bawat nag-isyu rito. Dumarating ang mga kredensyal nang may pirma, direkta mula sa nag-isyu.",
+      "noIssuers": "Walang available na nag-isyu sa ngayon.",
+      "noMatch": "Walang nag-isyu na tumutugma sa iyong hinahanap.",
+      "failed": "Hindi ma-load ang listahan ng mga nag-isyu.",
+      "clearSearch": "I-clear ang paghahanap"
+    }
   },
   "HelpScreen": {
     "header": "Tulong",

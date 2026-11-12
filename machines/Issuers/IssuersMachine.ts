@@ -18,11 +18,9 @@ export const IssuersMachine = model.createMachine(
     preserveActionOrder: true,
     id: Issuer_Tab_Ref_Id,
     context: model.initialContext,
-    // The issuers-list screen (browse-and-pick-an-issuer) has been removed — this machine used
-    // to start by fetching and displaying that list (the `displayIssuers` state, now gone) before
-    // landing here. Starting directly in `selectingIssuer` skips that fetch entirely; the only
-    // thing this state still does is wait for SCAN_CREDENTIAL_OFFER_QR_CODE, which is untouched
-    // and still drives w3cvc credential-offer downloads exactly as before.
+    // Starts ready for an offer: links and scanned offers send SCAN_CREDENTIAL_OFFER_QR_CODE
+    // straight away. The issuers list is fetched only when the + button's list asks for it
+    // (FETCH_ISSUERS), so offers never wait on, or fail with, that request.
     initial: 'selectingIssuer',
     tsTypes: {} as import('./IssuersMachine.typegen').Typegen0,
     schema: {
@@ -30,6 +28,25 @@ export const IssuersMachine = model.createMachine(
       events: {} as EventFrom<typeof model>,
     },
     states: {
+      displayIssuers: {
+        description:
+          'fetches the issuers (eSignet based downloads) listed by the + button on the wallet home',
+        entry: model.assign({issuersFetchFailed: false}),
+        invoke: {
+          src: 'downloadIssuersList',
+          onDone: {
+            actions: ['sendImpressionEvent', 'setIssuers'],
+            target: 'selectingIssuer',
+          },
+          // A failed fetch only marks the list, which offers a retry, instead of the full-screen
+          // download error.
+          onError: {
+            actions: model.assign({issuersFetchFailed: true}),
+            target: 'selectingIssuer',
+          },
+        },
+      },
+
       error: {
         description: 'reaches here when any error happens',
         entry: ['resetAuthorization'],
@@ -60,6 +77,9 @@ export const IssuersMachine = model.createMachine(
       selectingIssuer: {
         description: 'waits for the user to select any issuer',
         on: {
+          FETCH_ISSUERS: {
+            target: 'displayIssuers',
+          },
           SCAN_CREDENTIAL_OFFER_QR_CODE: {
             target: 'waitingForQrScan',
           },
