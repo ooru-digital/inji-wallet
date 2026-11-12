@@ -77,6 +77,9 @@ buildscript {
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.3")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        // Firebase Crashlytics (versions from @react-native-firebase/app 25.1.0's sdkVersions).
+        classpath("com.google.gms:google-services:4.5.0")
+        classpath("com.google.firebase:firebase-crashlytics-gradle:3.0.7")
     }
 }
 

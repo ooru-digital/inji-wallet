@@ -7,6 +7,13 @@ apply plugin: "com.facebook.react"
 apply plugin: "org.sonarqube"
 apply plugin: 'kotlin-android'
 
+// Firebase Crashlytics, once the Firebase project's android/app/google-services.json is in place.
+// Without the file the app builds and runs as before, with Crashlytics off.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+    apply plugin: 'com.google.firebase.crashlytics'
+}
+
 
 configurations.all {
     resolutionStrategy {
