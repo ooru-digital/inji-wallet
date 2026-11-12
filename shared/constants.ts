@@ -3,6 +3,7 @@ import {
   DEBUG_MODE,
   ESIGNET_HOST,
   MIMOTO_HOST,
+  ASSETS_CDN_HOST,
   LIVENESS_DETECTION,
   SNAPKYC_RELAYING_PARTY_NAME,
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE,
@@ -15,6 +16,9 @@ import {KeyTypes} from './cryptoutil/KeyTypes';
 
 export let MIMOTO_BASE_URL = MIMOTO_HOST;
 export let ESIGNET_BASE_URL = ESIGNET_HOST;
+export const ASSETS_CDN_BASE_URL = (
+  ASSETS_CDN_HOST || 'https://assets.credissuer.com'
+).replace(/\/+$/, '');
 export const DEBUG_MODE_ENABLED = DEBUG_MODE === 'true';
 export let CACHE_TTL = 60 * 60 * 1000;
 

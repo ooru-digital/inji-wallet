@@ -646,7 +646,21 @@
     "thisCard": "this card",
     "validUntil": "Valid until {{date}}",
     "downloadFailedPill": "Download failed",
-    "verificationFailedPill": "Couldn’t verify"
+    "verificationFailedPill": "Couldn’t verify",
+    "issuerList": {
+      "title": "Find Your Credential",
+      "lead": "Pick who issued it, then choose what to download.",
+      "searchPlaceholder": "Try “driving licence” or “university”",
+      "count": "{{count}} issuer",
+      "count_plural": "{{count}} issuers",
+      "credentialTypes": "{{count}} credential",
+      "credentialTypes_plural": "{{count}} credentials",
+      "trustNote": "Every issuer here is in the national trust registry. Credentials arrive signed, straight from the issuer.",
+      "noIssuers": "No issuers are available right now.",
+      "noMatch": "No issuers match your search.",
+      "failed": "Couldn’t load the list of issuers.",
+      "clearSearch": "Clear search"
+    }
   },
   "HelpScreen": {
     "header": "Help",

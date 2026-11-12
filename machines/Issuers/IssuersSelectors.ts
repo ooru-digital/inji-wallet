@@ -144,6 +144,14 @@ export function selectIsSelectingIssuer(state: State) {
   return state.matches('selectingIssuer');
 }
 
+export function selectIsFetchingIssuers(state: State) {
+  return state.matches('displayIssuers');
+}
+
+export function selectIssuersFetchFailed(state: State) {
+  return state.context.issuersFetchFailed;
+}
+
 export function selectTrustedIssuerConsentStatus(state: State) {
   return state.context.trustedIssuerConsentStatus;
 }

@@ -544,7 +544,21 @@
     "thisCard": "هذه البطاقة",
     "validUntil": "صالحة حتى {{date}}",
     "downloadFailedPill": "فشل التنزيل",
-    "verificationFailedPill": "تعذّر التحقق"
+    "verificationFailedPill": "تعذّر التحقق",
+    "issuerList": {
+      "title": "ابحث عن بيانات اعتمادك",
+      "lead": "اختر الجهة التي أصدرتها، ثم اختر ما تريد تنزيله.",
+      "searchPlaceholder": "جرّب «رخصة القيادة» أو «الجامعة»",
+      "count": "{{count}} جهة إصدار",
+      "count_plural": "{{count}} جهات إصدار",
+      "credentialTypes": "{{count}} بيان اعتماد",
+      "credentialTypes_plural": "{{count}} بيانات اعتماد",
+      "trustNote": "جميع جهات الإصدار هنا مسجّلة في سجل الثقة الوطني. تصل بيانات الاعتماد موقّعة ومباشرة من جهة الإصدار.",
+      "noIssuers": "لا توجد جهات إصدار متاحة حاليًا.",
+      "noMatch": "لا توجد جهات إصدار تطابق بحثك.",
+      "failed": "تعذّر تحميل قائمة جهات الإصدار.",
+      "clearSearch": "مسح البحث"
+    }
   },
   "HelpScreen": {
     "header": "يساعد",

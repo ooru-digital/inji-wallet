@@ -3,6 +3,7 @@ import {issuerType} from './IssuersMachine';
 
 export const IssuersEvents = {
   SELECTED_ISSUER: (id: string) => ({id}),
+  FETCH_ISSUERS: () => ({}),
   DOWNLOAD_ID: () => ({}),
   BIOMETRIC_CANCELLED: (requester?: string) => ({requester}),
   COMPLETED: () => ({}),

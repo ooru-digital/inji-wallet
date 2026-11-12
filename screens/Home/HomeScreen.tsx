@@ -117,6 +117,8 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
               onAddCredential={() =>
                 props.navigation.navigate(BOTTOM_TAB_ROUTES.share)
               }
+              // No offer is pending, so the Issuers screen opens on its list of issuers.
+              onBrowseIssuers={controller.GOTO_ISSUERS}
               service={controller.tabRefs.myVcs}
               vcItemActor={controller.selectedVc}
               isViewingVc={controller.isViewingVc}
@@ -167,6 +169,8 @@ export interface HomeScreenTabProps {
   vcItemActor: ActorRefFrom<typeof VCItemMachine>;
   vc: VerifiableCredential | Credential;
   onAddCredential?: () => void;
+  /** The header's + button: lists the issuers to download a credential from. */
+  onBrowseIssuers?: () => void;
   /** Opens this credential's detail view as soon as its card has loaded. */
   openVcKey?: string;
   onVcOpened?: () => void;

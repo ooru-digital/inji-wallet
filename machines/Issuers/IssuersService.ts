@@ -1,7 +1,7 @@
 import NetInfo from '@react-native-community/netinfo';
 import {NativeModules} from 'react-native';
 import Cloud from '../../shared/CloudBackupAndRestoreUtils';
-import getAllConfigurations from '../../shared/api';
+import getAllConfigurations, {CACHED_API} from '../../shared/api';
 import {
   fetchKeyPair,
   generateKeyPair,
@@ -56,6 +56,10 @@ export const IssuersService = () => {
   return {
     isUserSignedAlready: () => async () => {
       return await Cloud.isSignedInAlready();
+    },
+    downloadIssuersList: async () => {
+      const trustedIssuersList = await CACHED_API.fetchIssuers();
+      return trustedIssuersList;
     },
     checkInternet: async () => await NetInfo.fetch(),
     downloadIssuerWellknown: async (context: any) => {

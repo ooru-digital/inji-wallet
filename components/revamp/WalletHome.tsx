@@ -89,6 +89,8 @@ export const WalletHome: React.FC<{
   searchIndex: Record<string, string>;
   refreshing: boolean;
   onRefresh: () => void;
+  /** Opens the list of issuers to download a credential from. */
+  onAdd?: () => void;
   /** The shown card is a tour step: while the tour is replayed from Settings, or until the
    * first-card tour has been shown. */
   isCardTourStep?: boolean;
@@ -106,6 +108,7 @@ export const WalletHome: React.FC<{
   searchIndex,
   refreshing,
   onRefresh,
+  onAdd,
   isCardTourStep = false,
   startCardTour = false,
   openVcKey,
@@ -396,6 +399,7 @@ export const WalletHome: React.FC<{
       <WalletHeader
         countText={countText}
         onAvatar={() => navigation.navigate(BOTTOM_TAB_ROUTES.settings)}
+        onAdd={onAdd}
         searching={searching}
         onToggleSearch={toggleSearch}
         search={{query, onQuery: setQuery, chips, chip, onChip: setChip}}
