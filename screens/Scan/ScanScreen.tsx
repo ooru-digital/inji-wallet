@@ -414,7 +414,7 @@ export const ScanScreen: React.FC = () => {
   return (
     <LinearGradient
       colors={[COLORS.darkBackground, COLORS.darkBackgroundEnd]}
-      style={[styles.screen, {paddingTop: insets.top + 8}]}>
+      style={[styles.screen, {paddingTop: insets.top}]}>
       <BannerNotificationContainer />
       <FaceVerificationAlertOverlay
         isVisible={faceVerificationController.isFaceVerificationConsent}
@@ -425,6 +425,8 @@ export const ScanScreen: React.FC = () => {
       <View style={styles.header}>
         <Pressable
           testID="scanClose"
+          // 40 px to look like the other headers' buttons, 56 px to tap, like RoundButton.
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={t('close')}
           onPress={scanScreenController.GOTO_HOME}
@@ -435,16 +437,20 @@ export const ScanScreen: React.FC = () => {
           <Icon
             name="close"
             type="material-community"
-            size={24}
+            size={22}
             color={COLORS.darkText}
           />
         </Pressable>
-        <Text style={styles.headerTitle} accessibilityRole="header">
+        <Text
+          style={styles.headerTitle}
+          accessibilityRole="header"
+          numberOfLines={1}>
           {t('scanQrTitle')}
         </Text>
         {scanScreenController.isScanning || isAddOnly ? (
           <Pressable
             testID="scanTorch"
+            hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={isTorchOn ? t('flashOff') : t('flashOn')}
             accessibilityState={{selected: isTorchOn}}
@@ -457,7 +463,7 @@ export const ScanScreen: React.FC = () => {
             <Icon
               name={isTorchOn ? 'flash' : 'flash-outline'}
               type="material-community"
-              size={24}
+              size={22}
               color={isTorchOn ? COLORS.darkBackground : COLORS.darkText}
             />
           </Pressable>
@@ -556,22 +562,28 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  // The same row as PageHeader, in the camera screen's dark colours.
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 6,
+    minHeight: 60,
   },
   headerTitle: {
     flex: 1,
-    marginHorizontal: 16,
-    fontFamily: 'Montserrat_700Bold',
-    fontSize: 26,
+    marginHorizontal: 8,
+    textAlign: 'center',
+    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 18,
+    lineHeight: 22,
     color: COLORS.darkText,
   },
   roundButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.darkSurface,
@@ -580,7 +592,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkText,
   },
   roundButtonPlaceholder: {
-    width: 48,
+    width: 40,
   },
   content: {
     paddingHorizontal: 24,
