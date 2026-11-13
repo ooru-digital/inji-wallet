@@ -270,7 +270,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {flex: 1, fontFamily: fonts.regular, fontSize: 16, lineHeight: 19.2},
-  value: {fontFamily: fonts.regular, fontSize: 14},
+  // At most part of the row, so a long translated value wraps instead of squeezing the label.
+  value: {
+    flexShrink: 1,
+    maxWidth: '45%',
+    textAlign: 'right',
+    fontFamily: fonts.regular,
+    fontSize: 14,
+  },
   track: {
     width: 46,
     height: 28,
