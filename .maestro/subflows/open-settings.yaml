@@ -1,0 +1,8 @@
+# The Settings tab, from the unlocked Home screen.
+appId: io.ooru.credissuerwallet
+---
+- runFlow: home.yaml
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Security and Privacy"
+    timeout: 15000

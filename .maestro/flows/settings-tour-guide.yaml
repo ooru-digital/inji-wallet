@@ -1,0 +1,26 @@
+appId: io.ooru.credissuerwallet
+name: Tour guide from Settings
+---
+- startRecording: recording
+- runFlow: ../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element: "CredIssuer Tour Guide"
+    direction: DOWN
+- tapOn: "CredIssuer Tour Guide"
+- extendedWaitUntil:
+    visible: "Quick tour · .*"
+    timeout: 15000
+- evalScript: ${output.tourStep = 0}
+- repeat:
+    while:
+      visible: "Quick tour.*"
+    times: 10
+    commands:
+      - evalScript: ${output.tourStep = output.tourStep + 1}
+      - takeScreenshot: 1-tour-${output.tourStep}
+      - tapOn: "Next|Done"
+- assertTrue:
+    condition: ${output.tourStep > 1}
+    label: The tour went through more than one step
+- assertNotVisible: "Quick tour.*"
+- stopRecording

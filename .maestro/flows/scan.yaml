@@ -1,0 +1,21 @@
+appId: io.ooru.credissuerwallet
+name: Scan
+---
+- startRecording: recording
+- runFlow: ../subflows/home.yaml
+- tapOn: "Scan to Add or Share"
+- extendedWaitUntil:
+    visible: "Scan QR code"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Point your camera at the QR code"
+    timeout: 15000
+- takeScreenshot: 1-scan
+- tapOn: "Turn on flashlight"
+- assertVisible: "Turn off flashlight"
+- tapOn: "Turn off flashlight"
+- tapOn: "Close"
+- extendedWaitUntil:
+    visible: "No cards yet"
+    timeout: 15000
+- stopRecording

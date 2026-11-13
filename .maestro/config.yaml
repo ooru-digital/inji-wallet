@@ -1,0 +1,26 @@
+# Maestro UI tests for CredIssuer Wallet, run by .github/workflows/ui-tests.yml.
+# Locally, with an Android phone or emulator connected (it is reset by the tests):
+#   maestro test .maestro
+# Onboarding starts from a fresh install and takes the quick tour. The other flows carry on from
+# the wallet it set up, and set one up themselves when there isn't one, so each still runs alone.
+flows:
+  - flows/*
+executionOrder:
+  continueOnFailure: true
+  flowsOrder:
+    - Onboarding with a passcode
+    - Unlock with the passcode
+    - A wrong passcode is refused
+    - Settings
+    - Activity
+    - Language
+    - Auto-lock
+    - About
+    - Tour guide from Settings
+    - Sharing history from Settings
+    - Activity filters
+    - Scan
+    - Scan with the camera off
+    - Arabic
+    # Last: it changes the passcode, and puts 111111 back.
+    - Change PIN

@@ -1,0 +1,16 @@
+# The wallet's Home screen, unlocked with 111111, from whatever state an earlier flow left.
+appId: io.ooru.credissuerwallet
+---
+- runFlow: set-up-once.yaml
+- runFlow:
+    when:
+      visible: "Your cards are locked."
+    commands:
+      - tapOn: "Unlock"
+      - extendedWaitUntil:
+          visible: "Enter your passcode"
+          timeout: 30000
+      - runFlow: type-passcode.yaml
+- extendedWaitUntil:
+    visible: "No cards yet"
+    timeout: 30000

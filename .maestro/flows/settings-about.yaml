@@ -1,0 +1,19 @@
+appId: io.ooru.credissuerwallet
+name: About
+---
+- startRecording: recording
+- runFlow: ../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element: "About CredIssuer Wallet"
+    direction: DOWN
+- tapOn: "About CredIssuer Wallet"
+- extendedWaitUntil:
+    visible: "Version .*"
+    timeout: 10000
+- assertVisible: "About"
+- takeScreenshot: 1-about
+- pressKey: Back
+- extendedWaitUntil:
+    visible: "About CredIssuer Wallet"
+    timeout: 10000
+- stopRecording

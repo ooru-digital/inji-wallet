@@ -1,0 +1,19 @@
+appId: io.ooru.credissuerwallet
+name: Scan with the camera off
+---
+- startRecording: recording
+- runFlow: ../subflows/set-up-once.yaml
+- launchApp:
+    permissions:
+      camera: deny
+- runFlow: ../subflows/home.yaml
+- tapOn: "Scan to Add or Share"
+- extendedWaitUntil:
+    visible: "Camera access is off"
+    timeout: 15000
+- takeScreenshot: 1-camera-off
+- tapOn: "Close"
+- extendedWaitUntil:
+    visible: "No cards yet"
+    timeout: 15000
+- stopRecording

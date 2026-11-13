@@ -1,4 +1,16 @@
 fileignoreconfig:
+  - filename: .maestro/subflows/type-passcode.yaml
+    checksum: 940e1cb22b34459619c960d26422871da0cc2b0c16aa0f7b34cfee6c10f772e5
+  - filename: .maestro/subflows/onboard.yaml
+    checksum: 354831bffe1121e8f91e2ccfb248781b385b616bf1e9c751c6f5f768fd5088fe
+  - filename: .maestro/config.yaml
+    checksum: 2c9ce170fed1623af63bf70f093bc98d79bbb8d4d3d536cef86d4e305c0debe6
+  - filename: .maestro/flows/settings-change-pin.yaml
+    checksum: b68765cea4d3a16de69f6767856bb0b37bd98f55e090f17bdc82ebfb830744f3
+  - filename: .github/workflows/ui-tests.yml
+    checksum: 5eeec77a5d189383f4995e8cce9c15f8951eac96fca5cf6659094cbe066bf38e
+  - filename: .maestro/report.py
+    checksum: 4ed6f9b80391bcd6f2c5f03efb979ea28b1d84593a38fef076737c2352ed0724
   - filename: components/VC/common/StatusInfoModal.tsx
     checksum: 5db61aa419e0c1c70b067993272da93822917daa55523371fc196022bd7c25a3
   - filename: components/VC/Views/ShareableInfoModal.tsx
@@ -78,7 +90,7 @@ fileignoreconfig:
   - filename: screens/MainLayout.tsx
     checksum: 8909ef957c866221e864c6edaf93081af7f5968857200284bf7047631f525322
   - filename: android/app/build.gradle
-    checksum: 8d5715e179a398518e6acff82c75b27077c9f893dc90b2972c77f9a09f10be95
+    checksum: 308cbcdd78e764a5221d14ad6b9e7172b65168b892c3553f20c742cd1d3bff73
   - filename: .github/workflows/push-triggers.yml
     checksum: abc19ea38c8d7b79f15695d015709cc88a34a995181aaf12bc8344f940f3cbc4
   - filename: android/fastlane/Fastfile

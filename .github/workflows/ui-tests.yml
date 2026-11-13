@@ -1,0 +1,156 @@
+name: UI tests (Maestro)
+
+# Builds the release APK, boots an Android emulator and runs the Maestro flows in .maestro/.
+# Every flow starts from a fresh install and sets the passcode itself, so nothing is shared
+# between runs. report.html, with each flow's recording, screenshots and steps, is attached to
+# the run.
+#
+# Secrets: CREDISSUER_API_TOKEN, ARTIFACTORY_USERNAME, ARTIFACTORY_PASSWORD. The APK is signed
+# with a key made for the run, never the release key, so it can't install over the real app.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [CredIssuer-revamp]
+  schedule:
+    # Nightly, 02:00 UTC
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  MAESTRO_VERSION: '2.12.1'
+  APK_PATH: android/app/build/outputs/apk/residentapp/release/CredIssuerWallet_universal.apk
+
+jobs:
+  android:
+    name: Android emulator
+    # A fork's pull request gets no secrets, and its code mustn't: skip it rather than fail.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The APK depends on every tracked file except the flows and the docs, so a run that only
+      # changes flows reuses the last APK instead of building again.
+      - name: Fingerprint the app
+        id: app
+        run: |
+          echo "hash=$(git ls-files -s -- . ':(exclude).maestro' ':(exclude)*.md' | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
+
+      - name: Reuse the APK built from the same code
+        id: apk
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.APK_PATH }}
+          key: ui-tests-apk-${{ steps.app.outputs.hash }}
+
+      - uses: actions/setup-node@v4
+        if: steps.apk.outputs.cache-hit != 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        if: steps.apk.outputs.cache-hit != 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Pull request runs save the Gradle cache too (by default only the default branch does,
+      # and it never runs these tests), so the next run reuses what didn't change.
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.apk.outputs.cache-hit != 'true'
+        with:
+          cache-read-only: false
+
+      - name: Install JS dependencies
+        if: steps.apk.outputs.cache-hit != 'true'
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          npm ci
+
+      - name: Write the files the build reads but git ignores
+        if: steps.apk.outputs.cache-hit != 'true'
+        env:
+          CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
+        run: |
+          printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
+          password=$(openssl rand -hex 16)
+          echo "::add-mask::$password"
+          echo "RELEASE_KEYSTORE_PASSWORD=$password" >> "$GITHUB_ENV"
+          keytool -genkeypair -keystore android/app/release.keystore -storetype PKCS12 \
+            -alias uitests -keyalg RSA -keysize 2048 -validity 1 -dname CN=ui-tests \
+            -storepass "$password" -keypass "$password"
+
+      # The emulator is x86_64, so only that CPU type's native code is built. Its keystore is
+      # software-only, which the app refuses unless built with allowSoftwareKeystore. The build
+      # cache lets unchanged libraries come from the last run instead of being compiled again.
+      - name: Build the APK
+        if: steps.apk.outputs.cache-hit != 'true'
+        working-directory: android
+        env:
+          RELEASE_KEYSTORE_ALIAS: uitests
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: ./gradlew --build-cache --parallel -PallowSoftwareKeystore=true -PreactNativeArchitectures=x86_64 generateCodegenArtifactsFromSchema :app:assembleResidentappRelease
+
+      - name: Keep the APK for runs with the same code
+        if: steps.apk.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.APK_PATH }}
+          key: ui-tests-apk-${{ steps.app.outputs.hash }}
+
+      - name: Remove secret files
+        if: always()
+        run: rm -f .env.local android/app/release.keystore
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | MAESTRO_VERSION="$MAESTRO_VERSION" bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the flows on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          disk-size: 6G
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            adb install -r "$APK_PATH"
+            mkdir -p maestro-output
+            maestro test .maestro --format junit --output maestro-output/report.xml --debug-output maestro-output/debug --flatten-debug-output
+
+      # report.html (each flow's result, recording, screenshots and steps) in the download, and a
+      # table of the flows on the run page.
+      - name: Report
+        if: always()
+        run: python3 .maestro/report.py maestro-output
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maestro-results
+          path: maestro-output
+          if-no-files-found: ignore
+          retention-days: 14
