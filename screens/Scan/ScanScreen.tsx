@@ -425,6 +425,8 @@ export const ScanScreen: React.FC = () => {
       <View style={styles.header}>
         <Pressable
           testID="scanClose"
+          // 40 px to look like the other headers' buttons, 56 px to tap, like RoundButton.
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={t('close')}
           onPress={scanScreenController.GOTO_HOME}
@@ -448,6 +450,7 @@ export const ScanScreen: React.FC = () => {
         {scanScreenController.isScanning || isAddOnly ? (
           <Pressable
             testID="scanTorch"
+            hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={isTorchOn ? t('flashOff') : t('flashOn')}
             accessibilityState={{selected: isTorchOn}}
