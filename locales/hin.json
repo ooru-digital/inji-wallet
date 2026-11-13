@@ -1531,5 +1531,106 @@
     "downloadingCard": "आपका कार्ड डाउनलोड हो रहा है…",
     "unknownIssuer": "अज्ञात जारीकर्ता",
     "offering": "ऑफ़र"
+  },
+  "Wallet": {
+    "tabs": {
+      "home": "होम",
+      "activity": "गतिविधि",
+      "settings": "सेटिंग्स"
+    },
+    "status": {
+      "verified": "वैध",
+      "pending": "लंबित",
+      "expired": "समाप्त",
+      "revoked": "रद्द"
+    },
+    "home": {
+      "credentialOne": "1 क्रेडेंशियल",
+      "credentialMany": "{{count}} क्रेडेंशियल",
+      "shownOf": "{{total}} में से {{visible}} दिखाए गए",
+      "all": "सभी",
+      "pinnedToTop": "{{title}} ऊपर पिन किया गया",
+      "unpinned": "अनपिन किया गया",
+      "notifications": "सूचनाएं",
+      "tapToSeeFront": "सामने का हिस्सा देखने के लिए कार्ड पर टैप करें",
+      "tapToSeeBack": "पीछे का हिस्सा देखने के लिए कार्ड पर टैप करें",
+      "tapToFlip": "पलटने के लिए कार्ड पर टैप करें",
+      "share": "शेयर करें",
+      "showQr": "QR दिखाएं",
+      "pin": "पिन करें",
+      "unpin": "अनपिन करें",
+      "activity": "गतिविधि",
+      "removeFromWallet": "वॉलेट से हटाएं",
+      "openDetails": "{{title}} का विवरण खोलें",
+      "pinned": "पिन किया गया",
+      "otherCredentials": "अन्य क्रेडेंशियल",
+      "noOtherMatch": "खोज से कोई अन्य क्रेडेंशियल मेल नहीं खाता।",
+      "swipeHint": "और के लिए स्वाइप करें · विवरण के लिए कार्ड पर टैप करें",
+      "noResultsTitle": "कोई मेल खाता क्रेडेंशियल नहीं",
+      "noResultsText": "कोई दूसरा नाम या जारीकर्ता आज़माएं, या फ़िल्टर हटाएं।",
+      "clearFilters": "फ़िल्टर हटाएं",
+      "previousCredential": "पिछला क्रेडेंशियल",
+      "nextCredential": "अगला क्रेडेंशियल",
+      "position": "{{count}} में से क्रेडेंशियल {{index}}"
+    },
+    "header": {
+      "wallet": "वॉलेट",
+      "openProfile": "प्रोफ़ाइल खोलें",
+      "searchCredentials": "क्रेडेंशियल खोजें",
+      "moreOptions": "अधिक विकल्प",
+      "closeMenu": "मेनू बंद करें",
+      "searchPlaceholder": "नाम या जारीकर्ता से खोजें",
+      "clearSearch": "खोज साफ़ करें",
+      "cancel": "रद्द करें",
+      "filterByIssuer": "जारीकर्ता से फ़िल्टर करें"
+    },
+    "carousel": {
+      "yourCredentials": "आपके क्रेडेंशियल। बाएं या दाएं स्वाइप करें",
+      "newPrefix": "नया। ",
+      "tapToFlipTitle": "{{title}}। पलटने के लिए टैप करें",
+      "showTitle": "{{title}} दिखाएं",
+      "loading": "क्रेडेंशियल लोड हो रहा है"
+    },
+    "details": {
+      "backToWallet": "वॉलेट पर वापस जाएं",
+      "unpinTitle": "{{title}} को अनपिन करें",
+      "pinTitle": "{{title}} को ऊपर पिन करें",
+      "backShown": "कार्ड का पिछला हिस्सा दिख रहा है। सामने का हिस्सा देखने के लिए टैप करें",
+      "frontShown": "कार्ड का सामने का हिस्सा दिख रहा है। पिछला हिस्सा देखने के लिए टैप करें",
+      "credentialInformation": "क्रेडेंशियल की जानकारी",
+      "issuer": "जारीकर्ता",
+      "issuedOn": "जारी करने की तिथि",
+      "validUntil": "मान्य तिथि तक",
+      "format": "प्रारूप",
+      "signature": "हस्ताक्षर",
+      "foundRevokedOn": "{{date}} को रद्द पाया गया",
+      "expiredOn": "{{date}} को समाप्त हुआ",
+      "validUntilDate": "{{date}} तक मान्य",
+      "theIssuer": "जारीकर्ता",
+      "expiredTitle": "इस क्रेडेंशियल की अवधि समाप्त हो गई है",
+      "revokedTitle": "जारीकर्ता ने रद्द कर दिया",
+      "expiredText": "सत्यापनकर्ता इसे अस्वीकार कर देंगे। {{issuer}} से नई प्रति प्राप्त करें।",
+      "revokedText": "{{issuer}} ने यह क्रेडेंशियल रद्द कर दिया है, इसलिए इसे शेयर नहीं किया जा सकता। अगर आपको लगता है कि यह गलती है, तो उनसे संपर्क करें।"
+    },
+    "card": {
+      "scanToVerify": "सत्यापन के लिए स्कैन करें",
+      "verificationQr": "सत्यापन QR कोड",
+      "numberShort": "सं.",
+      "licenceNo": "लाइसेंस सं."
+    },
+    "months": {
+      "1": "जन॰",
+      "2": "फ़र॰",
+      "3": "मार्च",
+      "4": "अप्रैल",
+      "5": "मई",
+      "6": "जून",
+      "7": "जुल॰",
+      "8": "अग॰",
+      "9": "सित॰",
+      "10": "अक्तू॰",
+      "11": "नव॰",
+      "12": "दिस॰"
+    }
   }
 }

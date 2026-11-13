@@ -10,6 +10,8 @@ import {Guilloche} from './Guilloche';
 import {CardStatus, CredentialCardData} from './useCredentialCard';
 import {maskNumber, mrzLines} from './credentialClaims';
 import {cardFields} from './cardFields';
+import {useTranslation} from 'react-i18next';
+import {wt} from './walletText';
 import {useCardQr} from './useCardQr';
 import {
   CARD_HEIGHT,
@@ -66,12 +68,8 @@ function cardColours(data: CredentialCardData) {
   };
 }
 
-export const statusLabel: Record<CardStatus, string> = {
-  verified: 'Valid',
-  pending: 'Pending',
-  expired: 'Expired',
-  revoked: 'Revoked',
-};
+export const statusLabel = (status: CardStatus): string =>
+  wt(`status.${status}`);
 
 /** The issuer's badge: its logo, or the design's shield, on a white disc in a ring of the card's colour. */
 const IssuerBadge: React.FC<{logoUrl?: string; colour: string}> = ({
@@ -146,7 +144,7 @@ const StatusStamp: React.FC<{status: CardStatus}> = ({status}) => {
         <ScaledText
           maxFontSizeMultiplier={CARD_TEXT_MAX_SCALE}
           style={[styles.stampText, {color: colour}]}>
-          {statusLabel[status].toUpperCase()}
+          {statusLabel(status).toUpperCase()}
         </ScaledText>
       </View>
     </View>
@@ -158,6 +156,7 @@ export const CredentialCardFront = React.memo(function CredentialCardFront({
 }: {
   data: CredentialCardData;
 }) {
+  useTranslation('Wallet');
   const {frontExtra} = useMemo(
     () =>
       cardFields(
@@ -247,7 +246,7 @@ export const CredentialCardFront = React.memo(function CredentialCardFront({
               <ScaledText
                 maxFontSizeMultiplier={CARD_TEXT_MAX_SCALE}
                 style={[styles.statusText, {color: fg}]}>
-                {statusLabel[data.status]}
+                {statusLabel(data.status)}
               </ScaledText>
             </View>
           )}
@@ -295,6 +294,7 @@ export const CredentialCardBack = React.memo(function CredentialCardBack({
   data: CredentialCardData;
   showing: boolean;
 }) {
+  useTranslation('Wallet');
   const {bg, fg, tone, edge, wash} = cardColours(data);
   const {
     back: {wide, pair},
@@ -343,14 +343,14 @@ export const CredentialCardBack = React.memo(function CredentialCardBack({
           <ScaledText
             maxFontSizeMultiplier={CARD_TEXT_MAX_SCALE}
             style={[styles.backAction, {color: fg}]}>
-            Scan to verify
+            {wt('card.scanToVerify')}
           </ScaledText>
         </View>
         <View style={styles.backMiddle}>
           <View
             style={styles.qrBox}
             accessibilityRole="image"
-            accessibilityLabel="Verification QR code">
+            accessibilityLabel={wt('card.verificationQr')}>
             {issuerQrUrl ? (
               <Image
                 source={{uri: issuerQrUrl}}

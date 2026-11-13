@@ -1,4 +1,5 @@
-import {getLocalizedField} from '../../i18n';
+import {displayInAppLanguage} from '../../shared/displayLanguage';
+import {wt} from './walletText';
 import {
   claimKey,
   displayDate,
@@ -174,8 +175,9 @@ export function claimLabels(wellknown: unknown): Record<string, string> {
     )) {
       if (value && typeof value === 'object' && 'display' in value) {
         const display = (value as {display: unknown}).display;
+        // In the app's language when the issuer gives one ({locale, name} entries).
         const name = Array.isArray(display)
-          ? getLocalizedField(display)?.name ?? display[0]?.name
+          ? displayInAppLanguage<{name?: string}>(display)?.name
           : undefined;
         if (typeof name === 'string' && name) labels[key] = name;
       }
@@ -233,7 +235,9 @@ export function cardFields(
   const plain = entries.filter(([k]) => kinds.get(k) === 'other').slice(0, 2);
   let frontExtra: string | undefined;
   if (expiryKey && (isIdentity || !plain.length)) {
-    frontExtra = `Valid until ${displayDate(claims[expiryKey])}`;
+    frontExtra = wt('details.validUntilDate', {
+      date: displayDate(claims[expiryKey]),
+    });
     used.add(expiryKey);
   } else if (plain.length) {
     frontExtra = plain.map(([, v]) => v).join(' · ');

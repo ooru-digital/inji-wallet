@@ -1531,5 +1531,106 @@
     "downloadingCard": "جارٍ تنزيل بطاقتك…",
     "unknownIssuer": "جهة مُصدِرة غير معروفة",
     "offering": "المعروض"
+  },
+  "Wallet": {
+    "tabs": {
+      "home": "الرئيسية",
+      "activity": "النشاط",
+      "settings": "الإعدادات"
+    },
+    "status": {
+      "verified": "صالحة",
+      "pending": "قيد الانتظار",
+      "expired": "منتهية الصلاحية",
+      "revoked": "ملغاة"
+    },
+    "home": {
+      "credentialOne": "بيانات اعتماد واحدة",
+      "credentialMany": "بيانات الاعتماد: {{count}}",
+      "shownOf": "عرض {{visible}} من {{total}}",
+      "all": "الكل",
+      "pinnedToTop": "تم تثبيت {{title}} في الأعلى",
+      "unpinned": "تم إلغاء التثبيت",
+      "notifications": "الإشعارات",
+      "tapToSeeFront": "اضغط على البطاقة لرؤية الوجه الأمامي",
+      "tapToSeeBack": "اضغط على البطاقة لرؤية الوجه الخلفي",
+      "tapToFlip": "اضغط على البطاقة لقلبها",
+      "share": "مشاركة",
+      "showQr": "عرض رمز QR",
+      "pin": "تثبيت",
+      "unpin": "إلغاء التثبيت",
+      "activity": "النشاط",
+      "removeFromWallet": "إزالة من المحفظة",
+      "openDetails": "فتح تفاصيل {{title}}",
+      "pinned": "مثبّتة",
+      "otherCredentials": "بيانات اعتماد أخرى",
+      "noOtherMatch": "لا توجد بيانات اعتماد أخرى تطابق البحث.",
+      "swipeHint": "اسحب للمزيد · اضغط على بطاقة للتفاصيل",
+      "noResultsTitle": "لا توجد بيانات اعتماد مطابقة",
+      "noResultsText": "جرّب اسمًا أو جهة إصدار أخرى، أو امسح عوامل التصفية.",
+      "clearFilters": "مسح عوامل التصفية",
+      "previousCredential": "بيانات الاعتماد السابقة",
+      "nextCredential": "بيانات الاعتماد التالية",
+      "position": "بيانات الاعتماد {{index}} من {{count}}"
+    },
+    "header": {
+      "wallet": "المحفظة",
+      "openProfile": "فتح الملف الشخصي",
+      "searchCredentials": "البحث في بيانات الاعتماد",
+      "moreOptions": "خيارات أخرى",
+      "closeMenu": "إغلاق القائمة",
+      "searchPlaceholder": "ابحث بالاسم أو جهة الإصدار",
+      "clearSearch": "مسح البحث",
+      "cancel": "إلغاء",
+      "filterByIssuer": "التصفية حسب جهة الإصدار"
+    },
+    "carousel": {
+      "yourCredentials": "بيانات اعتمادك. اسحب لليسار أو لليمين",
+      "newPrefix": "جديدة. ",
+      "tapToFlipTitle": "{{title}}. اضغط للقلب",
+      "showTitle": "عرض {{title}}",
+      "loading": "جارٍ تحميل بيانات الاعتماد"
+    },
+    "details": {
+      "backToWallet": "العودة إلى المحفظة",
+      "unpinTitle": "إلغاء تثبيت {{title}}",
+      "pinTitle": "تثبيت {{title}} في الأعلى",
+      "backShown": "يظهر الوجه الخلفي للبطاقة. اضغط لعرض الوجه الأمامي",
+      "frontShown": "يظهر الوجه الأمامي للبطاقة. اضغط لرؤية الوجه الخلفي",
+      "credentialInformation": "معلومات بيانات الاعتماد",
+      "issuer": "جهة الإصدار",
+      "issuedOn": "تاريخ الإصدار",
+      "validUntil": "صالحة حتى",
+      "format": "التنسيق",
+      "signature": "التوقيع",
+      "foundRevokedOn": "تبيّن أنها ملغاة في {{date}}",
+      "expiredOn": "انتهت صلاحيتها في {{date}}",
+      "validUntilDate": "صالحة حتى {{date}}",
+      "theIssuer": "جهة الإصدار",
+      "expiredTitle": "انتهت صلاحية بيانات الاعتماد هذه",
+      "revokedTitle": "ألغتها جهة الإصدار",
+      "expiredText": "سيرفضها المتحققون. احصل على نسخة محدّثة من {{issuer}}.",
+      "revokedText": "ألغت {{issuer}} بيانات الاعتماد هذه، لذا لا يمكن مشاركتها. تواصل معهم إذا كنت تعتقد أن ذلك خطأ."
+    },
+    "card": {
+      "scanToVerify": "امسح للتحقق",
+      "verificationQr": "رمز QR للتحقق",
+      "numberShort": "رقم",
+      "licenceNo": "رقم الرخصة"
+    },
+    "months": {
+      "1": "يناير",
+      "2": "فبراير",
+      "3": "مارس",
+      "4": "أبريل",
+      "5": "مايو",
+      "6": "يونيو",
+      "7": "يوليو",
+      "8": "أغسطس",
+      "9": "سبتمبر",
+      "10": "أكتوبر",
+      "11": "نوفمبر",
+      "12": "ديسمبر"
+    }
   }
 }
