@@ -178,21 +178,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     marginTop: 22,
   },
   // Previous and Skip tour: a pill like Next, in the quieter colours, so they read as buttons.
+  // It gives way to Next on a narrow screen: a long translation wraps inside it instead.
   secondaryButton: {
+    flexShrink: 1,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
     borderRadius: radii.pill,
   },
   secondaryButtonLabel: {
     fontFamily: fonts.semibold,
     fontSize: 16,
+    textAlign: 'center',
   },
   primaryButton: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,
