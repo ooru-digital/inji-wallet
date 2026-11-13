@@ -1,0 +1,32 @@
+appId: io.ooru.credissuerwallet
+name: Language
+---
+- startRecording: recording
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: "Language"
+- extendedWaitUntil:
+    visible: "The app changes language straight away."
+    timeout: 10000
+- assertVisible: "English"
+- assertVisible: "Filipino"
+- assertVisible: "عربى"
+- assertVisible: "हिंदी"
+- assertVisible: "ಕನ್ನಡ"
+- assertVisible: "தமிழ்"
+- takeScreenshot: 1-languages
+- tapOn: "Filipino"
+# The whole app changes straight away, Settings included.
+- extendedWaitUntil:
+    visible: "Mga setting"
+    timeout: 15000
+- takeScreenshot: 2-settings-filipino
+- tapOn: "Wika"
+- extendedWaitUntil:
+    visible: "English"
+    timeout: 10000
+- tapOn: "English"
+- extendedWaitUntil:
+    visible: "Security and Privacy"
+    timeout: 15000
+- assertVisible: "Settings"
+- stopRecording

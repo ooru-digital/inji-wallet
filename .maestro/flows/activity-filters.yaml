@@ -1,0 +1,23 @@
+appId: io.ooru.credissuerwallet
+name: Activity filters
+---
+- startRecording: recording
+- runFlow: ../subflows/home.yaml
+- tapOn: "Activity"
+- extendedWaitUntil:
+    visible: "Notifications"
+    timeout: 15000
+- assertVisible: "All caught up"
+- tapOn: "Credentials"
+- takeScreenshot: 1-credentials
+- tapOn: "Sharing"
+- takeScreenshot: 2-sharing
+- scrollUntilVisible:
+    element: "Account"
+    direction: RIGHT
+    centerElement: true
+- tapOn: "Account"
+- takeScreenshot: 3-account
+- tapOn: "All"
+- assertVisible: "No history available yet|Nothing here yet"
+- stopRecording

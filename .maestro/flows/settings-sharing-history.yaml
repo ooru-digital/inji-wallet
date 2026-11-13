@@ -1,0 +1,12 @@
+appId: io.ooru.credissuerwallet
+name: Sharing history from Settings
+---
+- startRecording: recording
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: "Sharing history"
+- extendedWaitUntil:
+    visible: "Notifications"
+    timeout: 15000
+- assertVisible: "Sharing"
+- takeScreenshot: 1-sharing-history
+- stopRecording

@@ -13,3 +13,13 @@ executionOrder:
     - A wrong passcode is refused
     - Settings
     - Activity
+    - Language
+    - Auto-lock
+    - About
+    - Tour guide from Settings
+    - Sharing history from Settings
+    - Activity filters
+    - Scan
+    - Scan with the camera off
+    # Last: it changes the passcode, and puts 111111 back.
+    - Change PIN
