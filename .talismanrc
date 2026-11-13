@@ -1,4 +1,10 @@
 fileignoreconfig:
+  - filename: components/revamp/walletText.ts
+    checksum: fcf693a3501a4965cd08d8fb1914013d8c8ddc8c3ea16ad1bdd7600d7fa0ceba
+  - filename: shared/displayLanguage.ts
+    checksum: d05301282b04b68acda640ad74daf4e078d237153408fa9f39477d0f21bf1666
+  - filename: components/revamp/translations.test.ts
+    checksum: 5c5acc9bf87f61e92d5169ce03d227cd479f4f9de9765053d1b79a33a8b1af30
   - filename: components/VC/common/StatusInfoModal.tsx
     checksum: 5db61aa419e0c1c70b067993272da93822917daa55523371fc196022bd7c25a3
   - filename: components/VC/Views/ShareableInfoModal.tsx
@@ -453,11 +459,11 @@ fileignoreconfig:
   - filename: components/revamp/CredentialCard.tsx
     checksum: f7588c336a757b1a57893023268a6b9a9a47b1e9374b3ef9c9506ada9d5d23cd
   - filename: components/revamp/RevampTabBar.tsx
-    checksum: 17dd0ffe2d789038588d3c05dd5c3dd4a095283e500f9987f6b29d8512fd836b
+    checksum: ab8a977696707d55a6f3144cb76e5b36456487f2107a7c2ecb552027938db1bc
   - filename: components/revamp/WalletHeader.tsx
     checksum: 4dd697ec883c1684958a79c3d6040604415a5b6176264be55b882830c61e31e3
   - filename: components/revamp/WalletHome.tsx
-    checksum: ca6df9e83a42fff827f6351fdec6dcd14e5a92e9376aa3ae5fe63a789e73a497
+    checksum: f57ece551edc9cebbc5f00d8b32b154e15a903ab5a3a5df65c6bc7870369512e
   - filename: components/revamp/useCredentialCard.ts
     checksum: 40e892bdea792a554b3c08ad9b46bec761d14997cf6284afc03ae46b988514c8
   - filename: components/revamp/cardFields.ts

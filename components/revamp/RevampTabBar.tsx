@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {
   Animated,
   Easing,
+  I18nManager,
   Keyboard,
   Pressable,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import {ScaledText} from './ScaledText';
+import {wt} from './walletText';
 import {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -43,6 +45,7 @@ const FULL_SCREEN_ROUTES = ['IssuersScreen'];
 
 interface Tab {
   route: string;
+  /** Its key under `Wallet:tabs`. */
   label: string;
   icon: (colour: string, on: boolean) => React.ReactNode;
   /** The tab's tour step: its `copilot:` text keys and its order. */
@@ -52,14 +55,14 @@ interface Tab {
 const TABS: Tab[] = [
   {
     route: BOTTOM_TAB_ROUTES.home,
-    label: 'Home',
+    label: 'home',
     icon: (col, on) => (
       <HomeIcon color={col} filled={on} strokeWidth={on ? 2.5 : 2.2} />
     ),
   },
   {
     route: BOTTOM_TAB_ROUTES.history,
-    label: 'Activity',
+    label: 'activity',
     icon: (col, on) => (
       <ActivityIcon color={col} strokeWidth={on ? 2.5 : 2.2} />
     ),
@@ -67,7 +70,7 @@ const TABS: Tab[] = [
   },
   {
     route: BOTTOM_TAB_ROUTES.settings,
-    label: 'Settings',
+    label: 'settings',
     icon: (col, on) => (
       <SettingsIcon color={col} strokeWidth={on ? 2.5 : 2.2} />
     ),
@@ -168,7 +171,7 @@ export const RevampTabBar: React.FC<BottomTabBarProps> = ({
         key={tab.route}
         onPress={() => go(tab.route)}
         accessibilityRole="tab"
-        accessibilityLabel={tab.label}
+        accessibilityLabel={wt(`tabs.${tab.label}`)}
         accessibilityState={{selected: on}}
         testID={tab.route}>
         <Animated.View
@@ -202,7 +205,7 @@ export const RevampTabBar: React.FC<BottomTabBarProps> = ({
               numberOfLines={1}
               maxFontSizeMultiplier={SLOT_LABEL_MAX_SCALE}
               style={[styles.label, {color: colour}]}>
-              {tab.label}
+              {wt(`tabs.${tab.label}`)}
             </ScaledText>
           </Animated.View>
         </Animated.View>
@@ -245,7 +248,9 @@ export const RevampTabBar: React.FC<BottomTabBarProps> = ({
                       inputRange: [0, TABS.length - 1],
                       outputRange: [
                         0,
-                        (TABS.length - 1) * (CLOSED_TAB + NAV_PAD),
+                        (I18nManager.isRTL ? -1 : 1) *
+                          (TABS.length - 1) *
+                          (CLOSED_TAB + NAV_PAD),
                       ],
                     }),
                   },

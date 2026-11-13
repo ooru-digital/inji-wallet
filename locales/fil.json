@@ -1530,5 +1530,106 @@
     "downloadingCard": "Dina-download ang iyong card…",
     "unknownIssuer": "Hindi kilalang issuer",
     "offering": "Iniaalok"
+  },
+  "Wallet": {
+    "tabs": {
+      "home": "Home",
+      "activity": "Aktibidad",
+      "settings": "Mga setting"
+    },
+    "status": {
+      "verified": "Valid",
+      "pending": "Nakabinbin",
+      "expired": "Nag-expire",
+      "revoked": "Binawi"
+    },
+    "home": {
+      "credentialOne": "1 kredensyal",
+      "credentialMany": "{{count}} kredensyal",
+      "shownOf": "Ipinapakita ang {{visible}} sa {{total}}",
+      "all": "Lahat",
+      "pinnedToTop": "Na-pin sa itaas ang {{title}}",
+      "unpinned": "Na-unpin",
+      "notifications": "Mga Notification",
+      "tapToSeeFront": "I-tap ang card para makita ang harap",
+      "tapToSeeBack": "I-tap ang card para makita ang likod",
+      "tapToFlip": "I-tap ang card para baligtarin ito",
+      "share": "Ibahagi",
+      "showQr": "Ipakita ang QR",
+      "pin": "I-pin",
+      "unpin": "I-unpin",
+      "activity": "Aktibidad",
+      "removeFromWallet": "Alisin sa Wallet",
+      "openDetails": "Buksan ang detalye ng {{title}}",
+      "pinned": "Naka-pin",
+      "otherCredentials": "Iba pang Kredensyal",
+      "noOtherMatch": "Walang ibang kredensyal na tumutugma sa paghahanap.",
+      "swipeHint": "Mag-swipe para sa iba pa · i-tap ang card para sa detalye",
+      "noResultsTitle": "Walang Tugmang Kredensyal",
+      "noResultsText": "Subukan ang ibang pangalan o issuer, o i-clear ang mga filter.",
+      "clearFilters": "I-clear ang mga Filter",
+      "previousCredential": "Nakaraang kredensyal",
+      "nextCredential": "Susunod na kredensyal",
+      "position": "Kredensyal {{index}} sa {{count}}"
+    },
+    "header": {
+      "wallet": "Wallet",
+      "openProfile": "Buksan ang profile",
+      "searchCredentials": "Maghanap ng kredensyal",
+      "moreOptions": "Higit pang opsyon",
+      "closeMenu": "Isara ang menu",
+      "searchPlaceholder": "Maghanap ayon sa pangalan o issuer",
+      "clearSearch": "I-clear ang paghahanap",
+      "cancel": "Kanselahin",
+      "filterByIssuer": "I-filter ayon sa issuer"
+    },
+    "carousel": {
+      "yourCredentials": "Ang iyong mga kredensyal. Mag-swipe pakaliwa o pakanan",
+      "newPrefix": "Bago. ",
+      "tapToFlipTitle": "{{title}}. I-tap para baligtarin",
+      "showTitle": "Ipakita ang {{title}}",
+      "loading": "Nilo-load ang kredensyal"
+    },
+    "details": {
+      "backToWallet": "Bumalik sa wallet",
+      "unpinTitle": "I-unpin ang {{title}}",
+      "pinTitle": "I-pin sa itaas ang {{title}}",
+      "backShown": "Likod ng card ang ipinapakita. I-tap para makita ang harap",
+      "frontShown": "Harap ng card ang ipinapakita. I-tap para makita ang likod",
+      "credentialInformation": "Impormasyon ng Kredensyal",
+      "issuer": "Issuer",
+      "issuedOn": "Inisyu noong",
+      "validUntil": "Valid hanggang",
+      "format": "Format",
+      "signature": "Lagda",
+      "foundRevokedOn": "Nakitang binawi noong {{date}}",
+      "expiredOn": "Nag-expire noong {{date}}",
+      "validUntilDate": "Valid hanggang {{date}}",
+      "theIssuer": "Ang issuer",
+      "expiredTitle": "Nag-expire na ang kredensyal na ito",
+      "revokedTitle": "Binawi ng issuer",
+      "expiredText": "Tatanggihan ito ng mga verifier. Kumuha ng bagong kopya mula sa {{issuer}}.",
+      "revokedText": "Binawi ng {{issuer}} ang kredensyal na ito, kaya hindi ito maibabahagi. Makipag-ugnayan sa kanila kung sa tingin mo ay mali ito."
+    },
+    "card": {
+      "scanToVerify": "I-scan para i-verify",
+      "verificationQr": "QR code para sa beripikasyon",
+      "numberShort": "Blg.",
+      "licenceNo": "Blg. ng lisensya"
+    },
+    "months": {
+      "1": "Ene",
+      "2": "Peb",
+      "3": "Mar",
+      "4": "Abr",
+      "5": "May",
+      "6": "Hun",
+      "7": "Hul",
+      "8": "Ago",
+      "9": "Set",
+      "10": "Okt",
+      "11": "Nob",
+      "12": "Dis"
+    }
   }
 }

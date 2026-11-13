@@ -8,6 +8,7 @@ import {AlertIcon, ShieldCheckIcon} from './Icons';
 import {fonts, narrowTextScale, radii, SLOT_LABEL_MAX_SCALE} from './tokens';
 import {RevampColors} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
+import {wt} from './walletText';
 import {CardStatus, CredentialCardData} from './useCredentialCard';
 
 const formatName: Record<string, string> = {
@@ -59,7 +60,9 @@ interface InfoRow {
 
 function infoRows(data: CredentialCardData, c: RevampColors): InfoRow[] {
   const rows: (InfoRow | undefined)[] = [
-    data.issuerName ? {label: 'Issuer', value: data.issuerName} : undefined,
+    data.issuerName
+      ? {label: wt('details.issuer'), value: data.issuerName}
+      : undefined,
     data.number
       ? {
           label: data.number.label,
@@ -70,13 +73,21 @@ function infoRows(data: CredentialCardData, c: RevampColors): InfoRow[] {
     ...(['issued', 'valid'] as const).map(k => {
       const value = date(data.claims, DATE_KEYS[k]);
       return value
-        ? {label: k === 'issued' ? 'Issued on' : 'Valid until', value}
+        ? {
+            label: wt(
+              k === 'issued' ? 'details.issuedOn' : 'details.validUntil',
+            ),
+            value,
+          }
         : undefined;
     }),
-    {label: 'Format', value: formatName[data.format] ?? data.format},
     {
-      label: 'Signature',
-      value: statusLabel[data.status],
+      label: wt('details.format'),
+      value: formatName[data.format] ?? data.format,
+    },
+    {
+      label: wt('details.signature'),
+      value: statusLabel(data.status),
       colour: statusColour(c, data.status),
     },
   ];
@@ -99,7 +110,7 @@ export const StatusPill: React.FC<{status: CardStatus; large?: boolean}> = ({
       )}
       <ScaledText
         style={[styles.pillText, large && {fontSize: 14}, {color: colour}]}>
-        {statusLabel[status]}
+        {statusLabel(status)}
       </ScaledText>
     </View>
   );
@@ -112,16 +123,16 @@ const revokedOn = (data: CredentialCardData) =>
 function statusDate(data: CredentialCardData): string | undefined {
   if (data.status === 'revoked') {
     const date = revokedOn(data);
-    return date ? `Found revoked on ${date}` : undefined;
+    return date ? wt('details.foundRevokedOn', {date}) : undefined;
   }
   if (data.status === 'expired') {
     const date = data.expiryDate
       ? displayDate(data.expiryDate)
       : validUntil(data);
-    return date ? `Expired on ${date}` : undefined;
+    return date ? wt('details.expiredOn', {date}) : undefined;
   }
   const date = validUntil(data);
-  return date ? `Valid until ${date}` : undefined;
+  return date ? wt('details.validUntilDate', {date}) : undefined;
 }
 
 export const StatusRow: React.FC<{data: CredentialCardData}> = ({data}) => {
@@ -143,7 +154,7 @@ export const StatusRow: React.FC<{data: CredentialCardData}> = ({data}) => {
 export const StatusNotice: React.FC<{data: CredentialCardData}> = ({data}) => {
   const {c} = useRevampTheme();
   if (!isInactive(data.status)) return null;
-  const issuer = data.issuerName ?? 'The issuer';
+  const issuer = data.issuerName ?? wt('details.theIssuer');
   const expired = data.status === 'expired';
   const colour = statusColour(c, data.status);
   return (
@@ -156,12 +167,12 @@ export const StatusNotice: React.FC<{data: CredentialCardData}> = ({data}) => {
       <AlertIcon color={colour} size={18} />
       <View style={{flex: 1, gap: 4}}>
         <ScaledText style={[styles.noticeTitle, {color: colour}]}>
-          {expired ? 'This credential has expired' : 'Revoked by the issuer'}
+          {expired ? wt('details.expiredTitle') : wt('details.revokedTitle')}
         </ScaledText>
         <ScaledText style={[styles.noticeText, {color: c.ink}]}>
           {expired
-            ? `Verifiers will reject it. Get an updated copy from ${issuer}.`
-            : `${issuer} has revoked this credential, so it can't be shared. Contact them if you think this is a mistake.`}
+            ? wt('details.expiredText', {issuer})
+            : wt('details.revokedText', {issuer})}
         </ScaledText>
       </View>
     </View>
@@ -220,7 +231,7 @@ export const CredentialInformation: React.FC<{
   return (
     <View style={{gap: 10}}>
       <ScaledText style={[styles.sectionTitle, {color: c.ink}]}>
-        Credential Information
+        {wt('details.credentialInformation')}
       </ScaledText>
       <View
         style={[

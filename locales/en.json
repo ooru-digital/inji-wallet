@@ -1709,5 +1709,106 @@
     "downloadingCard": "Downloading your card…",
     "unknownIssuer": "Unknown issuer",
     "offering": "Offering"
+  },
+  "Wallet": {
+    "tabs": {
+      "home": "Home",
+      "activity": "Activity",
+      "settings": "Settings"
+    },
+    "status": {
+      "verified": "Valid",
+      "pending": "Pending",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "home": {
+      "credentialOne": "1 credential",
+      "credentialMany": "{{count}} credentials",
+      "shownOf": "{{visible}} of {{total}} shown",
+      "all": "All",
+      "pinnedToTop": "{{title}} pinned to top",
+      "unpinned": "Unpinned",
+      "notifications": "Notifications",
+      "tapToSeeFront": "Tap the card to see the front",
+      "tapToSeeBack": "Tap the card to see the back",
+      "tapToFlip": "Tap the card to flip it",
+      "share": "Share",
+      "showQr": "Show QR",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "activity": "Activity",
+      "removeFromWallet": "Remove from Wallet",
+      "openDetails": "Open {{title}} details",
+      "pinned": "Pinned",
+      "otherCredentials": "Other Credentials",
+      "noOtherMatch": "No other credentials match your search.",
+      "swipeHint": "Swipe for more · tap a card for details",
+      "noResultsTitle": "No Matching Credentials",
+      "noResultsText": "Try another name or issuer, or clear the filters.",
+      "clearFilters": "Clear Filters",
+      "previousCredential": "Previous credential",
+      "nextCredential": "Next credential",
+      "position": "Credential {{index}} of {{count}}"
+    },
+    "header": {
+      "wallet": "Wallet",
+      "openProfile": "Open profile",
+      "searchCredentials": "Search credentials",
+      "moreOptions": "More options",
+      "closeMenu": "Close menu",
+      "searchPlaceholder": "Search by name or issuer",
+      "clearSearch": "Clear search",
+      "cancel": "Cancel",
+      "filterByIssuer": "Filter by issuer"
+    },
+    "carousel": {
+      "yourCredentials": "Your credentials. Swipe left or right",
+      "newPrefix": "New. ",
+      "tapToFlipTitle": "{{title}}. Tap to flip",
+      "showTitle": "Show {{title}}",
+      "loading": "Loading credential"
+    },
+    "details": {
+      "backToWallet": "Back to wallet",
+      "unpinTitle": "Unpin {{title}}",
+      "pinTitle": "Pin {{title}} to top",
+      "backShown": "Card back shown. Tap to show the front",
+      "frontShown": "Card front shown. Tap to see the back",
+      "credentialInformation": "Credential Information",
+      "issuer": "Issuer",
+      "issuedOn": "Issued on",
+      "validUntil": "Valid until",
+      "format": "Format",
+      "signature": "Signature",
+      "foundRevokedOn": "Found revoked on {{date}}",
+      "expiredOn": "Expired on {{date}}",
+      "validUntilDate": "Valid until {{date}}",
+      "theIssuer": "The issuer",
+      "expiredTitle": "This credential has expired",
+      "revokedTitle": "Revoked by the issuer",
+      "expiredText": "Verifiers will reject it. Get an updated copy from {{issuer}}.",
+      "revokedText": "{{issuer}} has revoked this credential, so it can't be shared. Contact them if you think this is a mistake."
+    },
+    "card": {
+      "scanToVerify": "Scan to verify",
+      "verificationQr": "Verification QR code",
+      "numberShort": "No.",
+      "licenceNo": "Licence no."
+    },
+    "months": {
+      "1": "Jan",
+      "2": "Feb",
+      "3": "Mar",
+      "4": "Apr",
+      "5": "May",
+      "6": "Jun",
+      "7": "Jul",
+      "8": "Aug",
+      "9": "Sep",
+      "10": "Oct",
+      "11": "Nov",
+      "12": "Dec"
+    }
   }
 }

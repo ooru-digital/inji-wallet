@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import {VCMetadata} from '../../shared/VCMetadata';
 import {useVcItemController} from '../VC/VCItemController';
 import {VCProcessor} from '../VC/common/VCProcessor';
@@ -139,6 +140,7 @@ export function useCredentialCard(
 
   const ready = loaded && !!vc && !!wellknown;
 
+  const {i18n} = useTranslation();
   const data = useMemo<CredentialCardData | null>(() => {
     if (!ready) return null;
     const format = vcMetadata.format;
@@ -190,6 +192,8 @@ export function useCredentialCard(
     vcMetadata,
     verifiableCredentialData,
     controller.credential,
+    // Its labels and dates are in the app's language.
+    i18n.language,
   ]);
 
   return {data, controller, service: controller.VCItemService};

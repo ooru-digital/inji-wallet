@@ -12,6 +12,7 @@ import {
 import {ScaledText} from './ScaledText';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
+import {wt} from './walletText';
 import {Copilot} from '../ui/Copilot';
 import {COPILOT_MORE_STEP} from '../../shared/constants';
 import CredIssuerMark from '../../assets/CredIssuerMark.svg';
@@ -65,7 +66,7 @@ export const WalletHeader: React.FC<{
         <View style={styles.left}>
           <Pressable
             onPress={onAvatar}
-            accessibilityLabel="Open profile"
+            accessibilityLabel={wt('header.openProfile')}
             style={[styles.avatarRing, {borderColor: c.sel}]}>
             {/* The app's logo until there is a signed-in user with a profile picture. */}
             <View style={[styles.avatar, {backgroundColor: c.card}]}>
@@ -78,7 +79,7 @@ export const WalletHeader: React.FC<{
               adjustsFontSizeToFit
               minimumFontScale={0.7}
               style={[styles.h1, {color: c.ink}]}>
-              Wallet
+              {wt('header.wallet')}
             </ScaledText>
             <ScaledText
               numberOfLines={1}
@@ -98,7 +99,7 @@ export const WalletHeader: React.FC<{
             {onToggleSearch ? (
               <Pressable
                 onPress={onToggleSearch}
-                accessibilityLabel="Search credentials"
+                accessibilityLabel={wt('header.searchCredentials')}
                 accessibilityState={{expanded: searching}}
                 style={[
                   styles.groupBtn,
@@ -114,7 +115,7 @@ export const WalletHeader: React.FC<{
               targetStyle={{borderRadius: radii.pill}}>
               <Pressable
                 onPress={() => setMenuOpen(true)}
-                accessibilityLabel="More options"
+                accessibilityLabel={wt('header.moreOptions')}
                 accessibilityState={{expanded: menuOpen}}
                 style={[
                   styles.groupBtn,
@@ -138,7 +139,7 @@ export const WalletHeader: React.FC<{
         onRequestClose={() => setMenuOpen(false)}>
         <Pressable
           style={StyleSheet.absoluteFill}
-          accessibilityLabel="Close menu"
+          accessibilityLabel={wt('header.closeMenu')}
           onPress={() => setMenuOpen(false)}
         />
         <Menu
@@ -256,9 +257,9 @@ const SearchPanel: React.FC<{search: SearchState; onCancel: () => void}> = ({
             autoFocus
             value={search.query}
             onChangeText={search.onQuery}
-            placeholder="Search by name or issuer"
+            placeholder={wt('header.searchPlaceholder')}
             placeholderTextColor={c.inkMuted}
-            accessibilityLabel="Search credentials"
+            accessibilityLabel={wt('header.searchCredentials')}
             returnKeyType="search"
             numberOfLines={1}
             multiline={false}
@@ -274,7 +275,7 @@ const SearchPanel: React.FC<{search: SearchState; onCancel: () => void}> = ({
           />
           {search.query ? (
             <Pressable
-              accessibilityLabel="Clear search"
+              accessibilityLabel={wt('header.clearSearch')}
               onPress={() => search.onQuery('')}
               style={styles.clear}>
               <CloseIcon color={c.inkMuted} />
@@ -283,7 +284,7 @@ const SearchPanel: React.FC<{search: SearchState; onCancel: () => void}> = ({
         </View>
         <Pressable onPress={onCancel} style={styles.cancel}>
           <ScaledText style={[styles.cancelText, {color: c.azureInk}]}>
-            Cancel
+            {wt('header.cancel')}
           </ScaledText>
         </Pressable>
       </View>
@@ -294,7 +295,7 @@ const SearchPanel: React.FC<{search: SearchState; onCancel: () => void}> = ({
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.chips}
           style={{marginHorizontal: -24}}
-          accessibilityLabel="Filter by issuer">
+          accessibilityLabel={wt('header.filterByIssuer')}>
           {search.chips.map(chip => {
             const on = chip.key === search.chip;
             return (

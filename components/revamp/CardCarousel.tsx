@@ -17,6 +17,8 @@ import {CredentialCardData} from './useCredentialCard';
 import {CARD_HEIGHT, CARD_WIDTH, motion, radii} from './tokens';
 import {CardSkeleton} from './CardSkeleton';
 import {NewCardDot} from './NewCardDot';
+import {useTranslation} from 'react-i18next';
+import {wt} from './walletText';
 import {
   carouselScale,
   FRONT_CARD_LIFT,
@@ -179,7 +181,7 @@ export const CardCarousel: React.FC<{
       <Animated.View
         style={{height: CARD_HEIGHT * scale + 2 * SLOT_TOP, width}}
         accessibilityRole="adjustable"
-        accessibilityLabel="Your credentials. Swipe left or right">
+        accessibilityLabel={wt('carousel.yourCredentials')}>
         {entries.map((entry, i) => (
           <CarouselCard
             key={entry.key}
@@ -230,6 +232,7 @@ const CarouselCard = React.memo(function CarouselCard({
   reduceMotion: boolean;
   isNew: boolean;
 }) {
+  useTranslation('Wallet');
   const {translateX, rotateY, cardScale, translateY, opacity, dim} =
     useMemo(() => {
       // e: this card's distance from the centre, in cards (negative = to the left).
@@ -325,10 +328,12 @@ const CarouselCard = React.memo(function CarouselCard({
           accessibilityRole="button"
           accessibilityLabel={
             data
-              ? `${isNew ? 'New. ' : ''}${
-                  isActive ? `${data.title}. Tap to flip` : `Show ${data.title}`
+              ? `${isNew ? wt('carousel.newPrefix') : ''}${
+                  isActive
+                    ? wt('carousel.tapToFlipTitle', {title: data.title})
+                    : wt('carousel.showTitle', {title: data.title})
                 }`
-              : 'Loading credential'
+              : wt('carousel.loading')
           }>
           {data ? (
             <View>
