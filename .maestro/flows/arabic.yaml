@@ -34,6 +34,10 @@ name: Arabic
     visible: "الأمان والخصوصية"
     timeout: 15000
 - takeScreenshot: 3-settings
+- scrollUntilVisible:
+    element: "لغة"
+    direction: DOWN
+    centerElement: true
 - tapOn: "لغة"
 - tapOn: "English"
 - extendedWaitUntil:

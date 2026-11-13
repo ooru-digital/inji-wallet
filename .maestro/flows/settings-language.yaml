@@ -20,6 +20,11 @@ name: Language
     visible: "Mga setting"
     timeout: 15000
 - takeScreenshot: 2-settings-filipino
+# Longer text in Filipino pushes the row below the tab bar.
+- scrollUntilVisible:
+    element: "Wika"
+    direction: DOWN
+    centerElement: true
 - tapOn: "Wika"
 - extendedWaitUntil:
     visible: "English"
