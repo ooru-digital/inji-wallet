@@ -17,7 +17,6 @@ import {fonts} from './revamp/tokens';
 import {useRevampTheme} from './revamp/useRevampTheme';
 
 /** Languages written right to left, whose names align right in the lists. */
-export const RTL_LANGUAGES = ['ar'];
 
 /** The trigger opens a page listing the app's languages; choosing one applies it and goes back. */
 export const LanguageSelector: React.FC<LanguageSelectorProps> = props => {
@@ -45,7 +44,6 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = props => {
                   testID={`language-${value}`}
                   label={label}
                   mark="check"
-                  rtl={RTL_LANGUAGES.includes(value)}
                   selected={i18n.language === value}
                   onPress={() => {
                     setIsOpen(false);

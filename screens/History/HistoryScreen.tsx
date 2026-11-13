@@ -1,6 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {
-  I18nManager,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -21,6 +20,7 @@ import {
 } from './HistoryScreenController';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
+import {PageHeader} from '../../components/revamp/Page';
 import {DesignTokens} from '../../components/ui/themes/designTokens';
 import testIDProps from '../../shared/commonUtil';
 import {VCItemContainerFlowType} from '../../shared/Utils';
@@ -38,7 +38,7 @@ import {
 import {NotificationRow} from './NotificationRow';
 import {NotificationDetailModal} from './NotificationDetailModal';
 
-const {colors, brand, elevation} = DesignTokens;
+const {colors, brand} = DesignTokens;
 
 export const HistoryScreen: React.FC = () => {
   const {t} = useTranslation('HistoryScreen');
@@ -116,24 +116,13 @@ export const HistoryScreen: React.FC = () => {
   return (
     <View style={[styles.screen, {paddingTop: insets.top + 12}]}>
       <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <Pressable
-            {...testIDProps('goBack')}
-            accessibilityRole="button"
-            accessibilityLabel={t('goBack')}
-            onPress={goBack}
-            style={({pressed}) => [
-              styles.backButton,
-              elevation.icon,
-              pressed && styles.pressed,
-            ]}>
-            <Icon
-              name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
-              type="material-community"
-              size={22}
-              color={colors.ink}
-            />
-          </Pressable>
+        <PageHeader title={t('title')} onBack={goBack} />
+        <View style={styles.statusRow}>
+          <Text {...testIDProps('unreadSummary')} style={styles.unreadSummary}>
+            {readState.unreadCount === 0
+              ? t('allCaughtUp')
+              : t('unreadCount', {count: readState.unreadCount})}
+          </Text>
           <Pressable
             {...testIDProps('markAllAsRead')}
             accessibilityRole="button"
@@ -150,17 +139,6 @@ export const HistoryScreen: React.FC = () => {
               {t('markAllAsRead')}
             </Text>
           </Pressable>
-        </View>
-
-        <View style={styles.titleRow}>
-          <Text {...testIDProps('notificationsTitle')} style={styles.title}>
-            {t('title')}
-          </Text>
-          <Text {...testIDProps('unreadSummary')} style={styles.unreadSummary}>
-            {readState.unreadCount === 0
-              ? t('allCaughtUp')
-              : t('unreadCount', {count: readState.unreadCount})}
-          </Text>
         </View>
 
         <ScrollView
@@ -267,24 +245,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.line,
   },
-  headerTopRow: {
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
+    paddingHorizontal: 24,
+    paddingTop: 4,
   },
   markAllAsRead: {
     fontFamily: 'Montserrat_600SemiBold',
-    fontSize: 15,
-    color: colors.azureInk,
+    fontSize: 14,
+    color: colors.ink,
   },
   markAllAsReadDisabled: {
     opacity: 0.5,
@@ -292,27 +263,13 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginTop: 18,
-  },
-  title: {
-    flexShrink: 1,
-    fontFamily: 'Montserrat_700Bold',
-    fontSize: 30,
-    color: colors.ink,
-  },
   unreadSummary: {
-    marginLeft: 12,
     fontFamily: 'Montserrat_500Medium',
     fontSize: 14,
     color: colors.inkMuted,
   },
   filters: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 14,
     gap: 8,
