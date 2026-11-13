@@ -90,10 +90,11 @@ export const CopilotTooltip = () => {
             accessibilityRole="button"
             onPress={controller.goToPrev}
             style={({pressed}) => [
-              styles.textButton,
+              styles.secondaryButton,
+              {backgroundColor: c.sand},
               pressed && styles.pressed,
             ]}>
-            <Text style={[styles.textButtonLabel, {color: c.inkMuted}]}>
+            <Text style={[styles.secondaryButtonLabel, {color: c.primary}]}>
               {t('previous')}
             </Text>
           </Pressable>
@@ -103,10 +104,11 @@ export const CopilotTooltip = () => {
             accessibilityRole="button"
             onPress={controller.stop}
             style={({pressed}) => [
-              styles.textButton,
+              styles.secondaryButton,
+              {backgroundColor: c.sand},
               pressed && styles.pressed,
             ]}>
-            <Text style={[styles.textButtonLabel, {color: c.inkMuted}]}>
+            <Text style={[styles.secondaryButtonLabel, {color: c.primary}]}>
               {t('skipTour')}
             </Text>
           </Pressable>
@@ -176,17 +178,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     marginTop: 22,
   },
-  textButton: {
-    paddingVertical: 10,
-    paddingRight: 12,
+  // Previous and Skip tour: a pill like Next, in the quieter colours, so they read as buttons.
+  // It gives way to Next on a narrow screen: a long translation wraps inside it instead.
+  secondaryButton: {
+    flexShrink: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
   },
-  textButtonLabel: {
+  secondaryButtonLabel: {
     fontFamily: fonts.semibold,
-    fontSize: 15,
+    fontSize: 16,
+    textAlign: 'center',
   },
   primaryButton: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,
