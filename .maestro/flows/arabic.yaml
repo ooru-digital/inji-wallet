@@ -1,0 +1,54 @@
+appId: io.ooru.credissuerwallet
+name: Arabic
+---
+# The app in Arabic, right to left: Home, Activity and Settings, then back to English.
+- startRecording: recording
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: "Language"
+- tapOn: "عربى"
+# The app restarts right to left.
+- extendedWaitUntil:
+    visible: "بطاقاتك مقفلة.|لا توجد بطاقات بعد"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "بطاقاتك مقفلة."
+    commands:
+      - tapOn: "فتح القفل"
+      - extendedWaitUntil:
+          visible: "أدخل رمز المرور.*"
+          timeout: 15000
+      - runFlow: ../subflows/type-passcode.yaml
+- extendedWaitUntil:
+    visible: "لا توجد بطاقات بعد"
+    timeout: 30000
+- takeScreenshot: 1-home
+# The tab labels are English until the wallet's text is translated (credflow-api#5448).
+- tapOn: "النشاط|Activity"
+- extendedWaitUntil:
+    visible: "الإشعارات"
+    timeout: 15000
+- takeScreenshot: 2-activity
+- tapOn: "الإعدادات|إعدادات|Settings"
+- extendedWaitUntil:
+    visible: "الأمان والخصوصية"
+    timeout: 15000
+- takeScreenshot: 3-settings
+- tapOn: "لغة"
+- tapOn: "English"
+- extendedWaitUntil:
+    visible: "Your cards are locked.|No cards yet|Security and Privacy"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Your cards are locked."
+    commands:
+      - tapOn: "Unlock"
+      - extendedWaitUntil:
+          visible: "Enter your passcode"
+          timeout: 15000
+      - runFlow: ../subflows/type-passcode.yaml
+- extendedWaitUntil:
+    visible: "No cards yet|Security and Privacy"
+    timeout: 30000
+- stopRecording

@@ -21,5 +21,6 @@ executionOrder:
     - Activity filters
     - Scan
     - Scan with the camera off
+    - Arabic
     # Last: it changes the passcode, and puts 111111 back.
     - Change PIN
