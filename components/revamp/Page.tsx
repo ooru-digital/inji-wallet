@@ -379,20 +379,9 @@ export const ChoiceRow: React.FC<{
   mark?: 'radio' | 'check';
   onPress: () => void;
   testID?: string;
-  rtl?: boolean;
   /** Draw the row as its own rounded card, tinted when selected; used inside ChoiceCards. */
   card?: boolean;
-}> = ({
-  label,
-  hint,
-  icon,
-  selected,
-  mark = 'radio',
-  onPress,
-  testID,
-  rtl,
-  card,
-}) => {
+}> = ({label, hint, icon, selected, mark = 'radio', onPress, testID, card}) => {
   const {c} = useRevampTheme();
   return (
     <Pressable
@@ -427,7 +416,7 @@ export const ChoiceRow: React.FC<{
           style={[
             styles.choiceLabel,
             card && styles.choiceLabelCard,
-            {color: c.ink, textAlign: rtl ? 'right' : 'left'},
+            {color: c.ink, textAlign: 'left'},
           ]}>
           {label}
         </ScaledText>

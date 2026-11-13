@@ -113,13 +113,10 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
       <View
         style={{flex: 1, backgroundColor: c.canvas, paddingTop: insets.top}}>
         <BannerNotificationContainer />
-        <View style={styles.header}>
-          <ScaledText
-            accessibilityRole="header"
-            style={[styles.title, {color: c.ink}]}>
-            {t('header')}
-          </ScaledText>
-        </View>
+        <PageHeader
+          title={t('header')}
+          onBack={() => navigation.navigate(BOTTOM_TAB_ROUTES.home as never)}
+        />
         <ScrollView
           {...testIDProps('settingsScreen')}
           contentContainerStyle={[
@@ -364,13 +361,6 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
 };
 
 const styles = StyleSheet.create({
-  header: {paddingTop: 18, paddingBottom: 12, paddingHorizontal: 24},
-  title: {
-    fontFamily: fonts.medium,
-    fontSize: 28,
-    lineHeight: 32,
-    letterSpacing: -0.56,
-  },
   options: {paddingTop: 12, paddingBottom: 24, gap: 12},
   optionsHint: {fontFamily: fonts.regular, fontSize: 13, paddingHorizontal: 4},
   content: {paddingTop: 8, paddingHorizontal: 24, paddingBottom: 32, gap: 24},

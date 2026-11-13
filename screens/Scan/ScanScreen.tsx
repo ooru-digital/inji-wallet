@@ -435,11 +435,14 @@ export const ScanScreen: React.FC = () => {
           <Icon
             name="close"
             type="material-community"
-            size={24}
+            size={22}
             color={COLORS.darkText}
           />
         </Pressable>
-        <Text style={styles.headerTitle} accessibilityRole="header">
+        <Text
+          style={styles.headerTitle}
+          accessibilityRole="header"
+          numberOfLines={1}>
           {t('scanQrTitle')}
         </Text>
         {scanScreenController.isScanning || isAddOnly ? (
@@ -457,7 +460,7 @@ export const ScanScreen: React.FC = () => {
             <Icon
               name={isTorchOn ? 'flash' : 'flash-outline'}
               type="material-community"
-              size={24}
+              size={22}
               color={isTorchOn ? COLORS.darkBackground : COLORS.darkText}
             />
           </Pressable>
@@ -556,22 +559,28 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  // The same row as PageHeader, in the camera screen's dark colours.
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 6,
+    minHeight: 60,
   },
   headerTitle: {
     flex: 1,
-    marginHorizontal: 16,
-    fontFamily: 'Montserrat_700Bold',
-    fontSize: 26,
+    marginHorizontal: 8,
+    textAlign: 'center',
+    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 18,
+    lineHeight: 22,
     color: COLORS.darkText,
   },
   roundButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.darkSurface,
@@ -580,7 +589,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkText,
   },
   roundButtonPlaceholder: {
-    width: 48,
+    width: 40,
   },
   content: {
     paddingHorizontal: 24,
