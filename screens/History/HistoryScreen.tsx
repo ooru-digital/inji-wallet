@@ -114,7 +114,7 @@ export const HistoryScreen: React.FC = () => {
       : undefined;
 
   return (
-    <View style={[styles.screen, {paddingTop: insets.top + 12}]}>
+    <View style={[styles.screen, {paddingTop: insets.top}]}>
       <View style={styles.header}>
         <PageHeader title={t('title')} onBack={goBack} />
         <View style={styles.statusRow}>

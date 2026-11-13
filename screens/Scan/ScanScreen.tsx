@@ -414,7 +414,7 @@ export const ScanScreen: React.FC = () => {
   return (
     <LinearGradient
       colors={[COLORS.darkBackground, COLORS.darkBackgroundEnd]}
-      style={[styles.screen, {paddingTop: insets.top + 8}]}>
+      style={[styles.screen, {paddingTop: insets.top}]}>
       <BannerNotificationContainer />
       <FaceVerificationAlertOverlay
         isVisible={faceVerificationController.isFaceVerificationConsent}
