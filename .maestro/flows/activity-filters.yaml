@@ -22,12 +22,13 @@ name: Activity filters
           direction: LEFT
 - tapOn: "Account"
 - takeScreenshot: 3-account
-- runFlow:
-    when:
+- repeat:
+    while:
       notVisible: "All"
+    times: 3
     commands:
       - swipe:
-          from: "filter-account"
+          from: "filter-sharing"
           direction: RIGHT
 - tapOn: "All"
 - assertVisible: "No history available yet|Nothing here yet"
