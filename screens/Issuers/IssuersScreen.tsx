@@ -631,6 +631,10 @@ const issuerDisplay = (issuer: issuerType) =>
     ? getDisplayObjectForCurrentLanguage(issuer.display)
     : undefined;
 
+/** The name shown for an issuer, and searched: its display name, or its ID without one. */
+const issuerName = (issuer: issuerType): string =>
+  issuerDisplay(issuer)?.name || issuer.issuer_id;
+
 /**
  * Each issuer's credential type names, read from its well-known metadata. Uses the same cached
  * request as the cards, so a list seen before shows its types straight away.
@@ -776,10 +780,9 @@ const IssuerListPage: React.FC<{
       return issuers;
     }
     return issuers.filter(issuer =>
-      [
-        issuerDisplay(issuer)?.name ?? '',
-        ...(credentialTypes[issuer.issuer_id] ?? []),
-      ].some(text => text.toLowerCase().includes(search)),
+      [issuerName(issuer), ...(credentialTypes[issuer.issuer_id] ?? [])].some(
+        text => text.toLowerCase().includes(search),
+      ),
     );
   }, [issuers, query, credentialTypes]);
 
@@ -999,7 +1002,7 @@ const IssuerRow = React.memo(function IssuerRow({
   const {c} = useRevampTheme();
   const display = issuerDisplay(issuer);
   const testID = removeWhiteSpace(issuer.issuer_id);
-  const name = display?.name ?? issuer.issuer_id;
+  const name = issuerName(issuer);
   // The credential types once they are known; the issuer's own description until then.
   const hint = credentialTypes?.length
     ? credentialTypes.join(' · ')
