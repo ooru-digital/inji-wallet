@@ -656,12 +656,23 @@ function useIssuerCredentialTypes(issuers: issuerType[]) {
           return;
         }
         const host = issuer.credential_issuer_host;
+        const fetchWellknown = () =>
+          CACHED_API.fetchIssuerWellknownConfig(host, host, true);
         try {
-          const wellknown = await CACHED_API.fetchIssuerWellknownConfig(
-            host,
-            host,
-            true,
-          );
+          let wellknown;
+          try {
+            wellknown = await fetchWellknown();
+          } catch {
+            // One more try after a pause, so a passing network blip doesn't leave the row
+            // without its types until the list is opened again.
+            await new Promise(resolve =>
+              setTimeout(resolve, CREDENTIAL_TYPES_RETRY_DELAY_MS),
+            );
+            if (!active) {
+              return;
+            }
+            wellknown = await fetchWellknown();
+          }
           if (!active) {
             return;
           }
@@ -673,7 +684,7 @@ function useIssuerCredentialTypes(issuers: issuerType[]) {
             drawTimer = setTimeout(draw, CREDENTIAL_TYPES_DRAW_DELAY_MS);
           }
         } catch {
-          // The row still shows the issuer, just without its types.
+          // Failed twice: the row still shows the issuer, just without its types.
         }
       }
     };
@@ -698,6 +709,8 @@ function useIssuerCredentialTypes(issuers: issuerType[]) {
 const CREDENTIAL_TYPE_FETCHES_AT_ONCE = 3;
 // Types arriving close together are drawn in one go rather than a redraw each.
 const CREDENTIAL_TYPES_DRAW_DELAY_MS = 250;
+// Pause before the one retry of an issuer whose metadata failed to load.
+const CREDENTIAL_TYPES_RETRY_DELAY_MS = 1500;
 
 /** The + button's page: the issuers to sign in with (eSignet) and download a credential from. */
 const IssuerListPage: React.FC<{
