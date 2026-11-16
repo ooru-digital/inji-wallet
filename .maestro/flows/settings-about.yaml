@@ -6,6 +6,7 @@ name: About
 - scrollUntilVisible:
     element: "About CredIssuer Wallet"
     direction: DOWN
+    centerElement: true
 - tapOn: "About CredIssuer Wallet"
 - extendedWaitUntil:
     visible: "Version .*"

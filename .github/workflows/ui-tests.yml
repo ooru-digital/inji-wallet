@@ -40,12 +40,14 @@ jobs:
         with:
           persist-credentials: false
 
-      # The APK depends on every tracked file except the flows and the docs, so a run that only
-      # changes flows reuses the last APK instead of building again.
+      # The APK depends on every tracked file except the flows and the docs, and on the API token
+      # built into it, so a run that only changes flows reuses the last APK instead of building again.
       - name: Fingerprint the app
         id: app
+        env:
+          CREDISSUER_API_TOKEN: ${{ secrets.CREDISSUER_API_TOKEN }}
         run: |
-          echo "hash=$(git ls-files -s -- . ':(exclude).maestro' ':(exclude)*.md' | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
+          echo "hash=$({ git ls-files -s -- . ':(exclude).maestro' ':(exclude)*.md'; printf '%s' "$CREDISSUER_API_TOKEN" | sha256sum; } | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
 
       - name: Reuse the APK built from the same code
         id: apk

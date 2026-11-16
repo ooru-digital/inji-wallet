@@ -12,10 +12,14 @@ name: Activity filters
 - takeScreenshot: 1-credentials
 - tapOn: "Sharing"
 - takeScreenshot: 2-sharing
-- scrollUntilVisible:
-    element: "Account"
-    direction: RIGHT
-    centerElement: true
+# The chips scroll sideways in their own row, so the swipe starts on one of them.
+- runFlow:
+    when:
+      notVisible: "Account"
+    commands:
+      - swipe:
+          from: "filter-sharing"
+          direction: LEFT
 - tapOn: "Account"
 - takeScreenshot: 3-account
 - tapOn: "All"

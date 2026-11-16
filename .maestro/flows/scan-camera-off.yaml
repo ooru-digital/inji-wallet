@@ -2,11 +2,10 @@ appId: io.ooru.credissuerwallet
 name: Scan with the camera off
 ---
 - startRecording: recording
-- runFlow: ../subflows/set-up-once.yaml
-- launchApp:
-    permissions:
-      camera: deny
-- runFlow: ../subflows/home.yaml
+- runFlow:
+    file: ../subflows/home.yaml
+    env:
+      CAMERA: deny
 - tapOn: "Scan to Add or Share"
 - extendedWaitUntil:
     visible: "Camera access is off"

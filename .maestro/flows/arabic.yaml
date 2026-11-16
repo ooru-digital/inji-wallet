@@ -1,5 +1,7 @@
 appId: io.ooru.credissuerwallet
 name: Arabic
+onFlowComplete:
+  - runFlow: ../subflows/back-to-english.yaml
 ---
 # The app in Arabic, right to left: Home, Activity and Settings, then back to English.
 - startRecording: recording

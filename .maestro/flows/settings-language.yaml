@@ -1,5 +1,7 @@
 appId: io.ooru.credissuerwallet
 name: Language
+onFlowComplete:
+  - runFlow: ../subflows/back-to-english.yaml
 ---
 - startRecording: recording
 - runFlow: ../subflows/open-settings.yaml
@@ -30,8 +32,9 @@ name: Language
     visible: "English"
     timeout: 10000
 - tapOn: "English"
+# Settings stays scrolled down to Language.
 - extendedWaitUntil:
-    visible: "Security and Privacy"
+    visible: "Sharing history"
     timeout: 15000
-- assertVisible: "Settings"
+- assertVisible: "English"
 - stopRecording
