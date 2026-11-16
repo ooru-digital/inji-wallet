@@ -41,7 +41,12 @@ export const IssuersMachine = model.createMachine(
           // A failed fetch only marks the list, which offers a retry, instead of the full-screen
           // download error.
           onError: {
-            actions: model.assign({issuersFetchFailed: true}),
+            actions: [
+              model.assign({issuersFetchFailed: true}),
+              // The retry UI doesn't show why it failed (offline, 5xx, bad response), so log it.
+              (_context, event) =>
+                console.error('Error fetching the issuers list', event.data),
+            ],
             target: 'selectingIssuer',
           },
         },
