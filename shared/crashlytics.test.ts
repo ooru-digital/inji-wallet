@@ -61,5 +61,13 @@ describe('crashlytics', () => {
       expect(mockLog).not.toHaveBeenCalled();
       expect(mockRecordError).toHaveBeenCalledWith({}, new Error('timeout'));
     });
+
+    it('never throws, so a reporting failure cannot break the flow that called it', () => {
+      mockRecordError.mockImplementationOnce(() => {
+        throw new Error('native module failed');
+      });
+
+      expect(() => reportError(new Error('boom'))).not.toThrow();
+    });
   });
 });

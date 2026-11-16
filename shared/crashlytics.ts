@@ -35,17 +35,24 @@ export function initCrashlytics(): void {
   }
 }
 
-/** Reports an error the app caught and handled, so it shows in Crashlytics as non-fatal. */
+/**
+ * Reports an error the app caught and handled, so it shows in Crashlytics as non-fatal. Called from
+ * the credential download and verification flows; it never throws, so reporting can't break them.
+ */
 export function reportError(error: unknown, context?: string): void {
   if (!isFirebaseConfigured()) {
     return;
   }
-  const crashlytics = getCrashlytics();
-  if (context) {
-    log(crashlytics, context);
+  try {
+    const crashlytics = getCrashlytics();
+    if (context) {
+      log(crashlytics, context);
+    }
+    recordError(
+      crashlytics,
+      error instanceof Error ? error : new Error(String(error)),
+    );
+  } catch (reportingError) {
+    console.warn('Could not report an error to Crashlytics', reportingError);
   }
-  recordError(
-    crashlytics,
-    error instanceof Error ? error : new Error(String(error)),
-  );
 }
