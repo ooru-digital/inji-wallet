@@ -130,7 +130,13 @@ export const API = {
       API_URLS.issuersList.method,
       API_URLS.issuersList.buildURL(),
     );
-    return response.response.issuers || [];
+    const issuers = response?.response?.issuers;
+    // Throw on an unexpected body rather than return [], which would be cached and show
+    // "no issuers" until it expires; throwing shows the list's retry and caches nothing.
+    if (!Array.isArray(issuers)) {
+      throw new Error('Unexpected issuers list response');
+    }
+    return issuers;
   },
 
   fetchIssuerConfig: async (issuerId: string) => {

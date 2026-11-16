@@ -155,3 +155,35 @@ describe('issuer well-known config, cache preferred', () => {
     expect(await fetchWellknown()).toEqual(fresh);
   });
 });
+
+describe('issuers list', () => {
+  beforeEach(() => {
+    jest.resetModules();
+    CACHED_API = require('./api').CACHED_API;
+    ({getItem: mockGetItem, setItem} = require('../machines/store'));
+    mockRequest = require('./request').request;
+    mockGetItem.mockResolvedValue(null);
+    setItem.mockClear();
+  });
+
+  it('returns the issuers and caches them', async () => {
+    const issuers = [{issuer_id: 'RoadTransport'}];
+    mockRequest.mockResolvedValue({response: {issuers}});
+
+    expect(await CACHED_API.fetchIssuers()).toEqual(issuers);
+    expect(setItem).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['no response', {errors: [{message: 'oops'}]}],
+    ['no issuers', {response: {}}],
+  ])(
+    'fails on a body with %s, caching nothing, so the list offers a retry',
+    async (_, body) => {
+      mockRequest.mockResolvedValue(body);
+
+      await expect(CACHED_API.fetchIssuers()).rejects.toThrow();
+      expect(setItem).not.toHaveBeenCalled();
+    },
+  );
+});
