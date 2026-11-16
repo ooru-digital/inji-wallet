@@ -7,6 +7,12 @@ name: Scan with the camera off
     env:
       CAMERA: deny
 - tapOn: "Scan to Add or Share"
+# The camera isn't granted, so Android asks first.
+- runFlow:
+    when:
+      visible: "Don.t allow"
+    commands:
+      - tapOn: "Don.t allow"
 - extendedWaitUntil:
     visible: "Camera access is off"
     timeout: 15000

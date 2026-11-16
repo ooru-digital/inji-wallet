@@ -42,8 +42,9 @@ onFlowComplete:
     centerElement: true
 - tapOn: "لغة"
 - tapOn: "English"
+# Settings comes back scrolled down to Language.
 - extendedWaitUntil:
-    visible: "Your cards are locked.|No cards yet|Security and Privacy"
+    visible: "Your cards are locked.|No cards yet|Sharing history"
     timeout: 60000
 - runFlow:
     when:
@@ -55,6 +56,6 @@ onFlowComplete:
           timeout: 15000
       - runFlow: ../subflows/type-passcode.yaml
 - extendedWaitUntil:
-    visible: "No cards yet|Security and Privacy"
+    visible: "No cards yet|Sharing history"
     timeout: 30000
 - stopRecording
