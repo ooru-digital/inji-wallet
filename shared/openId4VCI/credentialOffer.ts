@@ -74,9 +74,13 @@ export function getCredentialConfigurationNames(
   return configurationIds
     .map(id => {
       const configuration = supported[id];
+      if (!configuration) {
+        return '';
+      }
       const display =
-        configuration?.display ?? configuration?.credential_metadata?.display;
-      return display ? getDisplayObjectForCurrentLanguage(display)?.name : '';
+        configuration.display ?? configuration.credential_metadata?.display;
+      // Display metadata is optional; without a name, the configuration's ID stands in.
+      return (display && getDisplayObjectForCurrentLanguage(display)?.name) || id;
     })
     .filter((name): name is string => !!name);
 }
