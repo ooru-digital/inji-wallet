@@ -208,7 +208,10 @@ The config files are committed:
 | Android  | `android/app/google-services.json`  | `android/app/build.gradle` applies the google-services and Crashlytics Gradle plugins only when this file exists                                 |
 | iOS      | `ios/Inji/GoogleService-Info.plist` | **`pod install` adds it to the Inji target's resources** (`post_integrate` hook in [`ios/Podfile`](ios/Podfile)) — don't add it in Xcode by hand |
 
-Without the files, both platforms still build and run, with Crashlytics off.
+Without the files, both platforms still build and run, with Crashlytics off. On iOS, run
+`pod install` after removing or restoring the plist: the same hook removes it from the target's
+resources while it's missing (a missing referenced resource fails the build) and adds it back when
+it returns.
 
 The same `post_integrate` hook also replaces the build phase that RNFBCrashlytics adds
 (`[CP-User] [RNFB] Crashlytics Configuration`): Release builds upload the dSYM in the foreground (the

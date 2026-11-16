@@ -264,18 +264,26 @@ target 'Inji' do
         echo "warning: Crashlytics: dSYM upload failed. Crashes from this build stay unprocessed until it is uploaded: ios/Pods/FirebaseCrashlytics/upload-symbols -gsp ios/Inji/GoogleService-Info.plist -p ios <path to the .dSYM>"
       fi
     SH
-    # It also bundles ios/Inji/GoogleService-Info.plist once it has been added, so it never has to be
-    # added to the Xcode project by hand. Done here, not in post_install: CocoaPods saves the user
-    # project after post_install and would overwrite it. Documented in README.md, "Firebase Crashlytics".
+    # It also keeps ios/Inji/GoogleService-Info.plist in the Inji target's resources in step with the
+    # file: added when the file exists, so it never has to be added in Xcode by hand, and removed when
+    # it doesn't, because Copy Bundle Resources fails on a referenced file that is missing. Done here,
+    # not in post_install: CocoaPods saves the user project after post_install and would overwrite it.
+    # Documented in README.md, "Firebase Crashlytics".
     firebase_plist = File.join(__dir__, 'Inji', 'GoogleService-Info.plist')
     installer.aggregate_targets.map(&:user_project).uniq.each do |user_project|
       changed = false
       user_project.targets.each do |target|
-        if target.name == 'Inji' && File.exist?(firebase_plist) &&
-           user_project.files.none? { |file| file.path&.end_with?('GoogleService-Info.plist') }
-          app_group = user_project.main_group.find_subpath('Inji', false) || user_project.main_group
-          target.add_resources([app_group.new_reference(firebase_plist)])
-          changed = true
+        if target.name == 'Inji'
+          plist_refs = user_project.files.select { |file| file.path&.end_with?('GoogleService-Info.plist') }
+          if File.exist?(firebase_plist) && plist_refs.empty?
+            app_group = user_project.main_group.find_subpath('Inji', false) || user_project.main_group
+            target.add_resources([app_group.new_reference(firebase_plist)])
+            changed = true
+          elsif !File.exist?(firebase_plist) && plist_refs.any?
+            # remove_from_project also removes the file's Copy Bundle Resources entry.
+            plist_refs.each(&:remove_from_project)
+            changed = true
+          end
         end
         crashlytics_phase = target.shell_script_build_phases.find { |phase| phase.name == crashlytics_phase_name }
         if crashlytics_phase.nil?
