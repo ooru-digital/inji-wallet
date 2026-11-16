@@ -266,7 +266,7 @@ target 'Inji' do
     SH
     # It also bundles ios/Inji/GoogleService-Info.plist once it has been added, so it never has to be
     # added to the Xcode project by hand. Done here, not in post_install: CocoaPods saves the user
-    # project after post_install and would overwrite it.
+    # project after post_install and would overwrite it. Documented in README.md, "Firebase Crashlytics".
     firebase_plist = File.join(__dir__, 'Inji', 'GoogleService-Info.plist')
     installer.aggregate_targets.map(&:user_project).uniq.each do |user_project|
       changed = false
@@ -300,6 +300,11 @@ target 'Inji' do
   # Firebase Crashlytics (@react-native-firebase). Its Firebase SDK pods are partly Swift, and other
   # pods import them as modules. This app doesn't use `use_frameworks!`, so they need modular headers
   # instead; only these pods get them, so nothing else in the build changes.
+  # The list is maintained by hand for @react-native-firebase 25.1.0 (Firebase iOS SDK 12.x). If an
+  # upgrade adds a dependency, `pod install` fails with:
+  #   [!] The following Swift pods cannot yet be integrated as static libraries:
+  #   The Swift pod `X` depends upon `Y`, which does not define modules. ...
+  # Fix: add the pod named as `Y` to this list (and re-run pod install until it passes).
   ['FirebaseCore', 'FirebaseCoreExtension', 'FirebaseCoreInternal', 'FirebaseCrashlytics',
    'FirebaseInstallations', 'FirebaseSessions', 'FirebaseRemoteConfigInterop', 'GoogleUtilities',
    'GoogleDataTransport', 'nanopb', 'PromisesObjC', 'PromisesSwift'].each do |firebase_pod|
