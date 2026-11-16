@@ -8,8 +8,6 @@ import {
 } from './constants';
 import {INITIAL_CONFIG} from './InitialConfig';
 import {getItem, setItem} from '../machines/store';
-import {faceMatchConfig} from './commonUtil';
-import {configure} from '@iriscan/biometric-sdk-react-native';
 import {
   getErrorEventData,
   getImpressionEventData,
@@ -19,6 +17,12 @@ import {
 import {TelemetryConstants} from './telemetry/TelemetryConstants';
 import NetInfo from '@react-native-community/netinfo';
 import {createCacheObject} from './Utils';
+import {
+  currentApiMemoryCacheGeneration,
+  inFlightCacheLookups,
+  inFlightFetches,
+  memoryCache,
+} from './apiMemoryCache';
 
 const isCacheValid = (cachedData: any) => {
   if (!cachedData?.cachedTime || typeof cachedData.cachedTime !== 'number') {
@@ -166,6 +170,9 @@ export const CACHED_API = {
       cacheKey:
         API_CACHED_STORAGE_KEYS.fetchIssuerWellknownConfig(issuerCacheKey),
       fetchCall: API.fetchIssuerWellknownConfig.bind(null, credentialIssuer),
+      // Cards wait for this before they draw, and it can be a megabyte from a slow server:
+      // an hour-old copy is fine for laying out a card while a fresh one downloads.
+      useStaleWhileRefreshing: true,
     }),
 
   fetchIssuerAuthorizationServerMetadata: (
@@ -197,6 +204,11 @@ interface GenerateCacheAPIFunctionProps {
   cacheKey: string;
   fetchCall: (...props: any) => Promise<any>;
   onErrorHardCodedValue?: any;
+  /**
+   * With isCachePreferred: return an expired cached response straight away and refresh it in
+   * the background, instead of waiting for the network.
+   */
+  useStaleWhileRefreshing?: boolean;
 }
 
 async function generateCacheAPIFunction({
@@ -204,12 +216,16 @@ async function generateCacheAPIFunction({
   cacheKey = '',
   fetchCall = () => Promise.resolve(),
   onErrorHardCodedValue = undefined,
+  useStaleWhileRefreshing = false,
 }: GenerateCacheAPIFunctionProps) {
   if (isCachePreferred) {
-    return await generateCacheAPIFunctionWithCachePreference(
-      cacheKey,
-      fetchCall,
-      onErrorHardCodedValue,
+    return await shareInFlight(inFlightCacheLookups, cacheKey, () =>
+      generateCacheAPIFunctionWithCachePreference(
+        cacheKey,
+        fetchCall,
+        onErrorHardCodedValue,
+        useStaleWhileRefreshing,
+      ),
     );
   } else {
     return await generateCacheAPIFunctionWithAPIPreference(
@@ -220,28 +236,67 @@ async function generateCacheAPIFunction({
   }
 }
 
+function shareInFlight<T>(
+  inFlight: Map<string, Promise<T>>,
+  key: string,
+  start: () => Promise<T>,
+): Promise<T> {
+  let pending = inFlight.get(key);
+  if (!pending) {
+    const started = start().finally(() => {
+      // The cache may have been cleared, and the key reused, while this was running.
+      if (inFlight.get(key) === started) inFlight.delete(key);
+    });
+    pending = started;
+    inFlight.set(key, pending);
+  }
+  return pending;
+}
+
+function fetchAndCache(cacheKey: string, fetchCall: (...props: any[]) => any) {
+  return shareInFlight(inFlightFetches, cacheKey, async () => {
+    const generation = currentApiMemoryCacheGeneration();
+    const response = await fetchCall();
+    if (!response) {
+      throw new Error('Received Empty response in fetch call');
+    }
+    const cacheObject = createCacheObject(response);
+    if (generation === currentApiMemoryCacheGeneration()) {
+      memoryCache.set(cacheKey, cacheObject);
+    }
+    setItem(cacheKey, cacheObject, '').then(() =>
+      console.info('Cached response for ' + cacheKey),
+    );
+    return response;
+  });
+}
+
 async function generateCacheAPIFunctionWithCachePreference(
   cacheKey: string,
   fetchCall: (...props: any[]) => any,
   onErrorHardCodedValue?: any,
+  useStaleWhileRefreshing = false,
 ) {
   try {
-    const cachedData = await getItem(cacheKey, null, '');
+    let cachedData = memoryCache.get(cacheKey);
+    if (!cachedData) {
+      const generation = currentApiMemoryCacheGeneration();
+      cachedData = await getItem(cacheKey, null, '');
+      if (cachedData && generation === currentApiMemoryCacheGeneration()) {
+        memoryCache.set(cacheKey, cachedData);
+      }
+    }
     if (cachedData && isCacheValid(cachedData)) {
       console.info('Returned cached response for' + cacheKey);
       return cachedData.response;
-    } else {
-      const response = await fetchCall();
-      if (!response) {
-        throw new Error('Received Empty response in fetch call');
-      }
-      const cacheObject = createCacheObject(response);
-      setItem(cacheKey, cacheObject, '').then(() =>
-        console.info('Cached response for ' + cacheKey),
-      );
-
-      return response;
     }
+    if (useStaleWhileRefreshing && cachedData?.response) {
+      fetchAndCache(cacheKey, fetchCall).catch(error =>
+        console.warn(`Background refresh failed for ${cacheKey}`, error),
+      );
+      return cachedData.response;
+    }
+    return await fetchAndCache(cacheKey, fetchCall);
   } catch (error) {
     console.warn(`Failed to load due to network issue in cache preferred api call.
      cache key:${cacheKey} and has onErrorHardCodedValue:${
@@ -263,6 +318,7 @@ async function generateCacheAPIFunctionWithAPIPreference(
   onErrorHardCodedValue?: any,
 ) {
   let cacheObject;
+  const generation = currentApiMemoryCacheGeneration();
   try {
     const response = await fetchCall();
     if (!response) {
@@ -272,6 +328,9 @@ async function generateCacheAPIFunctionWithAPIPreference(
       updateCacheTTL(Number(response.cacheTTLInMilliSeconds));
     }
     cacheObject = createCacheObject(response);
+    if (generation === currentApiMemoryCacheGeneration()) {
+      memoryCache.set(cacheKey, cacheObject);
+    }
     setItem(cacheKey, cacheObject, '').then(() =>
       console.info('Cached response for ' + cacheKey),
     );
@@ -302,54 +361,6 @@ export default async function getAllConfigurations(
 ) {
   host && changeCrendetialRegistry(host);
   return await CACHED_API.getAllProperties(isCachePreferred);
-}
-
-/** The latest face-match model setup; resolves to whether it succeeded. */
-let faceModelSetup: Promise<boolean> | null = null;
-
-export function initializeFaceModel(): Promise<boolean> {
-  faceModelSetup = configureFaceModel();
-  return faceModelSetup;
-}
-
-/**
- * Whether the face-match model is set up, waiting for a setup still in progress and trying once
- * more if the last one failed. Call before any face compare: the native compare force-unwraps
- * the SDK instance and crashes the app (iOS) when the model was never set up.
- */
-export async function ensureFaceModelReady(): Promise<boolean> {
-  if (faceModelSetup && (await faceModelSetup)) {
-    return true;
-  }
-  return initializeFaceModel();
-}
-
-/** Never rejects: a setup that throws counts as failed, so `ensureFaceModelReady` tries again. */
-async function configureFaceModel(): Promise<boolean> {
-  let result = false;
-  try {
-    result = await configure(faceMatchConfig());
-  } catch (error) {
-    console.warn('Face model setup threw', error);
-  }
-  if (result) {
-    sendImpressionEvent(
-      getImpressionEventData(
-        TelemetryConstants.FlowType.faceModelInit,
-        TelemetryConstants.Screens.home,
-        {status: TelemetryConstants.EndEventStatus.success},
-      ),
-    );
-  } else {
-    sendErrorEvent(
-      getErrorEventData(
-        TelemetryConstants.FlowType.faceModelInit,
-        TelemetryConstants.ErrorId.failure,
-        TelemetryConstants.ErrorMessage.faceModelInitFailed,
-      ),
-    );
-  }
-  return result;
 }
 
 type Api_Params = {

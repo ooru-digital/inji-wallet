@@ -48,7 +48,6 @@ declare module 'react-native-dotenv' {
   /**
    * Flag for toggling the SnapKYC native liveness check (Android only)
    */
-  export const SNAPKYC_LIVENESS: string;
 
   /**
    * Tenant id passed to the SnapKYC liveness SDK as `relayingPartyName`

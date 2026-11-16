@@ -15,7 +15,11 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {Copilot} from '../ui/Copilot';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
-import {COPILOT_SCAN_STEP} from '../../shared/constants';
+import {
+  COPILOT_HISTORY_STEP,
+  COPILOT_SCAN_STEP,
+  COPILOT_SETTINGS_STEP,
+} from '../../shared/constants';
 import {ActivityIcon, HomeIcon, ScanIcon, SettingsIcon} from './Icons';
 import {fonts, radii, shadows, SLOT_LABEL_MAX_SCALE} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
@@ -41,7 +45,8 @@ interface Tab {
   route: string;
   label: string;
   icon: (colour: string, on: boolean) => React.ReactNode;
-  copilot?: string;
+  /** The tab's tour step: its `copilot:` text keys and its order. */
+  copilot?: {key: string; order: number};
 }
 
 const TABS: Tab[] = [
@@ -58,7 +63,7 @@ const TABS: Tab[] = [
     icon: (col, on) => (
       <ActivityIcon color={col} strokeWidth={on ? 2.5 : 2.2} />
     ),
-    copilot: 'history',
+    copilot: {key: 'history', order: COPILOT_HISTORY_STEP},
   },
   {
     route: BOTTOM_TAB_ROUTES.settings,
@@ -66,7 +71,7 @@ const TABS: Tab[] = [
     icon: (col, on) => (
       <SettingsIcon color={col} strokeWidth={on ? 2.5 : 2.2} />
     ),
-    copilot: 'settings',
+    copilot: {key: 'settings', order: COPILOT_SETTINGS_STEP},
   },
 ];
 
@@ -149,9 +154,6 @@ export const RevampTabBar: React.FC<BottomTabBarProps> = ({
     if (focused.name !== name && !event.defaultPrevented)
       navigation.navigate(name);
   };
-  const copilotOrder = (name: string) =>
-    1 + state.routes.findIndex(r => r.name === name);
-
   const renderTab = (tab: Tab, i: number) => {
     const on = i === tabIndex;
     const colour = on ? c.sel : c.inkMuted;
@@ -210,9 +212,9 @@ export const RevampTabBar: React.FC<BottomTabBarProps> = ({
     return (
       <Copilot
         key={tab.route}
-        title={t(`copilot:${tab.copilot}Title`)}
-        description={t(`copilot:${tab.copilot}Message`)}
-        order={copilotOrder(tab.copilot)}>
+        title={t(`copilot:${tab.copilot.key}Title`)}
+        description={t(`copilot:${tab.copilot.key}Message`)}
+        order={tab.copilot.order}>
         {button}
       </Copilot>
     );
@@ -256,16 +258,16 @@ export const RevampTabBar: React.FC<BottomTabBarProps> = ({
       </View>
       <View style={[styles.scanWrap, {left: left + navWidth + SCAN_GAP}]}>
         <Copilot
-          title={t('copilot:scanToShareTitle')}
-          description={t('copilot:scanToShareMessage')}
+          title={t('copilot:scanTitle')}
+          description={t('copilot:scanMessage')}
           order={COPILOT_SCAN_STEP}
           targetStyle={{borderRadius: radii.pill}}>
           <Pressable
-            // Opens the Share tab's scanner: verifier requests online (OpenID4VP) or over
-            // Bluetooth, and QR login.
+            // Opens the app's one scanner: issuers' credential offers, verifier requests online
+            // (OpenID4VP) or over Bluetooth, and QR login.
             onPress={() => go(BOTTOM_TAB_ROUTES.share)}
             accessibilityRole="button"
-            accessibilityLabel={t('copilot:scanToShareTitle')}
+            accessibilityLabel={t('copilot:scanTitle')}
             testID="scanToShare"
             style={({pressed}) => [
               styles.scan,

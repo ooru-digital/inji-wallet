@@ -602,7 +602,6 @@
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
-				1E55884F2CC0EF2C00CF55B4 /* Copy FaceSDK Model */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				D864AD95A969870E3F1029D7 /* [CP] Embed Pods Frameworks */,
 				467F10C0B5070779AA08A7BB /* [CP] Copy Pods Resources */,
@@ -650,7 +649,7 @@
 			packageReferences = (
 				9CCCA19C2CF87A8400D5A461 /* XCRemoteSwiftPackageReference "secure-keystore-ios-swift" */,
 				9CAE74EC2E2E38F800C2532C /* XCRemoteSwiftPackageReference "pixelpass-ios-swift" */,
-				C3F18B182E320C85007DBE73 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */,
+				4B1D0E6A7C2F4E8A9B3C5D71 /* XCLocalSwiftPackageReference "inji-openid4vp-ios-swift" */,
 				C3F18B1B2E320C9A007DBE73 /* XCRemoteSwiftPackageReference "inji-vci-client-ios-swift" */,
 				C33922392E79A536004A01EC /* XCRemoteSwiftPackageReference "inji-vc-renderer-ios-swift" */,
 				9CCC57752E9D7C7000669DB7 /* XCRemoteSwiftPackageReference "tuvali-ios-swift" */,
@@ -712,24 +711,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" $PROJECT_ROOT ios relative | tail -n 1)\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
-		};
-		1E55884F2CC0EF2C00CF55B4 /* Copy FaceSDK Model */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 12;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Copy FaceSDK Model";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "MODEL_SRC_DIR=\"${PROJECT_DIR}/../assets/models\"\nMODEL_DST_DIR=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app\"\n\ncp -v \"$MODEL_SRC_DIR/faceModel.tflite\" \"$MODEL_DST_DIR\" || {\n    echo \"Failed to copy face model\"\n    exit 1\n}\n";
 		};
 		467F10C0B5070779AA08A7BB /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -950,7 +931,7 @@
 				CODE_SIGN_ENTITLEMENTS = Inji/Inji.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = ZSY3UCY8A4;
 				ENABLE_BITCODE = NO;
@@ -994,7 +975,7 @@
 				CODE_SIGN_ENTITLEMENTS = Inji/InjiRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = ZSY3UCY8A4;
 				INFOPLIST_FILE = Inji/Info.plist;
@@ -1187,6 +1168,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BioChqFaceLivenessBinary;
 		};
+		4B1D0E6A7C2F4E8A9B3C5D71 /* XCLocalSwiftPackageReference "inji-openid4vp-ios-swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "Packages/inji-openid4vp-ios-swift";
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1220,14 +1205,6 @@
 			requirement = {
 				kind = exactVersion;
 				version = 0.1.0;
-			};
-		};
-		C3F18B182E320C85007DBE73 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/inji/inji-openid4vp-ios-swift.git";
-			requirement = {
-				kind = exactVersion;
-				version = 0.7.1;
 			};
 		};
 		C3F18B1B2E320C9A007DBE73 /* XCRemoteSwiftPackageReference "inji-vci-client-ios-swift" */ = {
@@ -1268,7 +1245,7 @@
 		};
 		C3F18B192E320C85007DBE73 /* OpenID4VP */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = C3F18B182E320C85007DBE73 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */;
+			package = 4B1D0E6A7C2F4E8A9B3C5D71 /* XCLocalSwiftPackageReference "inji-openid4vp-ios-swift" */;
 			productName = OpenID4VP;
 		};
 		C3F18B1C2E320C9A007DBE73 /* VCIClient */ = {

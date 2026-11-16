@@ -30,10 +30,8 @@ export function detectImageFormat(bytes: Buffer): string | undefined {
  * Coerces a credential portrait / captured probe into standard base64 that Android's
  * `BitmapFactory.decodeByteArray` can actually decode.
  *
- * This matters because `@iriscan`'s `faceExtractAndEncode` has no try/catch around
- * `extractAndEncode(bitmap)` — handing it undecodable data makes `decodeByteArray` return null
- * and throws out of the native module as an uncatchable "Exception in native call from JS"
- * redbox rather than a rejected promise. So the validation has to happen before the call.
+ * Undecodable data makes `decodeByteArray` return null in the native face match, so the
+ * validation happens before the call rather than as an error from inside it.
  *
  * mdoc portraits arrive as a CBOR byte string that pixelpass' `toJson` may render as base64,
  * base64url, a plain number array, or a Buffer-shaped object — hence the several shapes here.

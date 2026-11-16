@@ -13,8 +13,9 @@ import {ScaledText} from './ScaledText';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {Copilot} from '../ui/Copilot';
+import {COPILOT_MORE_STEP} from '../../shared/constants';
 import CredIssuerMark from '../../assets/CredIssuerMark.svg';
-import {CloseIcon, MoreIcon, PlusIcon, SearchIcon} from './Icons';
+import {CloseIcon, MoreIcon, SearchIcon} from './Icons';
 import {fonts, radii, shadows} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
 
@@ -42,24 +43,15 @@ export interface SearchState {
 
 const MENU_TOP = 70;
 
-/** "Wallet" with the count, add, search and a menu; search opens a field and filter chips below. */
+/** "Wallet" with the count, search and a menu; search opens a field and filter chips below. */
 export const WalletHeader: React.FC<{
   countText: string;
   onAvatar: () => void;
-  onAdd: () => void;
   searching: boolean;
   onToggleSearch?: () => void;
   search?: SearchState;
   menu: MenuItem[];
-}> = ({
-  countText,
-  onAvatar,
-  onAdd,
-  searching,
-  onToggleSearch,
-  search,
-  menu,
-}) => {
+}> = ({countText, onAvatar, searching, onToggleSearch, search, menu}) => {
   const {c} = useRevampTheme();
   const {t} = useTranslation();
   const insets = useSafeAreaInsets();
@@ -97,24 +89,6 @@ export const WalletHeader: React.FC<{
           </View>
         </View>
         <View style={styles.right}>
-          <Copilot
-            title={t('copilot:downloadTitle')}
-            description={t('copilot:downloadMessage')}
-            order={1}
-            targetStyle={{borderRadius: radii.pill}}>
-            <Pressable
-              onPress={onAdd}
-              testID="downloadCardButton"
-              accessibilityLabel="Add a credential"
-              style={({pressed}) => [
-                styles.iconBtn,
-                shadows.raised,
-                {backgroundColor: c.card, borderColor: c.line},
-                pressed && {transform: [{scale: 0.95}]},
-              ]}>
-              <PlusIcon color={c.ink} />
-            </Pressable>
-          </Copilot>
           <View
             style={[
               styles.group,
@@ -136,7 +110,7 @@ export const WalletHeader: React.FC<{
             <Copilot
               title={t('copilot:moreTitle')}
               description={t('copilot:moreMessage')}
-              order={2}
+              order={COPILOT_MORE_STEP}
               targetStyle={{borderRadius: radii.pill}}>
               <Pressable
                 onPress={() => setMenuOpen(true)}
@@ -393,14 +367,6 @@ const styles = StyleSheet.create({
   },
   count: {fontFamily: fonts.regular, fontSize: 12, lineHeight: 14.4},
   right: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   group: {
     height: 44,
     paddingHorizontal: 2,

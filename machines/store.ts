@@ -37,6 +37,7 @@ import {
 import {Buffer} from 'buffer';
 import {VC} from './VerifiableCredential/VCMetaMachine/vc';
 import {isVCStorageInitialised} from '../shared/fileStorage';
+import {clearApiMemoryCache} from '../shared/apiMemoryCache';
 
 export const keyinvalidatedString =
   'Key Invalidated due to biometric enrollment';
@@ -1026,6 +1027,7 @@ export async function clear() {
       RNSecureKeystoreModule.clearKeys();
     }
     await Storage.clear();
+    clearApiMemoryCache();
   } catch (e) {
     console.error('error clear:', e);
     throw e;
