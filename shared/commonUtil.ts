@@ -61,7 +61,9 @@ export const removeWhiteSpace = (str: string) => {
 };
 
 // CredIssuer's asset buckets don't allow public reads; their files are served by the assets CDN
-// at the same path. The backend maps them the same way (credflow-api `form_cdn_url`).
+// at the same path. This mirrors the backend's mapping in credflow-api
+// `commons/utils/cdn_url.py` (`form_cdn_url`): when a bucket is added to or removed from the CDN
+// there, update this list too. Drop it once the backend returns CDN URLs directly.
 const CDN_SERVED_BUCKETS = [
   'credissuer-public-assets',
   'prod-credissuer-assets',
