@@ -114,7 +114,7 @@ export const WalletHome: React.FC<{
   highlightVcKey,
   onHighlightTaken,
 }) => {
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
   const insets = useSafeAreaInsets();
   const {c, reduceMotion} = useRevampTheme();
   const navigation = useNavigation<any>();
@@ -158,6 +158,8 @@ export const WalletHome: React.FC<{
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [chip, setChip] = useState(ALL);
+  // The chips are issuer names, which can change with the language.
+  useEffect(() => setChip(ALL), [i18n.language]);
   const toggleSearch = () => {
     setSearching(s => !s);
     setQuery('');

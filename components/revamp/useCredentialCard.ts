@@ -125,10 +125,8 @@ export function useCredentialCard(
         setWellknown(
           response?.matchingCredentialIssuerMetadata ?? {fallback: 'true'},
         );
-        const issuer = response?.wellknownResponse?.display;
-        setIssuerDisplay(
-          issuer ? getDisplayObjectForCurrentLanguage(issuer) : null,
-        );
+        // All its languages: the one shown is picked below, so it follows the app's.
+        setIssuerDisplay(response?.wellknownResponse?.display ?? null);
         if (response?.wellknownResponse)
           controller.STORE_INCOMING_VC_WELLKNOWN_CONFIG(
             vcMetadata.issuerHost,
@@ -161,7 +159,10 @@ export function useCredentialCard(
     const status = cardStatusOf(vcMetadata, controller.credential);
     return {
       title: getCredentialType(wellknown),
-      issuerName: issuerDisplay?.name ?? verifiableCredentialData?.issuer,
+      issuerName:
+        (issuerDisplay
+          ? getDisplayObjectForCurrentLanguage(issuerDisplay)?.name
+          : undefined) ?? verifiableCredentialData?.issuer,
       holderName: holderName(claims),
       number: documentNumber(claims),
       face: verifiableCredentialData?.face,
