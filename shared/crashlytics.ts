@@ -1,9 +1,6 @@
 import {getApps} from '@react-native-firebase/app';
-import {
-  getCrashlytics,
-  log,
-  recordError,
-} from '@react-native-firebase/crashlytics';
+
+type CrashlyticsModule = typeof import('@react-native-firebase/crashlytics');
 
 /**
  * Firebase Crashlytics. Native crashes are reported by the Firebase SDK on its own; this file
@@ -33,12 +30,27 @@ function isFirebaseConfigured(): boolean {
 }
 
 /**
+ * Loads @react-native-firebase/crashlytics. Only call it after isFirebaseConfigured(): the module
+ * calls getApp() when it loads (25.1.0, namespaced.ts) and throws "Default App Not initialized"
+ * without a config file, so a top-level import would crash the app at startup in that case.
+ */
+function loadCrashlytics(): CrashlyticsModule {
+  return require('@react-native-firebase/crashlytics');
+}
+
+/**
  * Turns on reporting of JavaScript crashes: creating the Crashlytics instance installs its handlers
- * for uncaught errors and unhandled promise rejections. Call once, as the app starts.
+ * for uncaught errors and unhandled promise rejections. Call once, as the app starts; it never
+ * throws, so Crashlytics can't stop the app from starting.
  */
 export function initCrashlytics(): void {
-  if (isFirebaseConfigured()) {
-    getCrashlytics();
+  if (!isFirebaseConfigured()) {
+    return;
+  }
+  try {
+    loadCrashlytics().getCrashlytics();
+  } catch (initError) {
+    console.warn('Could not start Crashlytics', initError);
   }
 }
 
@@ -51,6 +63,7 @@ export function reportError(error: unknown, context?: string): void {
     return;
   }
   try {
+    const {getCrashlytics, log, recordError} = loadCrashlytics();
     const crashlytics = getCrashlytics();
     if (context) {
       log(crashlytics, context);

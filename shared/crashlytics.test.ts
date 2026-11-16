@@ -6,11 +6,17 @@ const mockRecordError = jest.fn();
 jest.mock('@react-native-firebase/app', () => ({
   getApps: () => mockGetApps(),
 }));
-jest.mock('@react-native-firebase/crashlytics', () => ({
-  getCrashlytics: () => mockGetCrashlytics(),
-  log: (...args: unknown[]) => mockLog(...args),
-  recordError: (...args: unknown[]) => mockRecordError(...args),
-}));
+// Like the real module (25.1.0), loading it throws when no Firebase app is configured.
+jest.mock('@react-native-firebase/crashlytics', () => {
+  if (mockGetApps().length === 0) {
+    throw new Error("No Firebase App '[DEFAULT]' has been created");
+  }
+  return {
+    getCrashlytics: () => mockGetCrashlytics(),
+    log: (...args: unknown[]) => mockLog(...args),
+    recordError: (...args: unknown[]) => mockRecordError(...args),
+  };
+});
 
 import {initCrashlytics, reportError} from './crashlytics';
 
@@ -20,9 +26,11 @@ describe('crashlytics', () => {
   describe('without a Firebase config file in the build', () => {
     beforeEach(() => mockGetApps.mockReturnValue([]));
 
-    it('does nothing', () => {
-      initCrashlytics();
-      reportError(new Error('boom'), 'context');
+    it("does nothing, and never loads the Crashlytics module, which throws when it's unconfigured", () => {
+      expect(() => {
+        initCrashlytics();
+        reportError(new Error('boom'), 'context');
+      }).not.toThrow();
 
       expect(mockGetCrashlytics).not.toHaveBeenCalled();
       expect(mockRecordError).not.toHaveBeenCalled();
