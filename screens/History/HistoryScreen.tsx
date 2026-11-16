@@ -249,6 +249,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     paddingHorizontal: 24,
     paddingTop: 4,
   },
@@ -264,6 +265,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   unreadSummary: {
+    flexShrink: 1,
     fontFamily: 'Montserrat_500Medium',
     fontSize: 14,
     color: colors.inkMuted,

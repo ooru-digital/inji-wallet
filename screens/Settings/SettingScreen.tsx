@@ -115,7 +115,11 @@ export const SettingScreen: React.FC<SettingProps & RootRouteProps> = props => {
         <BannerNotificationContainer />
         <PageHeader
           title={t('header')}
-          onBack={() => navigation.navigate(BOTTOM_TAB_ROUTES.home as never)}
+          onBack={() =>
+            navigation.canGoBack()
+              ? navigation.goBack()
+              : navigation.navigate(BOTTOM_TAB_ROUTES.home)
+          }
         />
         <ScrollView
           {...testIDProps('settingsScreen')}

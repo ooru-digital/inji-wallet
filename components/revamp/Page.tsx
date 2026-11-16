@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
+  I18nManager,
   Modal,
   Pressable,
   StyleProp,
@@ -416,7 +417,8 @@ export const ChoiceRow: React.FC<{
           style={[
             styles.choiceLabel,
             card && styles.choiceLabelCard,
-            {color: c.ink, textAlign: 'left'},
+            // The start edge: left, or right when the app is right to left.
+            {color: c.ink, textAlign: I18nManager.isRTL ? 'right' : 'left'},
           ]}>
           {label}
         </ScaledText>
