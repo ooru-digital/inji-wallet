@@ -69,7 +69,7 @@ import {AddedToWalletScreen} from '../../components/addCredential/AddedToWalletS
 import {VCMetadata} from '../../shared/VCMetadata';
 import {SendVPScreen} from '../Scan/SendVPScreen';
 
-import {AuthorizationType} from '../../shared/constants';
+import {AuthorizationType, REQUEST_TIMEOUT} from '../../shared/constants';
 import {useTimer} from '../../shared/hooks/UseTimer';
 import {
   ProcessingModal,
@@ -656,8 +656,14 @@ function useIssuerCredentialTypes(issuers: issuerType[]) {
           return;
         }
         const host = issuer.credential_issuer_host;
+        // Bounded, so a host that never answers doesn't hold this slot and keep the issuers
+        // behind it waiting. Only this wait is cut short: the request itself is shared with the
+        // cards (one per host), so it carries on and still fills the cache for them.
         const fetchWellknown = () =>
-          CACHED_API.fetchIssuerWellknownConfig(host, host, true);
+          rejectAfter(
+            CACHED_API.fetchIssuerWellknownConfig(host, host, true),
+            CREDENTIAL_TYPES_FETCH_TIMEOUT_MS,
+          );
         try {
           let wellknown;
           try {
@@ -711,6 +717,25 @@ const CREDENTIAL_TYPE_FETCHES_AT_ONCE = 3;
 const CREDENTIAL_TYPES_DRAW_DELAY_MS = 250;
 // Pause before the one retry of an issuer whose metadata failed to load.
 const CREDENTIAL_TYPES_RETRY_DELAY_MS = 1500;
+// How long the list waits for one issuer's metadata (it can be a megabyte) before moving on.
+const CREDENTIAL_TYPES_FETCH_TIMEOUT_MS = 15000;
+
+/** `promise`, or a rejection once `ms` have passed without it settling. */
+function rejectAfter<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(REQUEST_TIMEOUT)), ms);
+    promise.then(
+      value => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 /** The + button's page: the issuers to sign in with (eSignet) and download a credential from. */
 const IssuerListPage: React.FC<{
