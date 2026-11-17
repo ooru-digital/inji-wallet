@@ -168,7 +168,7 @@ fileignoreconfig:
   - filename: shared/VCMetadata.ts
     checksum: c76bd3c825931ac241d8e4f76b8a7444789f49e3b4e45a599b4dcd574f7971c8
   - filename: ios/Podfile.lock
-    checksum: 43bd4742f2ba13357d8b9c44430bfa3cca0bf9bf8341984fd81174a929c85955
+    checksum: d64a99b6552d7c7fbced1dffb2dd9ddb2749d50f145319c04801e5253b2a1f6b
   - filename: components/BackupAndRestoreBannerNotification.tsx
     checksum: e465a9947727687d784d0cb9d8db1e28f765b0659bf4a3aa6d75643aa7b14102
   - filename: components/ActivityLogEvent.ts
@@ -427,7 +427,7 @@ fileignoreconfig:
   - filename: screens/Home/MyVcsTab.tsx
     checksum: 9b689c38514a99fe25a1de9088f07f4939c3f4c125afe46cd7ce433ff24ae0c9
   - filename: package-lock.json
-    checksum: 3a38d02673f03c2edf1daa2003a3ff2b191482a1d26a97f945f7656b9e2cfcce
+    checksum: a46f39cf72eb056d999c5dd9b04e42ae64167c4c79c8ee723d1c3c01e6c5da86
   - filename: screens/IntroSliders/secureShareIntro.tsx
     checksum: ea51350b13ce6287c8965d177bfef275e117e16e42c119f46c738a444dfc0beb
   - filename: shared/backupUtils/restoreData.ts

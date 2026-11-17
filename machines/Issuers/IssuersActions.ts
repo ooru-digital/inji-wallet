@@ -23,6 +23,7 @@ import {getVCMetadata, VCMetadata} from '../../shared/VCMetadata';
 import {findCredentialsOfSameType} from '../../shared/credentialIdentity';
 import {isHardwareKeystoreExists} from '../../shared/cryptoutil/cryptoUtil';
 import {ActivityLogEvents} from '../activityLog';
+import {reportError} from '../../shared/crashlytics';
 import {
   getEndEventData,
   getImpressionEventData,
@@ -123,6 +124,9 @@ export const IssuersActions = (model: any) => {
         if (error.includes(REQUEST_TIMEOUT)) {
           return ErrorMessage.REQUEST_TIMEDOUT;
         }
+        // Every credential download failure lands here. The user's own connection problems
+        // (above) aren't reported; the rest go to Crashlytics as non-fatal, with the failed step.
+        reportError(event.data, `Credential download failed: ${event.type}`);
         if (
           error.includes(
             OIDCErrors.AUTHORIZATION_ENDPOINT_DISCOVERY
