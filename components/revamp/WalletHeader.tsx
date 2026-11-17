@@ -15,7 +15,7 @@ import {useTranslation} from 'react-i18next';
 import {Copilot} from '../ui/Copilot';
 import {COPILOT_MORE_STEP} from '../../shared/constants';
 import CredIssuerMark from '../../assets/CredIssuerMark.svg';
-import {CloseIcon, MoreIcon, SearchIcon} from './Icons';
+import {CloseIcon, MoreIcon, PlusIcon, SearchIcon} from './Icons';
 import {fonts, radii, shadows} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
 
@@ -43,15 +43,25 @@ export interface SearchState {
 
 const MENU_TOP = 70;
 
-/** "Wallet" with the count, search and a menu; search opens a field and filter chips below. */
+/** "Wallet" with the count, add, search and a menu; search opens a field and filter chips below. */
 export const WalletHeader: React.FC<{
   countText: string;
   onAvatar: () => void;
+  /** Opens the list of issuers to download a credential from. */
+  onAdd?: () => void;
   searching: boolean;
   onToggleSearch?: () => void;
   search?: SearchState;
   menu: MenuItem[];
-}> = ({countText, onAvatar, searching, onToggleSearch, search, menu}) => {
+}> = ({
+  countText,
+  onAvatar,
+  onAdd,
+  searching,
+  onToggleSearch,
+  search,
+  menu,
+}) => {
   const {c} = useRevampTheme();
   const {t} = useTranslation();
   const insets = useSafeAreaInsets();
@@ -89,6 +99,21 @@ export const WalletHeader: React.FC<{
           </View>
         </View>
         <View style={styles.right}>
+          {onAdd ? (
+            <Pressable
+              onPress={onAdd}
+              testID="downloadCardButton"
+              accessibilityRole="button"
+              accessibilityLabel={t('MyVcsTab:addCard')}
+              style={({pressed}) => [
+                styles.iconBtn,
+                shadows.raised,
+                {backgroundColor: c.card, borderColor: c.line},
+                pressed && {transform: [{scale: 0.95}]},
+              ]}>
+              <PlusIcon color={c.ink} />
+            </Pressable>
+          ) : null}
           <View
             style={[
               styles.group,
@@ -367,6 +392,14 @@ const styles = StyleSheet.create({
   },
   count: {fontFamily: fonts.regular, fontSize: 12, lineHeight: 14.4},
   right: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   group: {
     height: 44,
     paddingHorizontal: 2,

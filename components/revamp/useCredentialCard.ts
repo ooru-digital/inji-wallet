@@ -19,6 +19,7 @@ import {getCredentialExpiryDate} from '../../shared/credentialExpiry';
 import {cardStatusOf} from './cardStatus';
 import {useIssuerQrCode} from '../IssuerQrCodeImage';
 import {VCItemEvents} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
+import {toLogoUrl} from '../../shared/commonUtil';
 
 export type CardStatus = 'verified' | 'pending' | 'expired' | 'revoked';
 
@@ -163,7 +164,7 @@ export function useCredentialCard(
       holderName: holderName(claims),
       number: documentNumber(claims),
       face: verifiableCredentialData?.face,
-      issuerLogoUrl: verifiableCredentialData?.issuerLogo?.url,
+      issuerLogoUrl: toLogoUrl(verifiableCredentialData?.issuerLogo?.url),
       background: display?.background_color,
       text: display?.text_color,
       status,

@@ -5,6 +5,11 @@ declare module 'react-native-dotenv' {
   export const MIMOTO_HOST: string;
 
   /**
+   * CDN serving issuer and credential logos stored on CredIssuer's asset buckets
+   */
+  export const ASSETS_CDN_HOST: string;
+
+  /**
    * URL for the Esignet backend server
    */
   export const ESIGNET_HOST: string;

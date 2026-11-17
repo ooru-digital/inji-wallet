@@ -18,7 +18,7 @@ import {
 import Svg, {Circle} from 'react-native-svg';
 import {BottomSheet} from '../ui/BottomSheet';
 import {SCRIM} from '../ui/themes/designTokens';
-import {BackIcon, CheckIcon, CloseIcon} from './Icons';
+import {BackIcon, CheckIcon, ChevronIcon, CloseIcon} from './Icons';
 import {ScaledText} from './ScaledText';
 import {fonts, motion, radii, shadows} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
@@ -455,6 +455,43 @@ export const ChoiceRow: React.FC<{
   );
 };
 
+/** A row that leads somewhere: icon in a circle, title and hint, and a chevron. Used in a ChoiceList. */
+export const NavRow: React.FC<{
+  title: string;
+  hint?: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+  testID?: string;
+}> = ({title, hint, icon, onPress, testID}) => {
+  const {c} = useRevampTheme();
+  return (
+    <Pressable
+      {...(testID ? testIDProps(testID) : {})}
+      accessibilityRole="button"
+      accessibilityLabel={hint ? `${title}, ${hint}` : title}
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.navRow,
+        pressed && {backgroundColor: c.sand},
+      ]}>
+      <View style={[styles.navIcon, {backgroundColor: c.sand}]}>{icon}</View>
+      <View style={styles.choiceText}>
+        <ScaledText style={[styles.navTitle, {color: c.ink}]}>
+          {title}
+        </ScaledText>
+        {hint ? (
+          <ScaledText
+            numberOfLines={2}
+            style={[styles.choiceHint, {color: c.inkMuted}]}>
+            {hint}
+          </ScaledText>
+        ) : null}
+      </View>
+      <ChevronIcon color={c.ink} direction="right" />
+    </Pressable>
+  );
+};
+
 /** Rows on one bordered card, divided by hairlines (the Settings list style). */
 /** Choices as separate rounded cards with space between them. */
 export const ChoiceCards: React.FC<{children: React.ReactNode}> = ({
@@ -820,6 +857,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   choiceText: {flex: 1, gap: 3},
+  navRow: {
+    minHeight: 64,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  navIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  navTitle: {fontFamily: fonts.semibold, fontSize: 15, lineHeight: 19},
   choiceLabel: {fontFamily: fonts.regular, fontSize: 16, lineHeight: 20},
   choiceHint: {fontFamily: fonts.regular, fontSize: 13, lineHeight: 18},
   radio: {width: 22, height: 22, borderRadius: radii.pill, borderWidth: 1.5},

@@ -92,7 +92,8 @@ function reportVerificationFailure(
   reportError(
     new Error(
       `Credential verification failed: ${
-        result.verificationErrorCode || VerificationErrorType.GENERIC_TECHNICAL_ERROR
+        result.verificationErrorCode ||
+        VerificationErrorType.GENERIC_TECHNICAL_ERROR
       }`,
     ),
     `Credential verification (${credentialFormat})`,
