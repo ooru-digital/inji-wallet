@@ -24,7 +24,7 @@ import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Icon} from 'react-native-elements';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {isIOS, LIVENESS_CHECK} from '../../shared/constants';
+import {isIOS} from '../../shared/constants';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {AlertSheet} from '../../components/revamp/Page';
 import {QrUnknownIcon} from '../../components/revamp/Icons';
@@ -545,7 +545,6 @@ export const ScanScreen: React.FC = () => {
           isInvalidIdentity={sendVPScreenController.isInvalidIdentity}
           onNavigateHome={sendVPScreenController.GO_TO_HOME}
           onRetryVerification={sendVPScreenController.RETRY_VERIFICATION}
-          isLivenessEnabled={LIVENESS_CHECK}
         />
       </>
     </LinearGradient>

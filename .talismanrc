@@ -210,7 +210,7 @@ fileignoreconfig:
   - filename: screens/Home/IntroSlidersScreen.tsx
     checksum: 9880724461b194db7651737576ad2fd2db9cf3b4e732747f59be422a7ff4e4a1
   - filename: .env
-    checksum: ac76b852842c44ff5dac96c1fa5061e569bea4f54b3080d869a9dc25abd17991
+    checksum: a9687373ca41867d92e9c84c54ecf119d8f8025ef31a484b504e328184441e9e
   - filename: machines/VCItemMachine/VCItemMachine.typegen.ts
     checksum: 850b5d02636bef9e286fc0fbc4ffffbd38068f332c319302a906496f4bc1c8a1
   - filename: machines/VerifiableCredential/VCItemMachine/VCItemModel.ts
@@ -376,10 +376,6 @@ fileignoreconfig:
     checksum: 5bb246fa39bc7a9994b50bc5b1505d5389d0e254a4e30cfb2a57e6a1025e9087
   - filename: screens/Settings/ReceivedCardsModal.tsx
     checksum: 6dee9153a61009b0252d294154c88d5e1b241a517c76e930b391a39d7bc52392
-  - filename: components/FaceScanner/FaceCompare.tsx
-    checksum: 947b6d75543e2bf959ca2d95dd7224051e0b4ec2c28f7515f923701e22a932f0
-  - filename: components/FaceScanner/LivenessDetection.tsx
-    checksum: d4140a42ee9ca0f7c90e490f762d181a723fd9dd20db891cbbe53bfbd8f81632
   - filename: machines/VerifiableCredential/VCItemMachine/VCItemActions.ts
     checksum: 511f6f95c0491ad16b03236cd7cc3ef5f4a89d336be1a0202f3f0aaf9e29497d
   - filename: machines/VerifiableCredential/VCMetaMachine/VCMetaEvents.ts

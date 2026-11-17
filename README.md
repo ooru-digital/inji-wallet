@@ -103,9 +103,7 @@ APPLICATION_LANGUAGE=   # en, fil, ar, hi, kn, ta
 CREDENTIAL_REGISTRY_EDIT=
 DEBUG_MODE=
 
-LIVENESS_DETECTION=     # generic liveness toggle
-SNAPKYC_LIVENESS=       # SnapKYC native liveness after mDOC proximity consent (Android only)
-SNAPKYC_RELAYING_PARTY_NAME=
+SNAPKYC_RELAYING_PARTY_NAME=   # tenant id for the BioChq face SDK
 SNAPKYC_DEBUG_SKIP_FACE_IMAGE=   # debug only: skip credential portrait
 
 GOOGLE_ANDROID_CLIENT_ID=
