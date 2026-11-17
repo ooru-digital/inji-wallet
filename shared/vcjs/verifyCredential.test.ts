@@ -3,6 +3,7 @@ import {verifyCredential} from './verifyCredential';
 import {isAndroid, isIOS} from '../constants';
 import VCVerifier, {RevocationStatus} from '../vcVerifier/VcVerifier';
 import {VCFormat} from '../VCFormat';
+import {reportError} from '../crashlytics';
 
 jest.mock('@digitalcredentials/vc', () => ({verifyCredential: jest.fn()}));
 jest.mock('@digitalcredentials/jsonld', () => ({
@@ -27,9 +28,10 @@ jest.mock('../telemetry/TelemetryUtils', () => ({
   sendErrorEvent: jest.fn(),
 }));
 jest.mock('../telemetry/TelemetryConstants', () => ({
-  TelemetryConstants: {ErrorMessage: {}},
+  TelemetryConstants: {ErrorMessage: {}, FlowType: {}, ErrorId: {}},
 }));
 jest.mock('../commonUtil', () => ({getMosipIdentifier: jest.fn()}));
+jest.mock('../crashlytics', () => ({reportError: jest.fn()}));
 jest.mock('../constants', () => ({isAndroid: jest.fn(), isIOS: jest.fn()}));
 jest.mock('../mdoc/presentment/issuerSigned', () => ({
   readMsoValidUntil: (credential: string) => new Date(credential),
@@ -148,6 +150,83 @@ describe('verifyCredential for ldp_vc', () => {
           isVerified: true,
           isRevoked: RevocationStatus.TRUE,
         }),
+      );
+    });
+  });
+});
+
+describe('verifyCredential reporting to Crashlytics', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  describe('on iOS', () => {
+    beforeEach(() => {
+      (isAndroid as jest.Mock).mockReturnValue(false);
+      (isIOS as jest.Mock).mockReturnValue(true);
+      mockVerifier.getCredentialStatus.mockResolvedValue(notRevoked);
+    });
+
+    it('does not report a credential that verifies, even an expired or revoked one', async () => {
+      (vcjs.verifyCredential as jest.Mock).mockResolvedValue({verified: true});
+      await verifyCredential(ldpVc(PAST), VCFormat.ldp_vc);
+      mockVerifier.getCredentialStatus.mockResolvedValue(revoked);
+      await verifyCredential(ldpVc(FUTURE), VCFormat.ldp_vc);
+
+      expect(reportError).not.toHaveBeenCalled();
+    });
+
+    it('reports a failed signature check by its error code', async () => {
+      (vcjs.verifyCredential as jest.Mock).mockResolvedValue({
+        verified: false,
+        results: [{error: {name: 'VerificationError'}}],
+      });
+      await verifyCredential(ldpVc(FUTURE), VCFormat.ldp_vc);
+
+      expect(reportError).toHaveBeenCalledWith(
+        new Error('Credential verification failed: ERR_GENERIC'),
+        'Credential verification (ldp_vc)',
+      );
+    });
+
+    it('does not report a failure caused by the network', async () => {
+      (vcjs.verifyCredential as jest.Mock).mockResolvedValue({
+        verified: false,
+        results: [{error: {name: 'jsonld.InvalidUrl'}}],
+      });
+      await verifyCredential(ldpVc(FUTURE), VCFormat.ldp_vc);
+
+      expect(reportError).not.toHaveBeenCalled();
+    });
+
+    it('reports an exception thrown while verifying', async () => {
+      const error = new Error('suite failed');
+      (vcjs.verifyCredential as jest.Mock).mockRejectedValue(error);
+      await verifyCredential(ldpVc(FUTURE), VCFormat.ldp_vc);
+
+      expect(reportError).toHaveBeenCalledWith(
+        error,
+        'Credential verification threw (ldp_vc)',
+      );
+    });
+  });
+
+  describe('on Android', () => {
+    beforeEach(() => {
+      (isAndroid as jest.Mock).mockReturnValue(true);
+      (isIOS as jest.Mock).mockReturnValue(false);
+    });
+
+    it("reports the error code, never the verifier's message, which can quote the credential", async () => {
+      mockVerifier.getVerificationSummary.mockResolvedValue({
+        verificationStatus: false,
+        verificationMessage: 'Invalid field: credentialSubject.fullName',
+        verificationErrorCode: 'ERR_INVALID_FIELD',
+        credentialStatus: notRevoked,
+      });
+      await verifyCredential(ldpVc(FUTURE), VCFormat.ldp_vc);
+
+      expect(reportError).toHaveBeenCalledWith(
+        new Error('Credential verification failed: ERR_INVALID_FIELD'),
+        'Credential verification (ldp_vc)',
       );
     });
   });
