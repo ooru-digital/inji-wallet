@@ -8,12 +8,10 @@ import {Column} from '../components/ui';
 import {Theme} from '../components/ui/styleUtils';
 import {VerifiableCredential} from '../machines/VerifiableCredential/VCMetaMachine/vc';
 import {Modal} from '../components/ui/Modal';
-import {useTranslation} from 'react-i18next';
 
 export const VerifyIdentityOverlay: React.FC<
   VerifyIdentityOverlayProps
 > = props => {
-  const {t} = useTranslation('VerifyIdentityOverlay');
   const credential = props.credential;
   // Kept here, not in the share machines: this overlay shows both the scanner and the failure
   // page, so it knows why the last check failed.
@@ -81,5 +79,4 @@ export interface VerifyIdentityOverlayProps {
   isInvalidIdentity: boolean;
   onNavigateHome: () => void;
   onRetryVerification: () => void;
-  isLivenessEnabled: boolean;
 }

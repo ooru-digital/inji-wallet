@@ -57,7 +57,6 @@ jobs:
       APPLICATION_THEME: ${{ inputs.theme }}
       TESTFLIGHT_BETA_APP_DESCRIPTION: ${{ inputs.buildName }}
       ALLOW_ENV_EDIT: ${{ inputs.allow_env_edit }}
-      LIVENESS_DETECTION: 'false'
       ENABLE_AUTH: 'false'
       TESTFLIGHT_INTERNAL_TESTERS_GROUP: 'Dev-testing'
       APP_FLAVOR: ${{ inputs.injiFlavor }}

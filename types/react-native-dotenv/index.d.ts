@@ -5,6 +5,11 @@ declare module 'react-native-dotenv' {
   export const MIMOTO_HOST: string;
 
   /**
+   * CDN serving issuer and credential logos stored on CredIssuer's asset buckets
+   */
+  export const ASSETS_CDN_HOST: string;
+
+  /**
    * URL for the Esignet backend server
    */
   export const ESIGNET_HOST: string;
@@ -41,16 +46,7 @@ declare module 'react-native-dotenv' {
   export const GOOGLE_ANDROID_CLIENT_ID: string;
 
   /**
-   * Flag for Toggling for Liveness Detection
-   */
-  export const LIVENESS_DETECTION: string;
-
-  /**
-   * Flag for toggling the SnapKYC native liveness check (Android only)
-   */
-
-  /**
-   * Tenant id passed to the SnapKYC liveness SDK as `relayingPartyName`
+   * Tenant id passed to the BioChq face SDK as `relayingPartyName`
    */
   export const SNAPKYC_RELAYING_PARTY_NAME: string;
 

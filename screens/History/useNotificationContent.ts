@@ -1,6 +1,6 @@
 import {useTranslation} from 'react-i18next';
 import {format} from 'date-fns';
-import * as DateFnsLocale from 'date-fns/locale';
+import {DATE_FNS_LOCALES} from '../../shared/dateLocales';
 import {VCActivityLog} from '../../components/ActivityLogEvent';
 import {VPShareActivityLog} from '../../components/VPShareActivityLogEvent';
 import {getDisplayObjectForCurrentLanguage} from '../../shared/openId4VCI/Utils';
@@ -48,7 +48,7 @@ export function useNotificationContent(
   const names: NotificationNames = isCredentialLog
     ? {issuer: issuerName, device: log.deviceName, details: sharedDetails}
     : {verifier: log.verifierName, credentials: log.credentialName};
-  const dateLocale = DateFnsLocale[i18n.language as keyof typeof DateFnsLocale];
+  const dateLocale = DATE_FNS_LOCALES[i18n.language];
   const expiryDate =
     isCredentialLog && log.expiryDate
       ? format(toMillis(log.expiryDate), 'd MMM yyyy', {locale: dateLocale})

@@ -13,7 +13,7 @@ import {
 import {Icon} from 'react-native-elements';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {format} from 'date-fns';
-import * as DateFnsLocale from 'date-fns/locale';
+import {DATE_FNS_LOCALES} from '../../shared/dateLocales';
 import {Theme} from '../../components/ui/styleUtils';
 import {
   getCredentialType,
@@ -132,7 +132,7 @@ export const ShareSuccessScreen: React.FC<ShareSuccessScreenProps> = ({
               // Month names and the time format follow the app language; `p` is the
               // locale's short time. There is no `en` export, so English uses the default.
               value={format(sharedAt, 'dd MMM yyyy, p', {
-                locale: DateFnsLocale[i18n.language],
+                locale: DATE_FNS_LOCALES[i18n.language],
               })}
               isLast
             />

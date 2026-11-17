@@ -20,7 +20,6 @@ import {
   VCItemContainerFlowType,
 } from '../../shared/Utils';
 import {FaceVerificationAlertOverlay} from './FaceVerificationAlertOverlay';
-import {LIVENESS_CHECK} from '../../shared/constants';
 
 export const SendVcScreen: React.FC = () => {
   const {t} = useTranslation('SendVcScreen');
@@ -135,7 +134,6 @@ export const SendVcScreen: React.FC = () => {
         isInvalidIdentity={controller.isInvalidIdentity}
         onNavigateHome={controller.GO_TO_HOME}
         onRetryVerification={controller.RETRY_VERIFICATION}
-        isLivenessEnabled={LIVENESS_CHECK}
       />
 
       <FaceVerificationAlertOverlay
