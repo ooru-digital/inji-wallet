@@ -1,7 +1,7 @@
 import NetInfo from '@react-native-community/netinfo';
 import {NativeModules} from 'react-native';
 import Cloud from '../../shared/CloudBackupAndRestoreUtils';
-import getAllConfigurations from '../../shared/api';
+import getAllConfigurations, {CACHED_API} from '../../shared/api';
 import {
   fetchKeyPair,
   generateKeyPair,
@@ -40,22 +40,37 @@ import {
 const issuerMetadataRequests = new Map<string, Promise<issuerType>>();
 
 export function requestIssuerMetadata(issuer: string): Promise<issuerType> {
-  let request = issuerMetadataRequests.get(issuer);
-  if (!request) {
-    request = VciClient.getInstance().getIssuerMetadata(
-      issuer,
-    ) as Promise<issuerType>;
-    issuerMetadataRequests.set(issuer, request);
-    // A failed request isn't kept, so the next caller asks again.
-    request.catch(() => issuerMetadataRequests.delete(issuer));
+  const pending = issuerMetadataRequests.get(issuer);
+  if (pending) {
+    return pending;
   }
+  const request = VciClient.getInstance().getIssuerMetadata(
+    issuer,
+  ) as Promise<issuerType>;
+  issuerMetadataRequests.set(issuer, request);
+  // A failed request isn't kept, so the next caller asks again.
+  request.catch(() => forgetIssuerMetadataRequest(issuer, request));
   return request;
+}
+
+/** A newer download may have stored its own request under the same issuer; that one stays. */
+function forgetIssuerMetadataRequest(
+  issuer: string,
+  request: Promise<issuerType>,
+) {
+  if (issuerMetadataRequests.get(issuer) === request) {
+    issuerMetadataRequests.delete(issuer);
+  }
 }
 
 export const IssuersService = () => {
   return {
     isUserSignedAlready: () => async () => {
       return await Cloud.isSignedInAlready();
+    },
+    downloadIssuersList: async () => {
+      const trustedIssuersList = await CACHED_API.fetchIssuers();
+      return trustedIssuersList;
     },
     checkInternet: async () => await NetInfo.fetch(),
     downloadIssuerWellknown: async (context: any) => {
@@ -332,16 +347,29 @@ export const IssuersService = () => {
     },
     cacheIssuerWellknown: async (context: any) => {
       const credentialIssuer = context.credentialOfferCredentialIssuer;
-      const issuerMetadata = await requestIssuerMetadata(credentialIssuer);
-      if (issuerMetadata) {
-        const wellknownCacheObject = createCacheObject(issuerMetadata);
-        await setItem(
-          API_CACHED_STORAGE_KEYS.fetchIssuerWellknownConfig(credentialIssuer),
-          wellknownCacheObject,
-          '',
-        );
+      let request = requestIssuerMetadata(credentialIssuer);
+      try {
+        // The shared request may have started long before (at consent, before the holder
+        // authenticated) and failed while this step waited on it. The credential has already
+        // downloaded by now, so ask once more rather than lose it.
+        const issuerMetadata = await request.catch(() => {
+          request = requestIssuerMetadata(credentialIssuer);
+          return request;
+        });
+        if (issuerMetadata) {
+          const wellknownCacheObject = createCacheObject(issuerMetadata);
+          await setItem(
+            API_CACHED_STORAGE_KEYS.fetchIssuerWellknownConfig(
+              credentialIssuer,
+            ),
+            wellknownCacheObject,
+            '',
+          );
+        }
+        return issuerMetadata;
+      } finally {
+        forgetIssuerMetadataRequest(credentialIssuer, request);
       }
-      return issuerMetadata;
     },
     constructProof: async (context: any) => {
       const proofJWT = await constructProofJWT(
