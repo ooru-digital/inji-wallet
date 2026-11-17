@@ -194,7 +194,7 @@ export const WalletHome: React.FC<{
         count,
       })),
     ];
-  }, [all]);
+  }, [all, i18n.language]);
 
   const visible = useMemo(() => {
     const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);

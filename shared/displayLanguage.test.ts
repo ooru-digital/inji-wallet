@@ -12,6 +12,32 @@ describe('an issuer display entry in the app language', () => {
     expect(displayInAppLanguage(display)?.name).toBe('राष्ट्रीय पहचान पत्र');
   });
 
+  it('prefers the exact tag to another region of the language', () => {
+    const display = [
+      {locale: 'hi-IN', name: 'Regional'},
+      {locale: 'hi', name: 'Exact'},
+    ];
+    expect(displayInAppLanguage(display)?.name).toBe('Exact');
+  });
+
+  it('prefers plain English to a regional one', () => {
+    const display = [
+      {locale: 'en-GB', name: 'British'},
+      {locale: 'en', name: 'English'},
+    ];
+    i18next.language = 'fr';
+    expect(displayInAppLanguage(display)?.name).toBe('English');
+    i18next.language = 'hi';
+  });
+
+  it('ignores entries that are not objects', () => {
+    const display = [null, {locale: 'hi', name: 'Card'}] as unknown as {
+      locale: string;
+      name: string;
+    }[];
+    expect(displayInAppLanguage(display)?.name).toBe('Card');
+  });
+
   it('falls back to English in any region', () => {
     const display = [
       {locale: 'fr', name: 'Carte'},

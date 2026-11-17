@@ -1,5 +1,5 @@
 import React, {useEffect, useRef} from 'react';
-import {Animated, Pressable, StyleSheet, View} from 'react-native';
+import {Animated, I18nManager, Pressable, StyleSheet, View} from 'react-native';
 import Svg, {Circle, Path, Rect} from 'react-native-svg';
 import {ScaledText} from './ScaledText';
 import {fonts, radii} from './tokens';
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   value: {
     flexShrink: 1,
     maxWidth: '45%',
-    textAlign: 'right',
+    textAlign: I18nManager.isRTL ? 'left' : 'right',
     fontFamily: fonts.regular,
     fontSize: 14,
   },

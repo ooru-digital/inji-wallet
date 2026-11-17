@@ -2,7 +2,7 @@ fileignoreconfig:
   - filename: components/revamp/walletText.ts
     checksum: fcf693a3501a4965cd08d8fb1914013d8c8ddc8c3ea16ad1bdd7600d7fa0ceba
   - filename: shared/displayLanguage.ts
-    checksum: d05301282b04b68acda640ad74daf4e078d237153408fa9f39477d0f21bf1666
+    checksum: eeefb4cebb78e6d406d5d3cb5599fc78b1d37fef573e54b774ca1591d63c5514
   - filename: components/revamp/translations.test.ts
     checksum: 5c5acc9bf87f61e92d5169ce03d227cd479f4f9de9765053d1b79a33a8b1af30
   - filename: components/VC/common/StatusInfoModal.tsx

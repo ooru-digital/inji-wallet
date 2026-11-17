@@ -11,6 +11,7 @@ import {useRevampTheme} from './useRevampTheme';
 import {wt} from './walletText';
 import {CardStatus, CredentialCardData} from './useCredentialCard';
 
+// The standards' own names, which stay in English in every language, as verifiers show them.
 const formatName: Record<string, string> = {
   [VCFormat.ldp_vc]: 'W3C Verifiable Credential',
   [VCFormat.mso_mdoc]: 'ISO mdoc',

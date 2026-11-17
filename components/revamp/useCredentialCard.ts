@@ -127,7 +127,12 @@ export function useCredentialCard(
           response?.matchingCredentialIssuerMetadata ?? {fallback: 'true'},
         );
         // All its languages: the one shown is picked below, so it follows the app's.
-        setIssuerDisplay(response?.wellknownResponse?.display ?? null);
+        const display = response?.wellknownResponse?.display;
+        setIssuerDisplay(
+          Array.isArray(display)
+            ? display.filter(entry => entry && typeof entry === 'object')
+            : null,
+        );
         if (response?.wellknownResponse)
           controller.STORE_INCOMING_VC_WELLKNOWN_CONFIG(
             vcMetadata.issuerHost,
