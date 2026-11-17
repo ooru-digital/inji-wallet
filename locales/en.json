@@ -57,8 +57,6 @@
     "Wallet": "Wallet"
   },
   "FaceScanner": {
-    "livenessCaptureGuide": "Hold the phone steady, keep your face focused in the centre.",
-    "faceProcessingInfo": "Please wait while we process the data.",
     "faceVerificationTitle": "Face verification",
     "verifyingTitle": "Verifying your face",
     "verifyingMessage": "This takes a few seconds. Please don’t close the app.",
@@ -71,12 +69,7 @@
     "tipCoverings": "Remove glasses, a mask or a cap",
     "tipSteady": "Keep your face in the centre and hold steady",
     "tryAgain": "Try again",
-    "faceOutGuide": "Keep your face inside the oval!",
-    "faceInGuide": "Capturing in progress!",
-    "imageCaptureGuide": "Hold the phone steady, keep your face focused in the centre and click on Capture.",
-    "capture": "Capture",
     "cancel": "Cancel",
-    "flipCamera": "Flip Camera",
     "missingPermissionText": "Camera access is needed to verify your identity. Please allow it in Settings.",
     "allowCameraButton": "Open Settings"
   },
@@ -336,7 +329,6 @@
     "deleted": "deleted",
     "historyHeaderLabel": "History",
     "title": "Notifications",
-    "goBack": "Go back",
     "markAllAsRead": "Mark all as read",
     "allCaughtUp": "All caught up",
     "unreadCount": "{{count}} unread",
@@ -647,7 +639,21 @@
     "thisCard": "this card",
     "validUntil": "Valid until {{date}}",
     "downloadFailedPill": "Download failed",
-    "verificationFailedPill": "Couldn’t verify"
+    "verificationFailedPill": "Couldn’t verify",
+    "issuerList": {
+      "title": "Find Your Credential",
+      "lead": "Pick who issued it, then choose what to download.",
+      "searchPlaceholder": "Try “driving licence” or “university”",
+      "count": "{{count}} issuer",
+      "count_plural": "{{count}} issuers",
+      "credentialTypes": "{{count}} credential",
+      "credentialTypes_plural": "{{count}} credentials",
+      "trustNote": "Every issuer here is in the national trust registry. Credentials arrive signed, straight from the issuer.",
+      "noIssuers": "No issuers are available right now.",
+      "noMatch": "No issuers match your search.",
+      "failed": "Couldn’t load the list of issuers.",
+      "clearSearch": "Clear search"
+    }
   },
   "HelpScreen": {
     "header": "Help",
@@ -1091,14 +1097,14 @@
       "backToWallet": "Back to Wallet",
       "viewHistory": "View Sharing History"
     },
-    "scanVerifierTitle": "Scan verifier",
+    "scanQrTitle": "Scan QR code",
     "close": "Close",
     "flashOn": "Turn on flashlight",
     "flashOff": "Turn off flashlight",
-    "pointCameraTitle": "Point your camera at the verifier's QR code",
-    "pointCameraSubtitle": "You'll see who is asking and choose what to share before anything is sent.",
+    "pointCameraTitle": "Point your camera at the QR code",
+    "pointCameraSubtitle": "Scan an issuer's code to add a card, or a verifier's code to share. You'll choose what to share before anything is sent.",
     "cameraOffTitle": "Camera access is off",
-    "cameraOffSubtitle": "Allow camera access in Settings to scan the verifier's QR code.",
+    "cameraOffSubtitle": "Allow camera access in Settings to scan QR codes.",
     "openSettings": "Open Settings",
     "shareWithSelfie": "Share with Selfie",
     "shareWithSelfieQrLogin": "QR Code Login",
@@ -1292,14 +1298,7 @@
       }
     },
     "postFaceCapture": {
-      "captureSuccessMessage": "Face Verification is successful! Credential sharing is initiated.",
-      "captureFailureTitle": "We couldn’t match your face",
-      "captureFailureMessage": "Nothing was shared. For the next try:",
-      "retakeSelfie": "Take the selfie again",
-      "cancelSharing": "Cancel sharing",
-      "faceTipLight": "Face the light, not a window behind you",
-      "faceTipGlasses": "Take off glasses and hats",
-      "faceTipFrame": "Keep your whole face in the frame"
+      "captureSuccessMessage": "Face Verification is successful! Credential sharing is initiated."
     },
     "rational": {
       "title": "Turn on your location",
@@ -1307,8 +1306,10 @@
       "accept": "OK",
       "cancel": "Cancel"
     },
-    "notVerifierCodeTitle": "This isn’t a verifier’s code",
-    "notVerifierCodeMessage": "The wallet reads QR codes from verifiers asking for your details. Ask the verifier to show theirs again, then point the camera at it.",
+    "unknownCodeTitle": "We can’t use this QR code",
+    "unknownCodeMessage": "The wallet reads QR codes from issuers, to add a card, and from verifiers asking for your details. Ask them to show their code again, then point the camera at it.",
+    "notCardOfferTitle": "This code can’t add a card",
+    "notCardOfferMessage": "It isn’t a card offer from an issuer. If a verifier is asking for your details, add a card to your wallet first, then scan their code again.",
     "scanAgain": "Scan again",
     "backToWallet": "Back to wallet"
   },
@@ -1472,8 +1473,7 @@
     "errors": {
       "invalidIdentity": {
         "title": "Face recognition failed",
-        "message": "The scanned face does not match with the photo on the card. Please try again.",
-        "messageNoRetry": "Face not recognised."
+        "message": "The scanned face does not match with the photo on the card. Please try again."
       }
     }
   },
@@ -1615,16 +1615,17 @@
     "close": "Close"
   },
   "copilot": {
-    "scanToShareTitle": "Scan to Share",
-    "scanToShareMessage": "Tap Scan and point your camera at a verifier's QR code to share your credentials.",
+    "scanTitle": "Scan to Add or Share",
+    "scanMessage": "Tap Scan and point your camera at an issuer's QR code to add a card, or at a verifier's QR code to share your credentials.",
     "moreTitle": "Stay in the Loop",
     "moreMessage": "Your notifications live inside ⋯. Notifications show each credential you download or share.",
     "quickTour": "Quick tour",
+    "quickTip": "Quick tip",
     "skipTour": "Skip tour",
     "helpTitle": "Help/FAQs",
     "helpMessage": "Find answers to common questions and access helpful resources in our FAQ section, ensuring you have the support whenever you need it.",
-    "downloadTitle": "Download Card",
-    "downloadMessage": "Easily download and securely store your card in the app for convenient access whenever you need them.",
+    "addCardTitle": "Add Your First Card",
+    "addCardMessage": "Tap Add a Card, then point your camera at the QR code your issuer gives you. Your card is saved in your wallet in seconds.",
     "shareTitle": "Share Card",
     "shareMessage": "Share your card with ease in offline mode using bluetooth, empowering you to provide verified information whenever required.",
     "historyTitle": "Access to History",
@@ -1634,6 +1635,7 @@
     "cardTitle": "Card",
     "cardMessage": "Your card displays your verified identity information. Tap for a detailed view or click on … for additional options.",
     "next": "Next",
+    "gotIt": "Got It",
     "previous": "Previous",
     "skip": "Skip",
     "done": "Done",

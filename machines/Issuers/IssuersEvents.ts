@@ -3,12 +3,13 @@ import {issuerType} from './IssuersMachine';
 
 export const IssuersEvents = {
   SELECTED_ISSUER: (id: string) => ({id}),
+  FETCH_ISSUERS: () => ({}),
   DOWNLOAD_ID: () => ({}),
   BIOMETRIC_CANCELLED: (requester?: string) => ({requester}),
   COMPLETED: () => ({}),
   TRY_AGAIN: () => ({}),
   RESET_ERROR: () => ({}),
-  SHOW_ERROR:(error: any) => ({error}),
+  SHOW_ERROR: (error: any) => ({error}),
   CHECK_KEY_PAIR: () => ({}),
   CANCEL: () => ({}),
   STORE_RESPONSE: (response?: unknown) => ({response}),

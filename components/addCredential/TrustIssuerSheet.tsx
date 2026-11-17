@@ -7,6 +7,7 @@ import {BottomSheet} from '../ui/BottomSheet';
 import {PillButton} from '../ui/PillButton';
 import {ShieldIcon} from '../ui/ShieldIcon';
 import {Theme} from '../ui/styleUtils';
+import {toLogoUrl} from '../../shared/commonUtil';
 
 const {colors: C, brand: B} = Theme.Tokens;
 
@@ -154,9 +155,9 @@ export const TrustIssuerSheet: React.FC<TrustIssuerSheetProps> = props => {
 };
 
 const IssuerLogo: React.FC<{logo?: string}> = ({logo}) =>
-  logo ? (
+  toLogoUrl(logo) ? (
     <View style={styles.logo}>
-      <Image source={{uri: logo}} style={styles.logoImage} />
+      <Image source={{uri: toLogoUrl(logo)}} style={styles.logoImage} />
     </View>
   ) : (
     <View style={[styles.logo, styles.logoFallback]}>

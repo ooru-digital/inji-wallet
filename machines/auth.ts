@@ -1,6 +1,5 @@
 import {assign, ContextFrom, EventFrom, send, StateFrom} from 'xstate';
 import {createModel} from 'xstate/lib/model';
-import {initializeFaceModel} from '../shared/api';
 import {AppServices} from '../shared/GlobalContext';
 import {StoreEvents, StoreResponseEvent} from './store';
 import {generateSecureRandom} from 'react-native-securerandom';
@@ -150,12 +149,6 @@ export const authMachine = model.createMachine(
         },
       },
       authorized: {
-        invoke: {
-          src: 'initializeFaceSdkModel',
-          onDone: {
-            actions: ['storeContext'],
-          },
-        },
         on: {
           LOGOUT: 'unauthorized',
           SETUP_BIOMETRICS: {
@@ -233,9 +226,6 @@ export const authMachine = model.createMachine(
     },
 
     services: {
-      initializeFaceSdkModel: () => () => {
-        initializeFaceModel();
-      },
       generatePasscodeSalt: () => async () => {
         const randomBytes = await generateSecureRandom(16);
         return binaryToBase64(randomBytes) as string;

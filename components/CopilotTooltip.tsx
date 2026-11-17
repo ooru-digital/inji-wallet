@@ -32,7 +32,7 @@ export const CopilotTooltip = () => {
     settingsController.BACK();
   });
 
-  const {showPrevious, isDoneStep} = controller;
+  const {showPrevious, isDoneStep, isQuickTip} = controller;
 
   // The dots follow the same count as the "n of total" label.
   const dotCount = controller.stepTotal;
@@ -44,24 +44,28 @@ export const CopilotTooltip = () => {
         <Text
           {...testIDProps(`${controller.CURRENT_STEP}stepCount`)}
           style={[styles.stepCount, {color: c.azureInk}]}>
-          {`${t('quickTour')} · ${controller.stepCount}`}
+          {isQuickTip
+            ? t('quickTip')
+            : `${t('quickTour')} · ${controller.stepCount}`}
         </Text>
-        <View
-          style={styles.dots}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants">
-          {Array.from({length: dotCount}, (_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === activeDot
-                  ? [styles.dotActive, {backgroundColor: c.primary}]
-                  : {backgroundColor: c.line},
-              ]}
-            />
-          ))}
-        </View>
+        {!isQuickTip && (
+          <View
+            style={styles.dots}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants">
+            {Array.from({length: dotCount}, (_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === activeDot
+                    ? [styles.dotActive, {backgroundColor: c.primary}]
+                    : {backgroundColor: c.line},
+                ]}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       <Text
@@ -77,16 +81,20 @@ export const CopilotTooltip = () => {
       </Text>
 
       <View style={styles.actions}>
-        {showPrevious ? (
+        {isQuickTip ? (
+          // Keeps "Got it" right-aligned.
+          <View />
+        ) : showPrevious ? (
           <Pressable
             {...testIDProps('copilot-prev-action')}
             accessibilityRole="button"
             onPress={controller.goToPrev}
             style={({pressed}) => [
-              styles.textButton,
+              styles.secondaryButton,
+              {backgroundColor: c.sand},
               pressed && styles.pressed,
             ]}>
-            <Text style={[styles.textButtonLabel, {color: c.inkMuted}]}>
+            <Text style={[styles.secondaryButtonLabel, {color: c.primary}]}>
               {t('previous')}
             </Text>
           </Pressable>
@@ -96,10 +104,11 @@ export const CopilotTooltip = () => {
             accessibilityRole="button"
             onPress={controller.stop}
             style={({pressed}) => [
-              styles.textButton,
+              styles.secondaryButton,
+              {backgroundColor: c.sand},
               pressed && styles.pressed,
             ]}>
-            <Text style={[styles.textButtonLabel, {color: c.inkMuted}]}>
+            <Text style={[styles.secondaryButtonLabel, {color: c.primary}]}>
               {t('skipTour')}
             </Text>
           </Pressable>
@@ -118,9 +127,9 @@ export const CopilotTooltip = () => {
             pressed && styles.pressed,
           ]}>
           <Text style={[styles.primaryButtonLabel, {color: c.onPrimary}]}>
-            {isDoneStep ? t('done') : t('next')}
+            {isQuickTip ? t('gotIt') : isDoneStep ? t('done') : t('next')}
           </Text>
-          {!isDoneStep && (
+          {!isDoneStep && !isQuickTip && (
             <View style={styles.primaryButtonIcon}>
               <ArrowRightIcon color={c.onPrimary} size={18} strokeWidth={2.4} />
             </View>
@@ -169,17 +178,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     marginTop: 22,
   },
-  textButton: {
-    paddingVertical: 10,
-    paddingRight: 12,
+  // Previous and Skip tour: a pill like Next, in the quieter colours, so they read as buttons.
+  // It gives way to Next on a narrow screen: a long translation wraps inside it instead.
+  secondaryButton: {
+    flexShrink: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
   },
-  textButtonLabel: {
+  secondaryButtonLabel: {
     fontFamily: fonts.semibold,
-    fontSize: 15,
+    fontSize: 16,
+    textAlign: 'center',
   },
   primaryButton: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,

@@ -18,6 +18,7 @@ export const IssuersModel = createModel(
     OpenId4VPRef: {} as ActorRefFrom<typeof openID4VPMachine>,
     authorizationType: AuthorizationType.IMPLICIT,
     issuers: [] as issuerType[],
+    issuersFetchFailed: false as boolean,
     selectedIssuerId: '' as string,
     qrData: '' as string,
     selectedIssuer: {} as issuerType,
@@ -25,11 +26,8 @@ export const IssuersModel = createModel(
     authorizationSuccess: false as boolean,
     tokenResponse: {} as object,
     errorMessage: '' as string,
-    // Used to start as 'displayIssuers' — the machine's old initial state, which invoked the
-    // issuers-list fetch and cleared this via resetLoadingReason once it finished. That state is
-    // gone now (the machine starts straight in selectingIssuer), so nothing would ever clear it;
-    // left as 'displayIssuers' this would permanently show IssuersScreen's loader and the "scan
-    // credential offer" UI would never render. null matches resetLoadingReason's own reset value.
+    // Stays null while the issuers list loads: the list shows its own placeholder rows,
+    // and any loading reason here would replace the page with the download screen.
     loadingReason: null as string,
     verifiableCredential: null as VerifiableCredential | null,
     selectedCredentialType: {} as CredentialTypes,

@@ -4,6 +4,7 @@ import {VCMetadata} from '../../../shared/VCMetadata';
 import {RevocationStatus} from '../../../shared/vcVerifier/VcVerifier';
 import {
   checkCardInBackground,
+  holdBackgroundStatusChecks,
   queueBackgroundStatusCheck,
 } from './backgroundStatusChecks';
 
@@ -130,6 +131,51 @@ describe('background card status checks', () => {
       jest.advanceTimersByTime(1000);
 
       await expect(run).resolves.toBe(true);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('a held queue starts nothing until it is released', async () => {
+    const release = holdBackgroundStatusChecks(60_000);
+    const run = jest.fn(() => Promise.resolve());
+    queueBackgroundStatusCheck(run);
+    await flush();
+    expect(run).not.toHaveBeenCalled();
+
+    release();
+    await flush();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for every hold to be released', async () => {
+    const releaseFirst = holdBackgroundStatusChecks(60_000);
+    const releaseSecond = holdBackgroundStatusChecks(60_000);
+    const run = jest.fn(() => Promise.resolve());
+    queueBackgroundStatusCheck(run);
+
+    releaseFirst();
+    await flush();
+    expect(run).not.toHaveBeenCalled();
+
+    releaseSecond();
+    await flush();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('a hold that is never released lets go after its time limit', async () => {
+    jest.useFakeTimers();
+    try {
+      holdBackgroundStatusChecks(1000);
+      const run = jest.fn(() => Promise.resolve());
+      queueBackgroundStatusCheck(run);
+      await Promise.resolve();
+      expect(run).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(run).toHaveBeenCalledTimes(1);
     } finally {
       jest.useRealTimers();
     }

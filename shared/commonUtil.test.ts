@@ -1,6 +1,5 @@
 import testIDProps, {
   bytesToMB,
-  faceMatchConfig,
   generateBackupEncryptionKey,
   generateRandomString,
   getBackupFileName,
@@ -15,6 +14,7 @@ import testIDProps, {
   isTranslationKeyFound,
   getAccountType,
   BYTES_IN_MEGABYTE,
+  toLogoUrl,
 } from './commonUtil';
 import {useScreenHeight} from './hooks/useScreenHeight';
 import {
@@ -336,32 +336,6 @@ describe('getAccountType', () => {
   });
 });
 
-describe('faceMatchConfig', () => {
-  it('should expose a function', () => {
-    expect(faceMatchConfig).toBeDefined();
-  });
-
-  it('should return a valid configuration object', () => {
-    const config = faceMatchConfig();
-    expect(config).toBeDefined();
-    expect(config.withFace).toBeDefined();
-    expect(config.withFace.encoder).toBeDefined();
-    expect(config.withFace.matcher).toBeDefined();
-    expect(config.withFace.encoder.tfModel).toBeDefined();
-    expect(config.withFace.matcher.threshold).toBe(1);
-  });
-
-  it('should return config with correct structure', () => {
-    const config = faceMatchConfig();
-    expect(config).toHaveProperty('withFace');
-    expect(config.withFace).toHaveProperty('encoder');
-    expect(config.withFace).toHaveProperty('matcher');
-    expect(config.withFace.encoder.tfModel).toHaveProperty('path');
-    expect(config.withFace.encoder.tfModel).toHaveProperty('modelChecksum');
-    expect(config.withFace.matcher.threshold).toBe(1);
-  });
-});
-
 describe('BYTES_IN_MEGABYTE', () => {
   it('should be defined', () => {
     expect(BYTES_IN_MEGABYTE).toBeDefined();
@@ -444,5 +418,39 @@ describe('bytesToMB', () => {
     const bytes = BYTES_IN_MEGABYTE * 2.5;
     const result = bytesToMB(bytes);
     expect(result).toBe('2.500');
+  });
+});
+
+describe('toLogoUrl', () => {
+  it('moves CredIssuer asset-bucket logos to the assets CDN, encoding spaces', () => {
+    expect(
+      toLogoUrl(
+        'https://credissuer-public-assets.s3.ap-south-1.amazonaws.com/organisation_logos/IIIT Bangalore.png',
+      ),
+    ).toBe(
+      'https://assets.credissuer.com/organisation_logos/IIIT%20Bangalore.png',
+    );
+    expect(
+      toLogoUrl(
+        'https://prod-credissuer-assets.s3.ap-south-1.amazonaws.com/default-logos/Credissuer.png',
+      ),
+    ).toBe('https://assets.credissuer.com/default-logos/Credissuer.png');
+  });
+
+  it('keeps other hosts and presigned URLs, only encoding spaces', () => {
+    expect(toLogoUrl(' https://schema.credissuer.com/a b.webp ')).toBe(
+      'https://schema.credissuer.com/a%20b.webp',
+    );
+    const presigned =
+      'https://credissuer-public-assets.s3.ap-south-1.amazonaws.com/x.png?X-Amz-Signature=abc';
+    expect(toLogoUrl(presigned)).toBe(presigned);
+    expect(toLogoUrl('https://other-bucket.s3.amazonaws.com/x.png')).toBe(
+      'https://other-bucket.s3.amazonaws.com/x.png',
+    );
+  });
+
+  it('returns undefined when there is no logo', () => {
+    expect(toLogoUrl(undefined)).toBeUndefined();
+    expect(toLogoUrl('  ')).toBeUndefined();
   });
 });

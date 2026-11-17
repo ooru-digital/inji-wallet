@@ -14,7 +14,7 @@ import LockIcon from '../../assets/Lock_Icon1.svg';
 import DigitalIdentity from '../../assets/Digital_Identity_Icon1.svg';
 import ReceiveCard from '../../assets/Receive_Card.svg';
 import ProgressIcon from '../../assets/Progress_Icon1.svg';
-import testIDProps from '../../shared/commonUtil';
+import testIDProps, {toLogoUrl} from '../../shared/commonUtil';
 import Logo from '../../assets/Inji_Logo.svg';
 import WarningLogo from '../../assets/Warning_Icon.svg';
 import OtpVerificationIcon from '../../assets/Otp_Verification_Icon.svg';
@@ -679,7 +679,7 @@ export class SvgImage {
 }
 
 function getIssuerLogo(props: displayType) {
-  return {uri: props.logo.url || props.logo.uri};
+  return {uri: toLogoUrl(props.logo.url || props.logo.uri)};
 }
 
 function isSvgLogoUrl(uri: string): boolean {
@@ -690,18 +690,27 @@ function isSvgLogoUrl(uri: string): boolean {
 }
 
 interface IssuerLogoProps {
-  uri: string;
+  uri?: string;
   testID: string;
+  size?: number;
+  /** Shown instead when there is no logo or it fails to load. */
+  fallback?: React.ReactNode;
 }
 
 // Renders whatever logo the server sent for an issuer/credential type — there's
 // no fixed set to hardcode against, this just has to cope with any URL, in any
 // format, for however many issuers/credential types came back.
-function IssuerLogo({uri, testID}: IssuerLogoProps) {
+export function IssuerLogo({
+  uri: rawUri,
+  testID,
+  size = 40,
+  fallback = null,
+}: IssuerLogoProps) {
   const [failedToLoad, setFailedToLoad] = useState(false);
+  const uri = toLogoUrl(rawUri);
 
   if (!uri || failedToLoad) {
-    return null;
+    return <>{fallback}</>;
   }
 
   // Logos may be served as a raster image (png/jpg) or as a vector .svg file.
@@ -713,8 +722,8 @@ function IssuerLogo({uri, testID}: IssuerLogoProps) {
   if (isSvgLogoUrl(uri)) {
     return (
       <SvgUri
-        width="40"
-        height="40"
+        width={String(size)}
+        height={String(size)}
         uri={uri}
         onError={() => setFailedToLoad(true)}
         {...testIDProps(testID)}
@@ -725,7 +734,7 @@ function IssuerLogo({uri, testID}: IssuerLogoProps) {
   return (
     <RNImage
       source={{uri}}
-      style={{width: 40, height: 40}}
+      style={{width: size, height: size}}
       resizeMode="contain"
       onError={() => setFailedToLoad(true)}
       {...testIDProps(testID)}

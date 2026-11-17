@@ -7,8 +7,7 @@ import {
   isAndroid,
   GMAIL,
   APPLE,
-  FACE_SDK_MODEL_PATH,
-  FACE_SDK_MODEL_CHECKSUM,
+  ASSETS_CDN_BASE_URL,
 } from './constants';
 import {generateSecureRandom} from 'react-native-securerandom';
 import forge from 'node-forge';
@@ -61,6 +60,35 @@ export const removeWhiteSpace = (str: string) => {
   return str ? str.replace(/\s/g, '') : str;
 };
 
+// CredIssuer's asset buckets don't allow public reads; their files are served by the assets CDN
+// at the same path. This mirrors the backend's mapping in credflow-api
+// `commons/utils/cdn_url.py` (`form_cdn_url`): when a bucket is added to or removed from the CDN
+// there, update this list too. Drop it once the backend returns CDN URLs directly.
+const CDN_SERVED_BUCKETS = [
+  'credissuer-public-assets',
+  'prod-credissuer-assets',
+];
+const S3_URL = /^https?:\/\/([^/]+)\.s3[.-][^/]*amazonaws\.com\/(.+)$/i;
+
+/**
+ * A logo URL the app can load: CredIssuer asset-bucket URLs, which return 403, are moved to the
+ * assets CDN, and spaces in file names ("IIIT Bangalore.png") are encoded, which iOS needs.
+ */
+export function toLogoUrl(url?: string | null): string | undefined {
+  const trimmed = url?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const encoded = trimmed.replace(/ /g, '%20');
+  // A presigned URL already grants access, and the CDN wouldn't accept its signature.
+  const isPresigned = /[?&](X-Amz-|Signature=)/i.test(encoded);
+  const s3 = S3_URL.exec(encoded);
+  if (!isPresigned && s3 && CDN_SERVED_BUCKETS.includes(s3[1].toLowerCase())) {
+    return `${ASSETS_CDN_BASE_URL}/${s3[2]}`;
+  }
+  return encoded;
+}
+
 export function logState(state: AnyState) {
   if (__DEV__) {
     const data = JSON.stringify(
@@ -87,25 +115,6 @@ export function logState(state: AnyState) {
 
 export const getMaskedText = (id: string): string => {
   return '*'.repeat(id.length - 4) + id.slice(-4);
-};
-
-export const faceMatchConfig = () => {
-  return {
-    withFace: {
-      encoder: {
-        tfModel: {
-          path: FACE_SDK_MODEL_PATH,
-          inputWidth: 160,
-          inputHeight: 160,
-          outputLength: 512,
-          modelChecksum: FACE_SDK_MODEL_CHECKSUM,
-        },
-      },
-      matcher: {
-        threshold: 1,
-      },
-    },
-  };
 };
 
 export const getBackupFileName = () => {
