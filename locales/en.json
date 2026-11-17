@@ -328,7 +328,6 @@
     "deleted": "deleted",
     "historyHeaderLabel": "History",
     "title": "Notifications",
-    "goBack": "Go back",
     "markAllAsRead": "Mark all as read",
     "allCaughtUp": "All caught up",
     "unreadCount": "{{count}} unread",
