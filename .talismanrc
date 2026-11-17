@@ -611,7 +611,7 @@ fileignoreconfig:
   - filename: screens/Home/MyVcsTab.tsx
     checksum: 9b689c38514a99fe25a1de9088f07f4939c3f4c125afe46cd7ce433ff24ae0c9
   - filename: package-lock.json
-    checksum: a46f39cf72eb056d999c5dd9b04e42ae64167c4c79c8ee723d1c3c01e6c5da86
+    checksum: d1d94174a1018d765aae7c7ff43ef290bb68d51dc15aadddb427826342146d78
   - filename: screens/IntroSliders/secureShareIntro.tsx
     checksum: ea51350b13ce6287c8965d177bfef275e117e16e42c119f46c738a444dfc0beb
   - filename: shared/backupUtils/restoreData.ts

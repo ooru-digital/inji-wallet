@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import {WebView} from 'react-native-webview';
 import * as WebBrowser from 'expo-web-browser';
-import {Ionicons} from '@expo/vector-icons';
+// Not the package root: that exposes all 19 icon sets and bundles every one of their fonts.
+import Ionicons from '@expo/vector-icons/Ionicons';
 import VciClient from '../shared/vciClient/VciClient';
 import {Theme} from '../components/ui/styleUtils';
 import {useTranslation} from 'react-i18next';
