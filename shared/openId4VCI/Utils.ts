@@ -314,6 +314,9 @@ export enum ErrorMessage {
   CREDENTIAL_TYPE_DOWNLOAD_FAILURE = 'credentialTypeListDownloadFailure',
   AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED = 'authorizationGrantTypeNotSupportedByWallet',
   NETWORK_REQUEST_FAILED = 'networkRequestFailed',
+  PRE_AUTHORIZED_CODE_INVALID = 'preAuthorizedCodeInvalid',
+  OFFER_ALREADY_USED = 'offerAlreadyUsed',
+  TOO_MANY_REQUESTS = 'tooManyRequests',
 }
 
 export async function constructProofJWT(
