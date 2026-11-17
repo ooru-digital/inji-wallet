@@ -33,7 +33,6 @@ import {
 } from 'react-native';
 import {Text} from './../../components/ui';
 import testIDProps from '../../shared/commonUtil';
-import {LIVENESS_CHECK} from '../../shared/constants';
 import {SendVPScreen} from './SendVPScreen';
 import {useSendVPScreen} from './SendVPScreenController';
 import {useSendVcScreen} from './SendVcScreenController';
@@ -112,7 +111,6 @@ export const ScanLayout: React.FC = () => {
         isInvalidIdentity={controller.isInvalidIdentity}
         onNavigateHome={controller.GOTO_HOME}
         onRetryVerification={controller.RETRY_VERIFICATION}
-        isLivenessEnabled={LIVENESS_CHECK}
       />
       {/*
         All three screens are registered unconditionally, always — not gated behind the same

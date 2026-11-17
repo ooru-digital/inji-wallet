@@ -4,7 +4,6 @@ import {
   ESIGNET_HOST,
   MIMOTO_HOST,
   ASSETS_CDN_HOST,
-  LIVENESS_DETECTION,
   SNAPKYC_RELAYING_PARTY_NAME,
   SNAPKYC_DEBUG_SKIP_FACE_IMAGE,
   CREDISSUER_API_HOST,
@@ -22,13 +21,9 @@ export const ASSETS_CDN_BASE_URL = (
 export const DEBUG_MODE_ENABLED = DEBUG_MODE === 'true';
 export let CACHE_TTL = 60 * 60 * 1000;
 
-export const LIVENESS_CHECK = LIVENESS_DETECTION === 'true';
-export const LIVENESS_THRESHOLD = 0.4;
-
 /**
- * SnapKYC native liveness — gates the face check of the "share with selfie" flows. Android runs the
- * SnapKYC SDK; iOS runs the BioChq face liveness SDK (ios/Packages/BioChqFaceLivenessBinary).
- * Explicit opt-in: a missing .env key leaves it off.
+ * Tenant id the BioChq face SDK is started with (`relayingPartyName`), for the face check of the
+ * "share with selfie" flows on Android and iOS.
  */
 export const SNAPKYC_RELAYING_PARTY_NAME_VALUE =
   (SNAPKYC_RELAYING_PARTY_NAME || '').trim().replace(/\s+/g, ' ') ||

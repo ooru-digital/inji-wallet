@@ -83,18 +83,20 @@ export const VCMetaActions = (model: any) => {
         };
       }
 
+      const vcKey = VCMetadata.fromVC(event.vcMetadata)?.getVcKey();
       const isMyVCs = context.myVcsMetadata?.filter(
         (vcMetadataObject: Object) => {
-          return (
-            new VCMetadata(vcMetadataObject).getVcKey() ===
-            VCMetadata.fromVC(event.vcMetadata)?.getVcKey()
-          );
+          return new VCMetadata(vcMetadataObject).getVcKey() === vcKey;
         },
       ).length;
 
+      // A just-downloaded card can ask before it is listed: the download sends its data
+      // (VC_DOWNLOADED) and then its metadata (VC_ADDED), and the "Added to your wallet" screen
+      // can mount the card in between. Without the myVcs fallback it found nothing, went on to
+      // the old server download, failed, and the new card was removed.
       const vcData = isMyVCs
-        ? context.myVcs[VCMetadata.fromVC(event.vcMetadata)?.getVcKey()]
-        : context.receivedVcs[VCMetadata.fromVC(event.vcMetadata)?.getVcKey()];
+        ? context.myVcs[vcKey]
+        : context.receivedVcs[vcKey] ?? context.myVcs[vcKey];
 
       return {
         type: 'GET_VC_RESPONSE',
