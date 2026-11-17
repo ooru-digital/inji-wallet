@@ -69,7 +69,11 @@ class MdocNfcEngagementService : HostApduService() {
                             Log.w(TAG, "Error handling APDU", e)
                             null
                         }
-                        sendResponseApdu((response ?: ResponseApdu(STATUS_NO_PRECISE_DIAGNOSIS)).encode())
+                        try {
+                            sendResponseApdu((response ?: ResponseApdu(STATUS_NO_PRECISE_DIAGNOSIS)).encode())
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Couldn't send the response (service unbound?)", e)
+                        }
                     }
                     is Event.Deactivated -> reset(event.reason)
                 }

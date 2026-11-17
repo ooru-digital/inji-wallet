@@ -49,11 +49,11 @@ class MdocIso18013PresentmentModule(
 
     override fun getName(): String = "MdocIso18013Presentment"
 
+    private val nfcListener = MdocNfcEngagements.Listener { engagement -> emitNfcEngaged(engagement.id) }
+
     init {
         // Only stores a callback; nothing here touches Multipaz, see the class comment.
-        MdocNfcEngagements.listener = MdocNfcEngagements.Listener { engagement ->
-            emitNfcEngaged(engagement.id)
-        }
+        MdocNfcEngagements.listener = nfcListener
     }
 
     private fun emitNfcEngaged(id: String) {
@@ -139,6 +139,18 @@ class MdocIso18013PresentmentModule(
             return Manifest.permission.BLUETOOTH_SCAN
         }
         return null
+    }
+
+    /** What stops a share from starting, if anything: "permission" or "bluetoothOff". */
+    @ReactMethod
+    fun presentmentBlocker(promise: Promise) {
+        promise.resolve(blocker())
+    }
+
+    private fun blocker(): String? {
+        if (missingBlePermissionsForMdocAdvertising() != null) return "permission"
+        val bluetooth = reactContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        return if (bluetooth?.adapter?.isEnabled == false) "bluetoothOff" else null
     }
 
     @ReactMethod
@@ -264,7 +276,8 @@ class MdocIso18013PresentmentModule(
     }
 
     override fun invalidate() {
-        MdocNfcEngagements.listener = null
+        // A newer module instance (a reload) may already have set its own.
+        if (MdocNfcEngagements.listener === nfcListener) MdocNfcEngagements.listener = null
         reactContext.runOnUiQueueThread {
             synchronized(this) {
                 presenter?.destroy()

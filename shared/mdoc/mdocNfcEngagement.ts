@@ -27,7 +27,10 @@ const PENDING_FOR_MS = 23_000;
 type NfcNative = {
   getPendingNfcEngagement?: () => Promise<string | null>;
   discardNfcEngagement?: (id: string) => void;
+  presentmentBlocker?: () => Promise<NfcShareBlocker | null>;
 };
+
+export type NfcShareBlocker = 'permission' | 'bluetoothOff';
 
 function native(): NfcNative | undefined {
   return (NativeModules as {MdocIso18013Presentment?: NfcNative})
@@ -44,6 +47,10 @@ function setPending(id: string | null) {
     clearTimeout(expiry);
     expiry = null;
   }
+  if (id && id !== pendingId) {
+    // Native only ever holds its latest tap, so older settled ones can't come back.
+    settledIds.clear();
+  }
   pendingId = id;
   if (id) {
     expiry = setTimeout(() => setPending(null), PENDING_FOR_MS);
@@ -54,6 +61,15 @@ function setPending(id: string | null) {
 /** The tap waiting to be answered, if any. */
 export function pendingNfcEngagementId(): string | null {
   return pendingId;
+}
+
+/** What would stop a share from starting (Bluetooth off, a missing permission), if anything. */
+export async function nfcShareBlocker(): Promise<NfcShareBlocker | null> {
+  return (
+    (await native()
+      ?.presentmentBlocker?.()
+      .catch(() => null)) ?? null
+  );
 }
 
 /** Claims the pending tap for one session; a second card opened after it gets none. */

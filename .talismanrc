@@ -1,4 +1,6 @@
 fileignoreconfig:
+  - filename: screens/Home/NfcTapShare.tsx
+    checksum: 738b19c47a137d090cc9dd23e4240f8c005e655c999f2559048da35392a4b831
   - filename: ios/Packages/inji-openid4vp-ios-swift/README.md
     checksum: fc1f2125cb2e102655a431e1695f93975c945059a97558d3538829abdc114c8e
   - filename: ios/Packages/inji-openid4vp-ios-swift/Sources/OpenID4VP/Exceptions/OpenId4VPExceptions.swift

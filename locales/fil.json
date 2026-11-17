@@ -1536,6 +1536,8 @@
     "noCardsTitle": "Walang card na maibabahagi",
     "noCardsBody": "Magdagdag ng lisensya sa pagmamaneho o ibang mobile na dokumento para maibahagi ito sa pag-tap.",
     "readerGoneTitle": "Tumigil sa paghihintay ang reader",
-    "readerGoneBody": "Idikit muli ang mga telepono para magbahagi."
+    "readerGoneBody": "Idikit muli ang mga telepono para magbahagi.",
+    "bluetoothTitle": "Kailangan ang Bluetooth",
+    "bluetoothBody": "I-on ang Bluetooth at payagan ang Nearby devices para sa wallet, saka subukang muli. Naghihintay pa ang reader."
   }
 }

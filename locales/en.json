@@ -1715,6 +1715,8 @@
     "noCardsTitle": "No card to share",
     "noCardsBody": "Add a driving licence or another mobile document to share it by tapping.",
     "readerGoneTitle": "The reader stopped waiting",
-    "readerGoneBody": "Tap the phones together again to share."
+    "readerGoneBody": "Tap the phones together again to share.",
+    "bluetoothTitle": "Bluetooth is needed",
+    "bluetoothBody": "Turn on Bluetooth and allow Nearby devices for the wallet, then try again. The reader is still waiting."
   }
 }

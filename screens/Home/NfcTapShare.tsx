@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useMemo, useState} from 'react';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {useSelector} from '@xstate/react';
 import {useTranslation} from 'react-i18next';
@@ -24,6 +24,7 @@ import {useIsAppLocked} from '../Settings/autoLock';
 import {
   dismissNfcEngagement,
   nfcCardInView,
+  nfcShareBlocker,
   takeNfcEngagement,
   useNfcEngagement,
 } from '../../shared/mdoc/mdocNfcEngagement';
@@ -66,7 +67,13 @@ export const NfcTapShare: React.FC = () => {
   const homeFocused = useIsFocused();
   const [choosing, setChoosing] = useState(false);
   const [sharing, setSharing] = useState<Sharing | null>(null);
-  const [notice, setNotice] = useState<'noCards' | 'readerGone' | null>(null);
+  const [notice, setNotice] = useState<
+    'noCards' | 'readerGone' | 'bluetooth' | null
+  >(null);
+  // The card picked while Bluetooth was off or a permission missing, to retry with.
+  const [blockedCard, setBlockedCard] = useState<string | null>(null);
+  // Set while a share is being started, so the effect can't start a second one meanwhile.
+  const starting = useRef(false);
 
   const metadata = useSelector(vcMetaService, selectMyVcsMetadata);
   const refreshing = useSelector(vcMetaService, selectIsRefreshingMyVcs);
@@ -77,13 +84,27 @@ export const NfcTapShare: React.FC = () => {
         .map(m => [m.getVcKey(), m] as const),
     [metadata],
   );
-  // A tap can be what launched the app: wait for the cards before choosing one.
-  const ready =
-    !refreshing &&
-    mdocs.every(([key]) => myVcs?.[key]?.verifiableCredential != null);
+  // A tap can be what launched the app: only cards that have loaded can be shared, and the
+  // others join the choice as they load.
+  const loadedMdocs = useMemo(
+    () => mdocs.filter(([key]) => myVcs?.[key]?.verifiableCredential != null),
+    [mdocs, myVcs],
+  );
 
-  const share = (vcKey: string) => {
+  const share = async (vcKey: string) => {
+    if (starting.current) {
+      return;
+    }
+    starting.current = true;
     setChoosing(false);
+    // Checked before the tap is taken, so turning Bluetooth on and trying again still works.
+    const blocker = await nfcShareBlocker();
+    starting.current = false;
+    if (blocker) {
+      setBlockedCard(vcKey);
+      setNotice('bluetooth');
+      return;
+    }
     const nfcEngagementId = takeNfcEngagement();
     if (!nfcEngagementId) {
       // Took too long: the reader has given up on Bluetooth by now.
@@ -93,22 +114,26 @@ export const NfcTapShare: React.FC = () => {
     setSharing({nfcEngagementId, vcKey});
   };
 
+  // Also runs when a share or the choice ends, so a tap that came in meanwhile is offered then.
   useEffect(() => {
-    if (!pendingTap || locked || !ready || sharing || choosing) {
+    if (!pendingTap || locked || refreshing || sharing || choosing || notice) {
       return;
     }
     const inView = homeFocused ? nfcCardInView() : null;
-    if (inView && mdocs.some(([key]) => key === inView)) {
+    if (inView && loadedMdocs.some(([key]) => key === inView)) {
       share(inView);
-    } else if (mdocs.length === 1) {
-      share(mdocs[0][0]);
     } else if (mdocs.length === 0) {
       dismissNfcEngagement();
       setNotice('noCards');
-    } else {
+    } else if (mdocs.length === 1) {
+      // Wait for the only card to load.
+      if (loadedMdocs.length === 1) {
+        share(loadedMdocs[0][0]);
+      }
+    } else if (loadedMdocs.length > 0) {
       setChoosing(true);
     }
-  }, [pendingTap, locked, ready]);
+  }, [pendingTap, locked, refreshing, sharing, choosing, notice, loadedMdocs]);
 
   // If the reader never connects - it gave up, or the tap didn't reach it - say so instead of
   // leaving Connecting up. Its request arriving, answerable or not, means it connected.
@@ -141,6 +166,12 @@ export const NfcTapShare: React.FC = () => {
     dismissNfcEngagement();
   };
 
+  const cancelBlocked = () => {
+    setNotice(null);
+    setBlockedCard(null);
+    dismissNfcEngagement();
+  };
+
   const shared = sharing ? myVcs[sharing.vcKey] : undefined;
 
   return (
@@ -160,7 +191,7 @@ export const NfcTapShare: React.FC = () => {
           </ScaledText>
         </View>
         <ChoiceList>
-          {mdocs.map(([vcKey, vcMetadata]) => (
+          {loadedMdocs.map(([vcKey, vcMetadata]) => (
             <CardRow
               key={vcKey}
               testID={`nfcTapCard-${vcKey}`}
@@ -195,14 +226,36 @@ export const NfcTapShare: React.FC = () => {
         isVisible={notice !== null}
         tone="warn"
         icon={colour => <AlertCircleIcon color={colour} />}
-        title={notice === 'noCards' ? t('noCardsTitle') : t('readerGoneTitle')}
-        message={notice === 'noCards' ? t('noCardsBody') : t('readerGoneBody')}
-        primary={{
-          testID: 'nfcTapNoticeOk',
-          title: t('common:ok'),
-          onPress: () => setNotice(null),
-        }}
-        onRequestClose={() => setNotice(null)}
+        title={t(`${notice ?? 'readerGone'}Title`)}
+        message={t(`${notice ?? 'readerGone'}Body`)}
+        primary={
+          notice === 'bluetooth' && blockedCard
+            ? {
+                testID: 'nfcTapNoticeTryAgain',
+                title: t('common:tryAgain'),
+                onPress: () => {
+                  setNotice(null);
+                  share(blockedCard);
+                },
+              }
+            : {
+                testID: 'nfcTapNoticeOk',
+                title: t('common:ok'),
+                onPress: () => setNotice(null),
+              }
+        }
+        secondary={
+          notice === 'bluetooth'
+            ? {
+                testID: 'nfcTapNoticeCancel',
+                title: t('common:cancel'),
+                onPress: cancelBlocked,
+              }
+            : undefined
+        }
+        onRequestClose={
+          notice === 'bluetooth' ? cancelBlocked : () => setNotice(null)
+        }
       />
     </>
   );
