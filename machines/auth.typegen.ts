@@ -4,11 +4,6 @@ export interface Typegen0 {
   '@@xstate/typegen': true;
   internalEvents: {
     '': {type: ''};
-    'done.invoke.auth.authorized:invocation[0]': {
-      type: 'done.invoke.auth.authorized:invocation[0]';
-      data: unknown;
-      __tip: 'See the XState TS docs to learn how to strongly type this.';
-    };
     'done.invoke.auth.introSlider:invocation[0]': {
       type: 'done.invoke.auth.introSlider:invocation[0]';
       data: unknown;
@@ -18,7 +13,6 @@ export interface Typegen0 {
   };
   invokeSrcNameMap: {
     generatePasscodeSalt: 'done.invoke.auth.introSlider:invocation[0]';
-    initializeFaceSdkModel: 'done.invoke.auth.authorized:invocation[0]';
   };
   missingImplementations: {
     actions: never;
@@ -28,11 +22,12 @@ export interface Typegen0 {
   };
   eventsCausingActions: {
     requestStoredContext: 'BIOMETRIC_CANCELLED' | 'xstate.init';
+    setAppSetupComplete: 'SETUP_PASSCODE';
     setBiometrics: 'SETUP_BIOMETRICS';
     setContext: 'STORE_RESPONSE';
     setInitialDownloadDone: 'INITIAL_DOWNLOAD_DONE';
     setIsToggleFromSettings: 'CHANGE_METHOD';
-    setLanguage: 'SETUP_BIOMETRICS' | 'SETUP_PASSCODE';
+    setLanguage: 'SETUP_PASSCODE';
     setOnboardingDone: 'ONBOARDING_DONE';
     setPasscode: 'CHANGE_PASSCODE' | 'SETUP_PASSCODE';
     setPasscodeSalt: 'done.invoke.auth.introSlider:invocation[0]';
@@ -44,7 +39,6 @@ export interface Typegen0 {
       | 'SETUP_BIOMETRICS'
       | 'SETUP_PASSCODE'
       | 'STORE_RESPONSE'
-      | 'done.invoke.auth.authorized:invocation[0]'
       | 'done.invoke.auth.introSlider:invocation[0]';
   };
   eventsCausingDelays: {};
@@ -57,7 +51,6 @@ export interface Typegen0 {
   };
   eventsCausingServices: {
     generatePasscodeSalt: '' | 'SELECT';
-    initializeFaceSdkModel: 'LOGIN' | 'SETUP_BIOMETRICS' | 'SETUP_PASSCODE';
   };
   matchesStates:
     | 'authorized'

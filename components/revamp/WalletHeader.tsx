@@ -13,6 +13,7 @@ import {ScaledText} from './ScaledText';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {Copilot} from '../ui/Copilot';
+import {COPILOT_MORE_STEP} from '../../shared/constants';
 import CredIssuerMark from '../../assets/CredIssuerMark.svg';
 import {CloseIcon, MoreIcon, PlusIcon, SearchIcon} from './Icons';
 import {fonts, radii, shadows} from './tokens';
@@ -46,7 +47,8 @@ const MENU_TOP = 70;
 export const WalletHeader: React.FC<{
   countText: string;
   onAvatar: () => void;
-  onAdd: () => void;
+  /** Opens the list of issuers to download a credential from. */
+  onAdd?: () => void;
   searching: boolean;
   onToggleSearch?: () => void;
   search?: SearchState;
@@ -97,15 +99,12 @@ export const WalletHeader: React.FC<{
           </View>
         </View>
         <View style={styles.right}>
-          <Copilot
-            title={t('copilot:downloadTitle')}
-            description={t('copilot:downloadMessage')}
-            order={1}
-            targetStyle={{borderRadius: radii.pill}}>
+          {onAdd ? (
             <Pressable
               onPress={onAdd}
               testID="downloadCardButton"
-              accessibilityLabel="Add a credential"
+              accessibilityRole="button"
+              accessibilityLabel={t('MyVcsTab:addCard')}
               style={({pressed}) => [
                 styles.iconBtn,
                 shadows.raised,
@@ -114,7 +113,7 @@ export const WalletHeader: React.FC<{
               ]}>
               <PlusIcon color={c.ink} />
             </Pressable>
-          </Copilot>
+          ) : null}
           <View
             style={[
               styles.group,
@@ -136,7 +135,7 @@ export const WalletHeader: React.FC<{
             <Copilot
               title={t('copilot:moreTitle')}
               description={t('copilot:moreMessage')}
-              order={2}
+              order={COPILOT_MORE_STEP}
               targetStyle={{borderRadius: radii.pill}}>
               <Pressable
                 onPress={() => setMenuOpen(true)}

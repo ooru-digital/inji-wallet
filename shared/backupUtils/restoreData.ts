@@ -8,6 +8,7 @@ import {getErrorEventData, sendErrorEvent} from '../telemetry/TelemetryUtils';
 import {VCMetadata} from '../VCMetadata';
 import {verifyCredentialData} from '../openId4VCI/Utils';
 import {RevocationStatus} from '../vcVerifier/VcVerifier';
+import {clearApiMemoryCache} from '../apiMemoryCache';
 
 export async function loadBackupData(
   data: string,
@@ -21,6 +22,7 @@ export async function loadBackupData(
     await fileStorage.writeFile(PREV_BACKUP_STATE_PATH, backupStartState);
     const dataFromDB = await loadVCs(completeBackupData, encryptionKey);
     await updateWellKnownConfigs(dataFromDB, encryptionKey);
+    clearApiMemoryCache();
   } catch (error) {
     console.error('Error while loading backup data:', error);
     throw error;

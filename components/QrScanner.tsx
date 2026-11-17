@@ -162,6 +162,9 @@ export function useCameraPermission() {
     showCameraPermissionDeniedBanner,
     setShowCameraPermissionDeniedBanner,
   ] = useState(false);
+  // True once the user refuses the system camera prompt shown here, as opposed to permission
+  // that was already off when the scanner opened.
+  const [isPromptDenied, setIsPromptDenied] = useState(false);
   const [_, requestCameraPermission, getCameraPermissionsAsync] =
     useCameraPermissions();
 
@@ -177,6 +180,7 @@ export function useCameraPermission() {
           setHasCameraPermission(response.granted);
           if (response.granted === false) {
             setShowCameraPermissionDeniedBanner(true);
+            setIsPromptDenied(true);
           }
         } else if (cameraPermissionResult.status === PermissionStatus.GRANTED) {
           setHasCameraPermission(true);
@@ -192,6 +196,7 @@ export function useCameraPermission() {
     hasCameraPermission,
     showCameraPermissionDeniedBanner,
     setShowCameraPermissionDeniedBanner,
+    isPromptDenied,
     openSettings,
   };
 }

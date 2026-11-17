@@ -60,8 +60,6 @@
     "passcodeMismatchError": "Hindi tumugma ang passcode."
   },
   "FaceScanner": {
-    "livenessCaptureGuide": "Hawakan nang matatag ang telepono, panatilihing nakatutok ang iyong mukha sa gitna.",
-    "faceProcessingInfo": "Mangyaring maghintay habang pinoproseso namin ang data.",
     "faceVerificationTitle": "Pag-verify ng mukha",
     "verifyingTitle": "Vine-verify ang iyong mukha",
     "verifyingMessage": "Ilang segundo lang ito. Huwag isara ang app.",
@@ -74,12 +72,7 @@
     "tipCoverings": "Tanggalin ang salamin, mask o sombrero",
     "tipSteady": "Panatilihin ang mukha sa gitna at huwag gumalaw",
     "tryAgain": "Subukang muli",
-    "faceOutGuide": "Panatilihin ang iyong mukha sa loob ng oval!",
-    "faceInGuide": "Kasalukuyang kumukuha!",
-    "cancel": "Kanselahin",
-    "imageCaptureGuide": "Hawakan nang matatag ang telepono, panatilihing nakatutok ang iyong mukha sa gitna at mag-click sa Capture.",
-    "capture": "Kunin",
-    "flipCamera": "I-flip ang Camera"
+    "cancel": "Kanselahin"
   },
   "OIDcAuth": {
     "title": "OIDC Authentication",
@@ -233,7 +226,6 @@
     "deleted": "tinanggal",
     "historyHeaderLabel": "Kasaysayan",
     "title": "Mga Notification",
-    "goBack": "Bumalik",
     "markAllAsRead": "Markahan lahat bilang nabasa",
     "allCaughtUp": "Wala nang bagong notification",
     "unreadCount": "{{count}} hindi pa nababasa",
@@ -543,7 +535,21 @@
     "thisCard": "card na ito",
     "validUntil": "Valid hanggang {{date}}",
     "downloadFailedPill": "Hindi na-download",
-    "verificationFailedPill": "Hindi ma-verify"
+    "verificationFailedPill": "Hindi ma-verify",
+    "issuerList": {
+      "title": "Hanapin ang Iyong Kredensyal",
+      "lead": "Piliin kung sino ang nag-isyu nito, saka piliin ang ida-download.",
+      "searchPlaceholder": "Subukan ang “driving licence” o “unibersidad”",
+      "count": "{{count}} nag-isyu",
+      "count_plural": "{{count}} na nag-isyu",
+      "credentialTypes": "{{count}} kredensyal",
+      "credentialTypes_plural": "{{count}} na kredensyal",
+      "trustNote": "Nasa pambansang trust registry ang bawat nag-isyu rito. Dumarating ang mga kredensyal nang may pirma, direkta mula sa nag-isyu.",
+      "noIssuers": "Walang available na nag-isyu sa ngayon.",
+      "noMatch": "Walang nag-isyu na tumutugma sa iyong hinahanap.",
+      "failed": "Hindi ma-load ang listahan ng mga nag-isyu.",
+      "clearSearch": "I-clear ang paghahanap"
+    }
   },
   "HelpScreen": {
     "header": "Tulong",
@@ -984,14 +990,14 @@
       "backToWallet": "Bumalik sa Wallet",
       "viewHistory": "Tingnan ang History ng Pagbabahagi"
     },
-    "scanVerifierTitle": "I-scan ang verifier",
+    "scanQrTitle": "I-scan ang QR code",
     "close": "Isara",
     "flashOn": "I-on ang flashlight",
     "flashOff": "I-off ang flashlight",
-    "pointCameraTitle": "Itutok ang iyong camera sa QR code ng verifier",
-    "pointCameraSubtitle": "Makikita mo kung sino ang humihingi at pipiliin mo kung ano ang ibabahagi bago may maipadala.",
+    "pointCameraTitle": "Itutok ang iyong camera sa QR code",
+    "pointCameraSubtitle": "I-scan ang code ng issuer para magdagdag ng card, o ang code ng verifier para magbahagi. Pipiliin mo kung ano ang ibabahagi bago may maipadala.",
     "cameraOffTitle": "Naka-off ang access sa camera",
-    "cameraOffSubtitle": "Payagan ang access sa camera sa Settings para ma-scan ang QR code ng verifier.",
+    "cameraOffSubtitle": "Payagan ang access sa camera sa Settings para makapag-scan ng mga QR code.",
     "openSettings": "Buksan ang Settings",
     "shareWithSelfie": "Ibahagi sa Selfie",
     "shareWithSelfieQrLogin": "Pag-login sa QR Code",
@@ -1120,14 +1126,7 @@
       }
     },
     "postFaceCapture": {
-      "captureSuccessMessage": "Matagumpay ang Face Verification! Sinisimulan ang pagbabahagi ng kredensyal.",
-      "captureFailureTitle": "Hindi namin maitugma ang iyong mukha",
-      "captureFailureMessage": "Walang naibahagi. Para sa susunod na subok:",
-      "retakeSelfie": "Kumuha muli ng selfie",
-      "cancelSharing": "Kanselahin ang pagbabahagi",
-      "faceTipLight": "Humarap sa liwanag, hindi sa bintana sa likod mo",
-      "faceTipGlasses": "Alisin ang salamin at sumbrero",
-      "faceTipFrame": "Panatilihin ang buong mukha sa frame"
+      "captureSuccessMessage": "Matagumpay ang Face Verification! Sinisimulan ang pagbabahagi ng kredensyal."
     },
     "rational": {
       "title": "I-on ang iyong lokasyon",
@@ -1135,8 +1134,10 @@
       "accept": "OK",
       "cancel": "Kanselahin"
     },
-    "notVerifierCodeTitle": "Hindi ito code ng verifier",
-    "notVerifierCodeMessage": "Binabasa ng wallet ang mga QR code mula sa mga verifier na humihingi ng iyong detalye. Hilingin sa verifier na ipakita muli ang kanilang code, saka itutok ang camera rito.",
+    "unknownCodeTitle": "Hindi magagamit ang QR code na ito",
+    "unknownCodeMessage": "Binabasa ng wallet ang mga QR code mula sa mga issuer, para magdagdag ng card, at mula sa mga verifier na humihingi ng iyong detalye. Hilingin sa kanila na ipakita muli ang kanilang code, saka itutok ang camera rito.",
+    "notCardOfferTitle": "Hindi makakapagdagdag ng card ang code na ito",
+    "notCardOfferMessage": "Hindi ito card offer mula sa isang issuer. Kung may verifier na humihingi ng iyong detalye, magdagdag muna ng card sa iyong wallet, saka i-scan muli ang kanilang code.",
     "scanAgain": "I-scan muli",
     "backToWallet": "Bumalik sa wallet"
   },
@@ -1300,8 +1301,7 @@
     "errors": {
       "invalidIdentity": {
         "title": "Nabigo ang pagkilala sa mukha",
-        "message": "Ang na-scan na mukha ay hindi tumutugma sa larawan sa card. Pakisubukang muli.",
-        "messageNoRetry": "Face not recognised."
+        "message": "Ang na-scan na mukha ay hindi tumutugma sa larawan sa card. Pakisubukang muli."
       }
     }
   },
@@ -1435,16 +1435,17 @@
     "close": "Isara"
   },
   "copilot": {
-    "scanToShareTitle": "I-scan para Magbahagi",
-    "scanToShareMessage": "I-tap ang Scan at itutok ang camera sa QR code ng verifier para ibahagi ang iyong mga credential.",
+    "scanTitle": "I-scan para Magdagdag o Magbahagi",
+    "scanMessage": "I-tap ang Scan at itutok ang camera sa QR code ng issuer para magdagdag ng card, o sa QR code ng verifier para ibahagi ang iyong mga credential.",
     "moreTitle": "Manatiling Updated",
     "moreMessage": "Nasa ⋯ ang iyong mga notification. Ipinapakita ng mga notification ang bawat credential na dina-download o ibinabahagi mo.",
     "quickTour": "Mabilis na tour",
+    "quickTip": "Mabilis na tip",
     "skipTour": "Laktawan ang tour",
     "helpTitle": "Tulong/Mga FAQ",
     "helpMessage": "Maghanap ng mga sagot sa mga karaniwang tanong at i-access ang mga kapaki-pakinabang na mapagkukunan sa aming seksyong FAQ, na tinitiyak na mayroon kang suporta sa tuwing kailangan mo ito.",
-    "downloadTitle": "I-download ang Card",
-    "downloadMessage": "Madaling i-download at secure na iimbak ang iyong card sa app para sa maginhawang pag-access sa tuwing kailangan mo ang mga ito.",
+    "addCardTitle": "Idagdag ang Iyong Unang Card",
+    "addCardMessage": "I-tap ang Magdagdag ng card, saka itutok ang iyong camera sa QR code na ibinigay ng iyong issuer. Mase-save ang iyong card sa wallet mo sa loob ng ilang segundo.",
     "shareTitle": "Share Card",
     "shareMessage": "Ibahagi ang iyong card nang madali sa offline mode gamit ang bluetooth, na nagbibigay ng kapangyarihan sa iyong magbigay ng na-verify na impormasyon kapag kinakailangan.",
     "historyTitle": "Access sa Kasaysayan",
@@ -1454,6 +1455,7 @@
     "cardTitle": "Card",
     "cardMessage": "Ipinapakita ng iyong card ang iyong na-verify na impormasyon ng pagkakakilanlan. I-tap para sa isang detalyadong view o mag-click sa … para sa mga karagdagang opsyon.",
     "next": "Susunod",
+    "gotIt": "Sige",
     "previous": "Nakaraang",
     "skip": "Laktawan",
     "done": "Tapos na",

@@ -1,6 +1,6 @@
 import {formatDistanceToNow} from 'date-fns';
 import {ActivityLog} from './ActivityLogEvent';
-import * as DateFnsLocale from 'date-fns/locale';
+import {DATE_FNS_LOCALES} from '../shared/dateLocales';
 import {VCItemContainerFlowType, VCShareFlowType} from '../shared/Utils';
 import {TFunction} from 'react-i18next';
 
@@ -80,7 +80,7 @@ export class VPShareActivityLog implements ActivityLog {
     return [
       formatDistanceToNow(this.timestamp, {
         addSuffix: true,
-        locale: DateFnsLocale[language],
+        locale: DATE_FNS_LOCALES[language],
       }),
     ]
       .filter(label => label?.trim() !== '')

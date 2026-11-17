@@ -20,11 +20,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Icon} from 'react-native-elements';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {isIOS, LIVENESS_CHECK} from '../../shared/constants';
+import {isIOS} from '../../shared/constants';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {AlertSheet} from '../../components/revamp/Page';
 import {QrUnknownIcon} from '../../components/revamp/Icons';
@@ -41,6 +41,7 @@ import {APP_EVENTS} from '../../machines/app';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {useOvpErrorModal} from '../../shared/hooks/useOvpErrorModal';
 import {useScanStackScreenSwitcher} from './useScanStackScreenSwitcher';
+import {isCredentialOffer} from '../../shared/openId4VCI/credentialOffer';
 
 const COLORS = Theme.Colors.Design;
 
@@ -67,8 +68,36 @@ export const ScanScreen: React.FC = () => {
   const [isBluetoothOn, setIsBluetoothOn] = useState(false);
   const insets = useSafeAreaInsets();
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const isFocused = useIsFocused();
+  // With no card to share, this scanner can only add one: it skips the Bluetooth and location
+  // checks sharing needs, and runs on its own rather than through the scan machine.
+  const isAddOnly =
+    scanScreenController.isNoSharableVCs &&
+    scanScreenController.authorizationRequest === '' &&
+    scanScreenController.linkcode === '';
+  const [isNotCardOffer, setIsNotCardOffer] = useState(false);
+  // Remounts the add-only scanner, which stops reading after its first code.
+  const [addOnlyScanKey, setAddOnlyScanKey] = useState(0);
+
+  const onQrFound = (qrCode: string) => {
+    if (isCredentialOffer(qrCode)) {
+      scanScreenController.ADD_CREDENTIAL(qrCode);
+    } else if (isAddOnly) {
+      setIsNotCardOffer(true);
+    } else {
+      scanScreenController.SCAN(qrCode);
+    }
+  };
+
+  const scanAgainToAdd = () => {
+    setIsNotCardOffer(false);
+    setAddOnlyScanKey(key => key + 1);
+  };
 
   // This tab is dark, so the status bar switches to light icons while it is in focus.
+  // Leaving the tab also closes the add-only scanner's popup and turns its torch off: the
+  // add-only scanner never enters the scan machine's scanning state, so the effect below
+  // doesn't do it.
   useFocusEffect(
     useCallback(() => {
       StatusBar.setBarStyle('light-content');
@@ -80,10 +109,13 @@ export const ScanScreen: React.FC = () => {
         if (Platform.OS === 'android') {
           StatusBar.setBackgroundColor(Theme.Colors.whiteBackgroundColor);
         }
+        setIsNotCardOffer(false);
+        setIsTorchOn(false);
       };
     }, []),
   );
 
+  // Turns the torch off when the share scanner stops scanning while the tab is still open.
   useEffect(() => {
     if (!scanScreenController.isScanning) {
       setIsTorchOn(false);
@@ -226,7 +258,7 @@ export const ScanScreen: React.FC = () => {
   function qrScannerComponent() {
     return (
       <VerifierQrScanner
-        onQrFound={scanScreenController.SCAN}
+        onQrFound={onQrFound}
         isTorchOn={isTorchOn}
         title={t('pointCameraTitle')}
         subtitle={t('pointCameraSubtitle')}
@@ -234,7 +266,41 @@ export const ScanScreen: React.FC = () => {
     );
   }
 
+  function addOnlyScannerComponent() {
+    return (
+      <>
+        {isFocused && (
+          <React.Fragment key={addOnlyScanKey}>
+            {qrScannerComponent()}
+          </React.Fragment>
+        )}
+        <AlertSheet
+          testID="notCardOfferPopup"
+          isVisible={isNotCardOffer}
+          tone="warn"
+          icon={colour => <QrUnknownIcon color={colour} />}
+          title={t('notCardOfferTitle')}
+          message={t('notCardOfferMessage')}
+          primary={{
+            testID: 'notCardOfferScanAgain',
+            title: t('scanAgain'),
+            onPress: scanAgainToAdd,
+          }}
+          secondary={{
+            testID: 'notCardOfferBackToWallet',
+            title: t('backToWallet'),
+            onPress: scanScreenController.GOTO_HOME,
+          }}
+          onRequestClose={scanAgainToAdd}
+        />
+      </>
+    );
+  }
+
   function loadQRScanner() {
+    if (isAddOnly) {
+      return addOnlyScannerComponent();
+    }
     if (
       scanScreenController.isNoSharableVCs &&
       scanScreenController.authorizationRequest === ''
@@ -300,8 +366,8 @@ export const ScanScreen: React.FC = () => {
           isVisible={scanScreenController.selectIsInvalid}
           tone="warn"
           icon={colour => <QrUnknownIcon color={colour} />}
-          title={t('notVerifierCodeTitle')}
-          message={t('notVerifierCodeMessage')}
+          title={t('unknownCodeTitle')}
+          message={t('unknownCodeMessage')}
           primary={{
             testID: 'scanAgain',
             title: t('scanAgain'),
@@ -348,7 +414,7 @@ export const ScanScreen: React.FC = () => {
   return (
     <LinearGradient
       colors={[COLORS.darkBackground, COLORS.darkBackgroundEnd]}
-      style={[styles.screen, {paddingTop: insets.top + 8}]}>
+      style={[styles.screen, {paddingTop: insets.top}]}>
       <BannerNotificationContainer />
       <FaceVerificationAlertOverlay
         isVisible={faceVerificationController.isFaceVerificationConsent}
@@ -359,6 +425,8 @@ export const ScanScreen: React.FC = () => {
       <View style={styles.header}>
         <Pressable
           testID="scanClose"
+          // 40 px to look like the other headers' buttons, 56 px to tap, like RoundButton.
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={t('close')}
           onPress={scanScreenController.GOTO_HOME}
@@ -369,16 +437,20 @@ export const ScanScreen: React.FC = () => {
           <Icon
             name="close"
             type="material-community"
-            size={24}
+            size={22}
             color={COLORS.darkText}
           />
         </Pressable>
-        <Text style={styles.headerTitle} accessibilityRole="header">
-          {t('scanVerifierTitle')}
+        <Text
+          style={styles.headerTitle}
+          accessibilityRole="header"
+          numberOfLines={1}>
+          {t('scanQrTitle')}
         </Text>
-        {scanScreenController.isScanning ? (
+        {scanScreenController.isScanning || isAddOnly ? (
           <Pressable
             testID="scanTorch"
+            hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={isTorchOn ? t('flashOff') : t('flashOn')}
             accessibilityState={{selected: isTorchOn}}
@@ -391,7 +463,7 @@ export const ScanScreen: React.FC = () => {
             <Icon
               name={isTorchOn ? 'flash' : 'flash-outline'}
               type="material-community"
-              size={24}
+              size={22}
               color={isTorchOn ? COLORS.darkBackground : COLORS.darkText}
             />
           </Pressable>
@@ -479,7 +551,6 @@ export const ScanScreen: React.FC = () => {
           isInvalidIdentity={sendVPScreenController.isInvalidIdentity}
           onNavigateHome={sendVPScreenController.GO_TO_HOME}
           onRetryVerification={sendVPScreenController.RETRY_VERIFICATION}
-          isLivenessEnabled={LIVENESS_CHECK}
         />
       </>
     </LinearGradient>
@@ -490,22 +561,28 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  // The same row as PageHeader, in the camera screen's dark colours.
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 6,
+    minHeight: 60,
   },
   headerTitle: {
     flex: 1,
-    marginHorizontal: 16,
-    fontFamily: 'Montserrat_700Bold',
-    fontSize: 26,
+    marginHorizontal: 8,
+    textAlign: 'center',
+    fontFamily: 'Montserrat_600SemiBold',
+    fontSize: 18,
+    lineHeight: 22,
     color: COLORS.darkText,
   },
   roundButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.darkSurface,
@@ -514,7 +591,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkText,
   },
   roundButtonPlaceholder: {
-    width: 48,
+    width: 40,
   },
   content: {
     paddingHorizontal: 24,

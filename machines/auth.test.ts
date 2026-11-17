@@ -1,6 +1,5 @@
 import {interpret} from 'xstate';
 
-jest.mock('../shared/api', () => ({initializeFaceModel: jest.fn()}));
 jest.mock('./store', () => ({
   StoreEvents: {
     GET: (key: string) => ({type: 'GET', key}),

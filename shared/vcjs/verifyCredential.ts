@@ -9,6 +9,7 @@ import {
   VerifiableCredential,
 } from '../../machines/VerifiableCredential/VCMetaMachine/vc';
 import {getErrorEventData, sendErrorEvent} from '../telemetry/TelemetryUtils';
+import {reportError} from '../crashlytics';
 import {TelemetryConstants} from '../telemetry/TelemetryConstants';
 import {getMosipIdentifier} from '../commonUtil';
 import {NativeModules} from 'react-native';
@@ -47,20 +48,22 @@ export async function verifyCredential(
   expiryCredential: unknown = verifiableCredential,
 ): Promise<VerificationResult> {
   try {
-    if (isAndroid()) {
-      return await verifyCredentialForAndroid(
-        verifiableCredential,
-        credentialFormat,
-        expiryCredential,
-      );
-    }
-    return await verifyCredentialForIos(
-      verifiableCredential,
-      credentialFormat,
-      expiryCredential,
-    );
+    const result = isAndroid()
+      ? await verifyCredentialForAndroid(
+          verifiableCredential,
+          credentialFormat,
+          expiryCredential,
+        )
+      : await verifyCredentialForIos(
+          verifiableCredential,
+          credentialFormat,
+          expiryCredential,
+        );
+    reportVerificationFailure(result, credentialFormat);
+    return result;
   } catch (error) {
     console.error('Error occurred during credential verification:', error);
+    reportError(error, `Credential verification threw (${credentialFormat})`);
 
     return {
       isVerified: false,
@@ -68,6 +71,33 @@ export async function verifyCredential(
       verificationErrorCode: VerificationErrorType.GENERIC_TECHNICAL_ERROR,
     };
   }
+}
+
+/**
+ * Every verification (on download and when a card is re-checked) ends here, so a failure is
+ * reported to Crashlytics as non-fatal. Only the error code and format are sent, never the
+ * credential or the verifier's message, which can quote it. A network failure is the user's
+ * connection, so it isn't reported.
+ */
+function reportVerificationFailure(
+  result: VerificationResult,
+  credentialFormat: string,
+): void {
+  if (
+    result.isVerified ||
+    result.verificationErrorCode === VerificationErrorType.NETWORK_ERROR
+  ) {
+    return;
+  }
+  reportError(
+    new Error(
+      `Credential verification failed: ${
+        result.verificationErrorCode ||
+        VerificationErrorType.GENERIC_TECHNICAL_ERROR
+      }`,
+    ),
+    `Credential verification (${credentialFormat})`,
+  );
 }
 
 async function verifyCredentialForAndroid(

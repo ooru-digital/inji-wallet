@@ -1,5 +1,5 @@
 {
-  "originHash" : "214ebad3ce1459f4eb9d7a80df466bcdde181ed332d76800f4490ad2e989aa3f",
+  "originHash" : "7744c3ad67c6d7ee86ea158886a34385e095876aa28a88dfa40b4b6889d1b4d3",
   "pins" : [
     {
       "identity" : "aexml",
@@ -71,15 +71,6 @@
       "state" : {
         "revision" : "7a7f17761c76a932662ab77028a4329f67d645a4",
         "version" : "5.2.0"
-      }
-    },
-    {
-      "identity" : "inji-openid4vp-ios-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/inji/inji-openid4vp-ios-swift.git",
-      "state" : {
-        "revision" : "7a1574b4aaddc56b1d76614e889c5febf06afa74",
-        "version" : "0.7.1"
       }
     },
     {

@@ -1,5 +1,37 @@
+diff --git a/node_modules/react-native-copilot/dist/index.d.mts b/node_modules/react-native-copilot/dist/index.d.mts
+index 8b9d6e7..3966e28 100644
+--- a/node_modules/react-native-copilot/dist/index.d.mts
++++ b/node_modules/react-native-copilot/dist/index.d.mts
+@@ -52,8 +52,10 @@ interface Props {
+     text: string;
+     children: React__default.ReactElement<any>;
+     active?: boolean;
++    /** inji-wallet patch: put the tooltip above or below the step instead of on the roomier side. */
++    tooltipPosition?: "top" | "bottom";
+ }
+-declare const CopilotStep: ({ name, order, text, children, active, }: Props) => React__default.ReactElement<any, string | React__default.JSXElementConstructor<any>>;
++declare const CopilotStep: ({ name, order, text, children, active, tooltipPosition, }: Props) => React__default.ReactElement<any, string | React__default.JSXElementConstructor<any>>;
+ 
+ type Events = {
+     start: undefined;
+diff --git a/node_modules/react-native-copilot/dist/index.d.ts b/node_modules/react-native-copilot/dist/index.d.ts
+index 8b9d6e7..3966e28 100644
+--- a/node_modules/react-native-copilot/dist/index.d.ts
++++ b/node_modules/react-native-copilot/dist/index.d.ts
+@@ -52,8 +52,10 @@ interface Props {
+     text: string;
+     children: React__default.ReactElement<any>;
+     active?: boolean;
++    /** inji-wallet patch: put the tooltip above or below the step instead of on the roomier side. */
++    tooltipPosition?: "top" | "bottom";
+ }
+-declare const CopilotStep: ({ name, order, text, children, active, }: Props) => React__default.ReactElement<any, string | React__default.JSXElementConstructor<any>>;
++declare const CopilotStep: ({ name, order, text, children, active, tooltipPosition, }: Props) => React__default.ReactElement<any, string | React__default.JSXElementConstructor<any>>;
+ 
+ type Events = {
+     start: undefined;
 diff --git a/node_modules/react-native-copilot/dist/index.js b/node_modules/react-native-copilot/dist/index.js
-index b9127da..6f6d474 100644
+index b9127da..bae6066 100644
 --- a/node_modules/react-native-copilot/dist/index.js
 +++ b/node_modules/react-native-copilot/dist/index.js
 @@ -188,12 +188,12 @@ var init_SvgMask = __esm({
@@ -67,3 +99,58 @@ index b9127da..6f6d474 100644
        );
      };
    }
+@@ -540,6 +567,10 @@ var CopilotModal = (0, import_react5.forwardRef)(
+     const _animateMove = (0, import_react5.useCallback)(
+       (rect) => __async(this, null, function* () {
+         var _a;
++        // inji-wallet patch: a step may ask for its tooltip above or below it ("top" or
++        // "bottom") instead of on the roomier side.
++        const preferredPosition = rect.tooltipPosition;
++        delete rect.tooltipPosition;
+         const newMeasuredLayout = yield measure();
+         if (!androidStatusBarVisible && import_react_native6.Platform.OS === "android") {
+           rect.y -= (_a = import_react_native6.StatusBar.currentHeight) != null ? _a : 0;
+@@ -559,7 +590,7 @@ var CopilotModal = (0, import_react5.forwardRef)(
+         const relativeToTop = center.y;
+         const relativeToBottom = Math.abs(center.y - newMeasuredLayout.height);
+         const relativeToRight = Math.abs(center.x - newMeasuredLayout.width);
+-        const verticalPosition = relativeToBottom > relativeToTop ? "bottom" : "top";
++        const verticalPosition = preferredPosition === "top" || preferredPosition === "bottom" ? preferredPosition : relativeToBottom > relativeToTop ? "bottom" : "top";
+         const horizontalPosition = relativeToLeft > relativeToRight ? "left" : "right";
+         const tooltip = {};
+         const arrow = {};
+@@ -914,7 +945,8 @@ var CopilotProvider = (_a) => {
+         width: size.width + OFFSET_WIDTH,
+         height: size.height + OFFSET_WIDTH,
+         x: size.x - OFFSET_WIDTH / 2,
+-        y: size.y - OFFSET_WIDTH / 2 + verticalOffset
++        y: size.y - OFFSET_WIDTH / 2 + verticalOffset,
++        tooltipPosition: step.tooltipPosition
+       });
+     }),
+     [verticalOffset]
+@@ -1070,7 +1102,8 @@ var CopilotStep = ({
+   order,
+   text,
+   children,
+-  active = true
++  active = true,
++  tooltipPosition
+ }) => {
+   const registeredName = (0, import_react11.useRef)(null);
+   const { registerStep, unregisterStep } = useCopilot();
+@@ -1105,11 +1138,12 @@ var CopilotStep = ({
+         order,
+         measure,
+         wrapperRef,
+-        visible: true
++        visible: true,
++        tooltipPosition
+       });
+       registeredName.current = name;
+     }
+-  }, [name, order, text, registerStep, unregisterStep, active]);
++  }, [name, order, text, registerStep, unregisterStep, active, tooltipPosition]);
+   (0, import_react11.useEffect)(() => {
+     if (active) {
+       return () => {

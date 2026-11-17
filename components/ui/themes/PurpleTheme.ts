@@ -2374,8 +2374,8 @@ export const PurpleTheme = {
   ICON_SMALL_SIZE: 16,
   ICON_MID_SIZE: 22,
   ICON_LARGE_SIZE: 33,
-  CloseCard: require('../../../assets/images/png/CardBGLandscape.png'),
-  OpenCard: require('../../../assets/images/png/CardBGPortrait.png'),
+  CloseCard: require('../../../assets/images/webp/CardBGLandscape.webp'),
+  OpenCard: require('../../../assets/images/webp/CardBGPortrait.webp'),
   HomeScreenLogo: HomeScreenLogo,
   InjiLogoSmall: InjiLogoSmall,
   elevation(level: ElevationLevel): ViewStyle {

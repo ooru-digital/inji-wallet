@@ -40,7 +40,7 @@ import {
 import {VCFormat} from '../../../shared/VCFormat';
 import {isShareable} from '../../../shared/shareability';
 
-import testIDProps from '../../../shared/commonUtil';
+import testIDProps, {toLogoUrl} from '../../../shared/commonUtil';
 import {ShareableInfoModal} from './ShareableInfoModal';
 import {SvgCss} from 'react-native-svg/css';
 import {QR_IMAGE_ID} from '../../../shared/constants';
@@ -58,7 +58,8 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = (
   props: VCItemDetailsProps,
 ) => {
   const {t} = useTranslation('VcDetails');
-  const logo = props.verifiableCredentialData.issuerLogo;
+  const issuerLogo = props.verifiableCredentialData.issuerLogo;
+  const logo = issuerLogo && {...issuerLogo, url: toLogoUrl(issuerLogo.url)};
   const face = props.verifiableCredentialData.face;
   const verifiableCredential = props.credential;
   const wellknownDisplayProperty = new Display(props.wellknown);

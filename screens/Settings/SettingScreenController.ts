@@ -28,7 +28,6 @@ import {
 import {GlobalContext} from '../../shared/GlobalContext';
 import {useTranslation} from 'react-i18next';
 import {RootRouteProps} from '../../routes';
-import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
 
 export function useSettingsScreen(props: RootRouteProps) {
   const {appService} = useContext(GlobalContext);
@@ -157,12 +156,10 @@ export function useSettingsScreen(props: RootRouteProps) {
 
     INJI_TOUR_GUIDE: () => {
       settingsService.send(SettingsEvents.INJI_TOUR_GUIDE());
-      props.navigation.navigate(BOTTOM_TAB_ROUTES.home);
       setIsVisible(false);
-      // The tour is deliberately not started here: calling start() synchronously
-      // alongside navigate() raced Home's mount, so the tour's first step could still be
-      // unregistered and it would begin on a later step instead. Setting this flag is
-      // enough — MyVcsTab starts the tour from its own onLayout, once Home is on screen.
+      // The tour is deliberately not started here, and Home is not opened: setting this flag
+      // is enough. MyVcsTab starts the tour, which begins on the bottom bar (on screen here
+      // too) and brings Home into view once it reaches a step on Home.
       authService.send(AuthEvents.SET_TOUR_GUIDE(true));
     },
 

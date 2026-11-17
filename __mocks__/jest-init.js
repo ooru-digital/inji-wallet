@@ -126,11 +126,6 @@ jest.mock('react-i18next', () => ({
   },
 }));
 
-jest.mock('@iriscan/biometric-sdk-react-native', () => ({
-  configure: jest.fn(),
-  // Add other functions or constants you need to mock here
-}));
-
 jest.mock('react-native-gesture-handler', () => {
   const mockScrollView = jest.fn().mockReturnValue(null); // Mock ScrollView component
   return {
@@ -140,6 +135,15 @@ jest.mock('react-native-gesture-handler', () => {
 });
 
 jest.mock('@invertase/react-native-apple-authentication', () => {});
+
+// Firebase Crashlytics (shared/crashlytics.ts). Its packages ship ES modules Jest doesn't transform,
+// and tests run without a Firebase app, so Crashlytics stays off: getApps() returns none.
+jest.mock('@react-native-firebase/app', () => ({getApps: () => []}));
+jest.mock('@react-native-firebase/crashlytics', () => ({
+  getCrashlytics: jest.fn(),
+  log: jest.fn(),
+  recordError: jest.fn(),
+}));
 
 jest.mock('react-native-share', () => {});
 
