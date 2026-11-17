@@ -1,4 +1,10 @@
 fileignoreconfig:
+  - filename: shared/crashlytics.ts
+    checksum: 33794ae15bcabd78b774671cdd434ec1543a8ebdeb95d8bcc39edb67050d4634
+  - filename: android/app/google-services.json
+    checksum: 627050941f54edaa32a141cb5c4f0ae0206bafc38e2bbb7ca9c0bf3282893dfe
+  - filename: ios/Inji/GoogleService-Info.plist
+    checksum: b27af32d7c37f8c69cd18a2db71d429759209f388da9055f78b6d5ee44d870f3
   - filename: components/VC/common/StatusInfoModal.tsx
     checksum: 5db61aa419e0c1c70b067993272da93822917daa55523371fc196022bd7c25a3
   - filename: components/VC/Views/ShareableInfoModal.tsx
@@ -44,7 +50,7 @@ fileignoreconfig:
   - filename: shared/fileStorage.ts
     checksum: 2ba2721d9722cd9420ae26762316230f7dab1a0be45820cbda4d0ecae0edf957
   - filename: screens/Issuers/IssuersScreen.tsx
-    checksum: fccf2ea2a4961989eb723c2a5f3f57f3307d29f5fbebff5d9526d97903b902b3
+    checksum: b3bad2a4298f28663ab2411c91735e2d950bc279259ca81506bb3e7bf41076d9
   - filename: screens/Home/MyVcs/GetIdInputModal.tsx
     checksum: 5c736ed79a372d0ffa7c02eb33d0dc06edbbb08d120978ff287f5f06cd6c7746
   - filename: shared/openId4VCI/Utils.ts
@@ -94,7 +100,7 @@ fileignoreconfig:
   - filename: screens/Settings/BackupViaPassword.tsx
     checksum: d2a355356bcaf8f7ef3b53ba93710cec15fefd0fdf31efd779eebd2bfab61c19
   - filename: shared/api.ts
-    checksum: e9c850f41a611b77163cd3246b98962704ed29ec233a38e324973fc8db570e1e
+    checksum: 4133ee3b58a0dc593127be13631b422804b1f833cb2e9924aa7ff1d188ff0565
   - filename: machines/backupWithEncryption.ts
     checksum: 038c12d30b2312fcbd9230a1c6ddb494d2e561fe0d09741335fa80ab67e2c550
   - filename: machines/backupWithEncryption.typegen.ts
@@ -168,7 +174,7 @@ fileignoreconfig:
   - filename: shared/VCMetadata.ts
     checksum: c76bd3c825931ac241d8e4f76b8a7444789f49e3b4e45a599b4dcd574f7971c8
   - filename: ios/Podfile.lock
-    checksum: d64a99b6552d7c7fbced1dffb2dd9ddb2749d50f145319c04801e5253b2a1f6b
+    checksum: 8bc3201b70c0eb46e947be05a6241220db54e64369c275c4f0ffc87bc5cc299f
   - filename: components/BackupAndRestoreBannerNotification.tsx
     checksum: e465a9947727687d784d0cb9d8db1e28f765b0659bf4a3aa6d75643aa7b14102
   - filename: components/ActivityLogEvent.ts
@@ -210,7 +216,7 @@ fileignoreconfig:
   - filename: screens/Home/IntroSlidersScreen.tsx
     checksum: 9880724461b194db7651737576ad2fd2db9cf3b4e732747f59be422a7ff4e4a1
   - filename: .env
-    checksum: a9687373ca41867d92e9c84c54ecf119d8f8025ef31a484b504e328184441e9e
+    checksum: 3c8bfde2fc11f24b7fbc8ea01f2746e258cf954265f96a65b96e7392ee18eafc
   - filename: machines/VCItemMachine/VCItemMachine.typegen.ts
     checksum: 850b5d02636bef9e286fc0fbc4ffffbd38068f332c319302a906496f4bc1c8a1
   - filename: machines/VerifiableCredential/VCItemMachine/VCItemModel.ts
@@ -268,7 +274,7 @@ fileignoreconfig:
   - filename: .github/scripts/set-google-clientid.sh
     checksum: 013ef3b43f50ba05e18c9c83e89cc366c3f0d8ed4d931ce7daa19a757880419b
   - filename: screens/Issuers/CredentialTypeSelectionScreen.tsx
-    checksum: 144bbf59e86a89bf580ac7931645ca3eaed69a9409de36f6ce9f88a14091a9d3
+    checksum: 8685841699e1e0646cc208652af3771f83c7f840fdb7b2b2cf00aebee17141aa
   - filename: components/QrCodeOverlay.tsx
     checksum: dacbce1d6cd7e702400897981f44b65288541f4a41ee970f1e6ac1146af150bb
   - filename: machines/Issuers/IssuersEvents.ts
@@ -288,7 +294,7 @@ fileignoreconfig:
   - filename: injitest/src/test/java/androidTestCases/ActivateVcTest.java
     checksum: ef35bd00dfa77e62018f11fa5ae8864720b1abdfa5da04dc429c046c72bab7c8
   - filename: machines/VerifiableCredential/VCMetaMachine/VCMetaActions.ts
-    checksum: 3bf2453601a0be8a762570a56aa881f703e55f7b3eb6c61faf99218bb75e6c48
+    checksum: 9ecc795971d202276f87689c301fea3012bb33723ef74731f6ac3996d0bdc6b8
   - filename: injitest/src/test/java/androidTestCases/DeletingVcTest.java
     checksum: 8ce5adb75377348b48613c06fa759a63b9f0f9dc20d51218bbe13c4bf1f93d5d
   - filename: injitest/src/test/java/androidTestCases/GenerateUinOrVidTest.java
@@ -373,7 +379,7 @@ fileignoreconfig:
   - filename: android/app/src/main/AndroidManifest.xml
     checksum: 8f4bd61770b8bb0a28859ca0f3b4b095aed4e3fb5adef435cb74b9389ff13e09
   - filename: ios/Inji.xcodeproj/project.pbxproj
-    checksum: 5bb246fa39bc7a9994b50bc5b1505d5389d0e254a4e30cfb2a57e6a1025e9087
+    checksum: 1ac24bcacc9028401beaa902cd097292d227270c360dab24ffd9b1cf399d412b
   - filename: screens/Settings/ReceivedCardsModal.tsx
     checksum: 6dee9153a61009b0252d294154c88d5e1b241a517c76e930b391a39d7bc52392
   - filename: machines/VerifiableCredential/VCItemMachine/VCItemActions.ts
@@ -423,7 +429,7 @@ fileignoreconfig:
   - filename: screens/Home/MyVcsTab.tsx
     checksum: 9b689c38514a99fe25a1de9088f07f4939c3f4c125afe46cd7ce433ff24ae0c9
   - filename: package-lock.json
-    checksum: a46f39cf72eb056d999c5dd9b04e42ae64167c4c79c8ee723d1c3c01e6c5da86
+    checksum: d1d94174a1018d765aae7c7ff43ef290bb68d51dc15aadddb427826342146d78
   - filename: screens/IntroSliders/secureShareIntro.tsx
     checksum: ea51350b13ce6287c8965d177bfef275e117e16e42c119f46c738a444dfc0beb
   - filename: shared/backupUtils/restoreData.ts
@@ -505,7 +511,7 @@ fileignoreconfig:
   - filename: components/addCredential/TrustIssuerSheet.test.tsx
     checksum: 5ffddb63f338014f73608b99b8ca699451dc63f4ff254aff157c768e6b30237b
   - filename: screens/Issuers/IssuersScreen.test.tsx
-    checksum: d4d2fec82ec432b8bfd2aca794471a3d7eecb80490f3985228065004980ca18d
+    checksum: bbac84516132c70e8a29a59f1d1bfca437e2477202fbc200bdff51c2e74d2a5c
   - filename: components/revamp/Icons.tsx
     checksum: 90f54ef95c4e61561264dcc8a03c88a154c8a5ad46e4fc9a49dfef2611ef0a89
   - filename: screens/Home/MyVcs/HistoryTab.tsx
