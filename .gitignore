@@ -140,6 +140,9 @@ injitest/target/
 .jest/cache
 
 ## runtime bundles / assets
+## Copied here by the build before the legacy face check was removed; a stale copy can
+## still be on disk in older checkouts. Delete it: Android packages everything in this folder.
+android/app/src/main/assets/faceModel.tflite
 ## Nexus login for the BioChq face liveness Swift package. ~/.netrc links here, since Xcode only
 ## reads ~/.netrc. Never commit.
 .netrc
