@@ -1,0 +1,96 @@
+appId: io.ooru.credissuerwallet
+name: Change PIN
+---
+# Runs last: it changes the passcode, and sets 111111 back at the end.
+- startRecording: recording
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: "Change PIN"
+- extendedWaitUntil:
+    visible: "Enter your current PIN"
+    timeout: 10000
+- takeScreenshot: 1-current-pin
+- runFlow:
+    file: ../subflows/type-digit.yaml
+    env:
+      DIGIT: "2"
+- extendedWaitUntil:
+    visible: "That isn.t your current PIN.*"
+    timeout: 15000
+- runFlow: ../subflows/type-passcode.yaml
+- extendedWaitUntil:
+    visible: "Enter a new PIN"
+    timeout: 15000
+- runFlow: ../subflows/type-passcode.yaml
+- extendedWaitUntil:
+    visible: "Choose a PIN different from your current one.*"
+    timeout: 15000
+- runFlow:
+    file: ../subflows/type-digit.yaml
+    env:
+      DIGIT: "2"
+- extendedWaitUntil:
+    visible: "Enter the new PIN again"
+    timeout: 15000
+- runFlow:
+    file: ../subflows/type-digit.yaml
+    env:
+      DIGIT: "3"
+- extendedWaitUntil:
+    visible: "The PINs don.t match.*"
+    timeout: 15000
+- runFlow:
+    file: ../subflows/type-digit.yaml
+    env:
+      DIGIT: "2"
+- extendedWaitUntil:
+    visible: "Enter the new PIN again"
+    timeout: 15000
+- runFlow:
+    file: ../subflows/type-digit.yaml
+    env:
+      DIGIT: "2"
+- extendedWaitUntil:
+    visible: "PIN changed"
+    timeout: 15000
+- takeScreenshot: 2-pin-changed
+- tapOn: "Done"
+# The new PIN unlocks the wallet.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Your cards are locked."
+    timeout: 30000
+- tapOn: "Unlock"
+- extendedWaitUntil:
+    visible: "Enter your passcode"
+    timeout: 15000
+- runFlow:
+    file: ../subflows/type-digit.yaml
+    env:
+      DIGIT: "2"
+- extendedWaitUntil:
+    visible: "No cards yet"
+    timeout: 30000
+# And back to 111111.
+- tapOn: "Settings"
+- tapOn: "Change PIN"
+- extendedWaitUntil:
+    visible: "Enter your current PIN"
+    timeout: 10000
+- runFlow:
+    file: ../subflows/type-digit.yaml
+    env:
+      DIGIT: "2"
+- extendedWaitUntil:
+    visible: "Enter a new PIN"
+    timeout: 15000
+- runFlow: ../subflows/type-passcode.yaml
+- extendedWaitUntil:
+    visible: "Enter the new PIN again"
+    timeout: 15000
+- runFlow: ../subflows/type-passcode.yaml
+- extendedWaitUntil:
+    visible: "PIN changed"
+    timeout: 15000
+- tapOn: "Done"
+- stopRecording

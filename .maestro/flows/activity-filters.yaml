@@ -1,0 +1,35 @@
+appId: io.ooru.credissuerwallet
+name: Activity filters
+---
+- startRecording: recording
+- runFlow: ../subflows/home.yaml
+- tapOn: "Activity"
+- extendedWaitUntil:
+    visible: "Notifications"
+    timeout: 15000
+- assertVisible: "All caught up"
+- tapOn: "Credentials"
+- takeScreenshot: 1-credentials
+- tapOn: "Sharing"
+- takeScreenshot: 2-sharing
+# The chips scroll sideways in their own row, so the swipe starts on one of them.
+- runFlow:
+    when:
+      notVisible: "Account"
+    commands:
+      - swipe:
+          from: "filter-sharing"
+          direction: LEFT
+- tapOn: "Account"
+- takeScreenshot: 3-account
+- repeat:
+    while:
+      notVisible: "All"
+    times: 3
+    commands:
+      - swipe:
+          from: "filter-sharing"
+          direction: RIGHT
+- tapOn: "All"
+- assertVisible: "No history available yet|Nothing here yet"
+- stopRecording

@@ -1,0 +1,8 @@
+# Types the test passcode 111111. One digit at a time: each of the six boxes takes one digit and
+# moves focus to the next itself, and the passcode submits on the sixth.
+appId: io.ooru.credissuerwallet
+---
+- repeat:
+    times: 6
+    commands:
+      - inputText: "1"

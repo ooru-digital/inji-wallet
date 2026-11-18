@@ -45,7 +45,7 @@ public class RNSecureKeystoreModule extends ReactContextBaseJavaModule {
 
   @ReactMethod(isBlockingSynchronousMethod = true)
   public boolean deviceSupportsHardware() {
-    return deviceCapability.supportsHardwareKeyStore();
+    return BuildConfig.ALLOW_SOFTWARE_KEYSTORE || deviceCapability.supportsHardwareKeyStore();
   }
 
   @ReactMethod(isBlockingSynchronousMethod = true)

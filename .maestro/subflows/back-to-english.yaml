@@ -1,0 +1,14 @@
+# After a flow that changes the language: if it failed before switching back, the wallet is
+# cleared so the next flow sets up a new one in English instead of failing on the text.
+appId: io.ooru.credissuerwallet
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Choose your language|Your cards are locked.|No cards yet"
+    timeout: 15000
+    optional: true
+- runFlow:
+    when:
+      notVisible: "Choose your language|Your cards are locked.|No cards yet"
+    commands:
+      - clearState
