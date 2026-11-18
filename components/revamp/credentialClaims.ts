@@ -1,31 +1,17 @@
 import {getLocalizedField} from '../../i18n';
 import {VCFormat} from '../../shared/VCFormat';
+import {wt} from './walletText';
 
 /**
  * A credential's claims as one flat map of name to display string, whatever its format: a W3C
  * credential's subject, or every element of an mdoc's namespaces.
  */
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
 /** "2026-10-09" or a full timestamp, as "09 Oct 2026"; anything else unchanged. */
 export function displayDate(value: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
   if (!m) return value;
-  const month = MONTHS[Number(m[2]) - 1];
-  return month ? `${m[3]} ${month} ${m[1]}` : value;
+  const n = Number(m[2]);
+  return n >= 1 && n <= 12 ? `${m[3]} ${wt(`months.${n}`)} ${m[1]}` : value;
 }
 
 /**
@@ -149,13 +135,13 @@ export function documentNumber(
   claims: Record<string, string>,
 ): {key: string; label: string; value: string} | undefined {
   const candidates: [string, string][] = [
-    ['document_number', 'No.'],
+    ['document_number', wt('card.numberShort')],
     ['UIN', 'UIN'],
     ['VID', 'VID'],
     ['credential_id', 'ID'],
     ['nationalId', 'ID'],
     ['idNumber', 'ID'],
-    ['licenseNumber', 'Licence no.'],
+    ['licenseNumber', wt('card.licenceNo')],
   ];
   for (const [name, label] of candidates) {
     const key = claimKey(claims, [name]);
@@ -175,7 +161,8 @@ export function documentNumber(
       value
     ) {
       const name = words.slice(0, -1).join(' ');
-      const label = name.length <= 4 ? name.toUpperCase() : 'No.';
+      const label =
+        name.length <= 4 ? name.toUpperCase() : wt('card.numberShort');
       return {key, label, value};
     }
   }
