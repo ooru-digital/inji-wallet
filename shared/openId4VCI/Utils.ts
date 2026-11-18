@@ -1,5 +1,4 @@
 import base64url from 'base64url';
-import i18next from 'i18next';
 import jose from 'node-jose';
 import {NativeModules} from 'react-native';
 import {vcVerificationBannerDetails} from '../../components/BannerNotificationContainer';
@@ -32,6 +31,7 @@ import {KeyTypes} from '../cryptoutil/KeyTypes';
 import {VCFormat} from '../VCFormat';
 import {UnsupportedVcFormat} from '../error/UnsupportedVCFormat';
 import {VCMetadata} from '../VCMetadata';
+import {displayInAppLanguage} from '../displayLanguage';
 
 export const Protocols = {
   OpenId4VCI: 'OpenId4VCI',
@@ -113,25 +113,7 @@ export const updateCredentialInformation = async (
 
 export const getDisplayObjectForCurrentLanguage = (
   display: displayType[],
-): displayType => {
-  const currentLanguage = i18next.language;
-  if (!display || display.length === 0) {
-    return {} as displayType;
-  }
-  const languageKey = Object.keys(display[0]).includes('language')
-    ? 'language'
-    : 'locale';
-  let displayType = display.filter(
-    obj => obj[languageKey] == currentLanguage,
-  )[0];
-  if (!displayType) {
-    displayType =
-      display.filter(obj => obj[languageKey] === 'en')[0] ||
-      display.filter(obj => obj[languageKey] === 'en-US')[0] ||
-      display[0];
-  }
-  return displayType;
-};
+): displayType => displayInAppLanguage(display) ?? ({} as displayType);
 
 export const getCredentialIssuersWellKnownConfig = async (
   issuerCacheKey: string | undefined,

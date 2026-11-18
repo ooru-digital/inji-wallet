@@ -1,4 +1,10 @@
 fileignoreconfig:
+  - filename: components/revamp/translations.test.ts
+    checksum: 3682ff1a1f212ef8d9683e3214af8f962740e586ef6d72b36331bbc1e93b066f
+  - filename: components/revamp/walletText.ts
+    checksum: fcf693a3501a4965cd08d8fb1914013d8c8ddc8c3ea16ad1bdd7600d7fa0ceba
+  - filename: shared/displayLanguage.ts
+    checksum: eeefb4cebb78e6d406d5d3cb5599fc78b1d37fef573e54b774ca1591d63c5514
   - filename: shared/crashlytics.ts
     checksum: 33794ae15bcabd78b774671cdd434ec1543a8ebdeb95d8bcc39edb67050d4634
   - filename: android/app/google-services.json
@@ -467,11 +473,11 @@ fileignoreconfig:
   - filename: components/revamp/CredentialCard.tsx
     checksum: f7588c336a757b1a57893023268a6b9a9a47b1e9374b3ef9c9506ada9d5d23cd
   - filename: components/revamp/RevampTabBar.tsx
-    checksum: 17dd0ffe2d789038588d3c05dd5c3dd4a095283e500f9987f6b29d8512fd836b
+    checksum: ab8a977696707d55a6f3144cb76e5b36456487f2107a7c2ecb552027938db1bc
   - filename: components/revamp/WalletHeader.tsx
     checksum: 4dd697ec883c1684958a79c3d6040604415a5b6176264be55b882830c61e31e3
   - filename: components/revamp/WalletHome.tsx
-    checksum: ca6df9e83a42fff827f6351fdec6dcd14e5a92e9376aa3ae5fe63a789e73a497
+    checksum: a739fcb31bdda963d4fa0c8017905e9970abf0cdcba5646938359ab6857d001c
   - filename: components/revamp/useCredentialCard.ts
     checksum: 40e892bdea792a554b3c08ad9b46bec761d14997cf6284afc03ae46b988514c8
   - filename: components/revamp/cardFields.ts
