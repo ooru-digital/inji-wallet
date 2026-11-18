@@ -19,6 +19,7 @@ import {ScaledText} from './ScaledText';
 import {NewCardDot} from './NewCardDot';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
+import {wt} from './walletText';
 import {Copilot} from '../ui/Copilot';
 import {useCopilot} from 'react-native-copilot';
 import {COPILOT_FINAL_STEP} from '../../shared/constants';
@@ -77,7 +78,7 @@ interface HomeEntry {
 const FRONT_CARD_MAX_HOLD_MS = 10_000;
 
 const pluralCredentials = (n: number) =>
-  `${n} ${n === 1 ? 'credential' : 'credentials'}`;
+  n === 1 ? wt('home.credentialOne') : wt('home.credentialMany', {count: n});
 
 /**
  * The revamped home: the wallet's credentials as a card carousel (or, once one is pinned, that card
@@ -117,7 +118,7 @@ export const WalletHome: React.FC<{
   highlightVcKey,
   onHighlightTaken,
 }) => {
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
   const insets = useSafeAreaInsets();
   const {c, reduceMotion} = useRevampTheme();
   const navigation = useNavigation<any>();
@@ -161,6 +162,8 @@ export const WalletHome: React.FC<{
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [chip, setChip] = useState(ALL);
+  // The chips are issuer names, which can change with the language.
+  useEffect(() => setChip(ALL), [i18n.language]);
   const toggleSearch = () => {
     setSearching(s => !s);
     setQuery('');
@@ -185,14 +188,14 @@ export const WalletHome: React.FC<{
       if (issuer) byIssuer.set(issuer, (byIssuer.get(issuer) ?? 0) + 1);
     });
     return [
-      {key: ALL, label: 'All', count: all.length},
+      {key: ALL, label: wt('home.all'), count: all.length},
       ...[...byIssuer].map(([issuer, count]) => ({
         key: issuer,
         label: issuer,
         count,
       })),
     ];
-  }, [all]);
+  }, [all, i18n.language]);
 
   const visible = useMemo(() => {
     const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -372,7 +375,11 @@ export const WalletHome: React.FC<{
         if (!card) return;
         const pinning = !vcMetadata.isPinned;
         card.service.send(VCItemEvents.PIN_CARD());
-        flash(pinning ? `${card.data.title} pinned to top` : 'Unpinned');
+        flash(
+          pinning
+            ? wt('home.pinnedToTop', {title: card.data.title})
+            : wt('home.unpinned'),
+        );
       },
       // The item machine takes these only from its kebab-menu state, which the old card's menu opened.
       activity: () => {
@@ -389,7 +396,7 @@ export const WalletHome: React.FC<{
   const countText =
     visible.length === all.length
       ? pluralCredentials(all.length)
-      : `${visible.length} of ${all.length} shown`;
+      : wt('home.shownOf', {visible: visible.length, total: all.length});
 
   return (
     <View style={{flex: 1, backgroundColor: c.canvas}}>
@@ -411,7 +418,7 @@ export const WalletHome: React.FC<{
         search={{query, onQuery: setQuery, chips, chip, onChip: setChip}}
         menu={[
           {
-            label: 'Notifications',
+            label: wt('home.notifications'),
             icon: col => <BellIcon color={col} />,
             onPress: () => navigation.navigate(BOTTOM_TAB_ROUTES.history),
           },
@@ -480,9 +487,7 @@ export const WalletHome: React.FC<{
             <View style={styles.hint}>
               <FlipIcon color={c.inkMuted} />
               <ScaledText style={[styles.hintText, {color: c.inkMuted}]}>
-                {flipped
-                  ? 'Tap the card to see the front'
-                  : 'Tap the card to flip it'}
+                {flipped ? wt('home.tapToSeeFront') : wt('home.tapToFlip')}
               </ScaledText>
             </View>
             {activeEntry && loaded[activeEntry.key] ? (
@@ -647,25 +652,25 @@ const ActiveDetails: React.FC<{
 
       <View style={styles.actions}>
         <Action
-          label="Share"
+          label={wt('home.share')}
           primary
           disabled={isInactive(data.status)}
           onPress={actions.share}
           icon={col => <ShareIcon color={col} />}
         />
         <Action
-          label="Show QR"
+          label={wt('home.showQr')}
           disabled={isInactive(data.status)}
           onPress={actions.showQr}
           icon={col => <QrIcon color={col} />}
         />
         <Action
-          label={pinned ? 'Unpin' : 'Pin'}
+          label={pinned ? wt('home.unpin') : wt('home.pin')}
           onPress={actions.togglePin}
           icon={col => <PinIcon color={col} filled={pinned} />}
         />
         <Action
-          label="Activity"
+          label={wt('home.activity')}
           onPress={actions.activity}
           icon={col => <ActivityIcon color={col} />}
         />
@@ -679,7 +684,7 @@ const ActiveDetails: React.FC<{
         accessibilityRole="button">
         <TrashIcon color={c.fail} />
         <ScaledText style={[styles.removeText, {color: c.fail}]}>
-          Remove from Wallet
+          {wt('home.removeFromWallet')}
         </ScaledText>
       </Pressable>
     </Animated.View>
@@ -712,7 +717,7 @@ const PinnedCard: React.FC<{
   const card = (
     <Pressable
       onPress={onOpen}
-      accessibilityLabel={`Open ${entry.data.title} details`}
+      accessibilityLabel={wt('home.openDetails', {title: entry.data.title})}
       style={({pressed}) => [
         shadows.card,
         // Hugs the card: on wide screens the card stops at its design size, and a wrapper
@@ -759,7 +764,7 @@ const PinnedCard: React.FC<{
         <View style={styles.pinnedLabel}>
           <PinIcon color={c.azureInk} size={16} filled />
           <ScaledText style={[styles.pinnedText, {color: c.azureInk}]}>
-            Pinned
+            {wt('home.pinned')}
           </ScaledText>
         </View>
         <Pressable
@@ -769,7 +774,7 @@ const PinnedCard: React.FC<{
             {borderColor: c.line, backgroundColor: c.card},
           ]}>
           <ScaledText style={[styles.unpinText, {color: c.ink}]}>
-            Unpin
+            {wt('home.unpin')}
           </ScaledText>
         </Pressable>
       </View>
@@ -794,7 +799,7 @@ const PinnedCard: React.FC<{
           ]}>
           <QrIcon color={c.onPrimary} size={18} strokeWidth={1.6} />
           <ScaledText style={[styles.bigBtnText, {color: c.onPrimary}]}>
-            Show QR
+            {wt('home.showQr')}
           </ScaledText>
         </Pressable>
         <Pressable
@@ -806,7 +811,7 @@ const PinnedCard: React.FC<{
           ]}>
           <ShareIcon color={c.ink} size={18} strokeWidth={1.6} />
           <ScaledText style={[styles.bigBtnText, {color: c.ink}]}>
-            Share
+            {wt('home.share')}
           </ScaledText>
         </Pressable>
       </View>
@@ -825,7 +830,7 @@ const Rail: React.FC<{
     <View style={styles.rail}>
       <View style={styles.railHead}>
         <ScaledText style={[styles.railTitle, {color: c.ink}]}>
-          Other Credentials
+          {wt('home.otherCredentials')}
         </ScaledText>
         <ScaledText style={[styles.railCount, {color: c.inkMuted}]}>
           {pluralCredentials(entries.length)}
@@ -842,7 +847,7 @@ const Rail: React.FC<{
             <Pressable
               key={e.key}
               onPress={() => onOpen(e.key)}
-              accessibilityLabel={`Open ${e.data.title} details`}
+              accessibilityLabel={wt('home.openDetails', {title: e.data.title})}
               style={({pressed}) => [
                 {width: RAIL_CARD_WIDTH, gap: 8},
                 pressed && {transform: [{scale: 0.98}]},
@@ -870,7 +875,7 @@ const Rail: React.FC<{
         )}
         {entries.length === 0 ? (
           <ScaledText style={[styles.empty, {color: c.inkMuted}]}>
-            No other credentials match your search.
+            {wt('home.noOtherMatch')}
           </ScaledText>
         ) : null}
       </ScrollView>
@@ -878,7 +883,7 @@ const Rail: React.FC<{
         <View style={styles.railHint}>
           <ArrowRightIcon color={c.inkMuted} />
           <ScaledText style={[styles.railCount, {color: c.inkMuted}]}>
-            Swipe for more · tap a card for details
+            {wt('home.swipeHint')}
           </ScaledText>
         </View>
       ) : null}
@@ -895,10 +900,10 @@ const NoResults: React.FC<{onReset: () => void}> = ({onReset}) => {
         {borderColor: c.lineStrong, backgroundColor: c.sand},
       ]}>
       <ScaledText style={[styles.noResultsTitle, {color: c.ink}]}>
-        No Matching Credentials
+        {wt('home.noResultsTitle')}
       </ScaledText>
       <ScaledText style={[styles.noResultsText, {color: c.inkMuted}]}>
-        Try another name or issuer, or clear the filters.
+        {wt('home.noResultsText')}
       </ScaledText>
       <Pressable
         onPress={onReset}
@@ -907,7 +912,7 @@ const NoResults: React.FC<{onReset: () => void}> = ({onReset}) => {
           {borderColor: c.sel, backgroundColor: c.card},
         ]}>
         <ScaledText style={[styles.unpinText, {fontSize: 14, color: c.ink}]}>
-          Clear Filters
+          {wt('home.clearFilters')}
         </ScaledText>
       </Pressable>
     </View>
@@ -961,7 +966,7 @@ const Pager: React.FC<{
   return (
     <View style={styles.pager}>
       <Pressable
-        accessibilityLabel="Previous credential"
+        accessibilityLabel={wt('home.previousCredential')}
         onPress={() => index > 0 && onSelect(index - 1)}
         style={[
           styles.pagerBtn,
@@ -975,13 +980,13 @@ const Pager: React.FC<{
       </Pressable>
       <View
         style={styles.dots}
-        accessibilityLabel={`Credential ${index + 1} of ${count}`}>
+        accessibilityLabel={wt('home.position', {index: index + 1, count})}>
         {Array.from({length: count}).map((_, i) => (
           <Dot key={i} active={i === index} />
         ))}
       </View>
       <Pressable
-        accessibilityLabel="Next credential"
+        accessibilityLabel={wt('home.nextCredential')}
         onPress={() => index < count - 1 && onSelect(index + 1)}
         style={[
           styles.pagerBtn,

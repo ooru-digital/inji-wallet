@@ -1,4 +1,10 @@
 fileignoreconfig:
+  - filename: shared/displayLanguage.ts
+    checksum: eeefb4cebb78e6d406d5d3cb5599fc78b1d37fef573e54b774ca1591d63c5514
+  - filename: components/revamp/translations.test.ts
+    checksum: 3682ff1a1f212ef8d9683e3214af8f962740e586ef6d72b36331bbc1e93b066f
+  - filename: components/revamp/walletText.ts
+    checksum: fcf693a3501a4965cd08d8fb1914013d8c8ddc8c3ea16ad1bdd7600d7fa0ceba
   - filename: screens/Home/NfcTapShare.tsx
     checksum: 738b19c47a137d090cc9dd23e4240f8c005e655c999f2559048da35392a4b831
   - filename: ios/Packages/inji-openid4vp-ios-swift/README.md
@@ -637,11 +643,11 @@ fileignoreconfig:
   - filename: components/revamp/CredentialCard.tsx
     checksum: f7588c336a757b1a57893023268a6b9a9a47b1e9374b3ef9c9506ada9d5d23cd
   - filename: components/revamp/RevampTabBar.tsx
-    checksum: 97f078d5d2ea9e9facd478ed368e3a504960008e791c159663cead3bd0b4d9ca
+    checksum: ab8a977696707d55a6f3144cb76e5b36456487f2107a7c2ecb552027938db1bc
   - filename: components/revamp/WalletHeader.tsx
     checksum: 4dd697ec883c1684958a79c3d6040604415a5b6176264be55b882830c61e31e3
   - filename: components/revamp/WalletHome.tsx
-    checksum: ba3d63b236ac84b99201397413e893944a421c22d806599b5fd02ef3795e347c
+    checksum: 959a0f6db0087a50fdace5346d266cb2fe4d85e9bf6114816ee006607193d646
   - filename: components/revamp/useCredentialCard.ts
     checksum: 40e892bdea792a554b3c08ad9b46bec761d14997cf6284afc03ae46b988514c8
   - filename: components/revamp/cardFields.ts
