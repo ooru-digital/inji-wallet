@@ -31,6 +31,29 @@
 -keep class com.apicatalog.** { *; }
 -keep class com.nimbusds.** { *; }
 -keep class com.google.gson.** { *; }
+
+# W3C VC (ldp_vc) verification in MOSIP's vcverifier. JsonLDObject reads each credential and
+# proof class's DEFAULT_JSONLD_CONTEXTS / _TYPES / _PREDICATE fields by name; without these rules
+# every ldp_vc download fails with "NoSuchFieldException: DEFAULT_JSONLD_PREDICATE".
+-keep class foundation.identity.** { *; }
+-keep class info.weboftrust.** { *; }
+-keep class com.danubetech.** { *; }
+# RDF canonicalisation, and Jakarta JSON, whose API loads its implementation by class name.
+-keep class io.setl.** { *; }
+-keep class jakarta.json.** { *; }
+-keep class org.glassfish.json.** { *; }
+# Ed25519 signatures: lazysodium calls libsodium through JNA, which maps classes by reflection;
+# the i2p EdDSA classes are registered as a security provider.
+-keep class com.goterl.** { *; }
+-keep class com.sun.jna.** { *; }
+-keep class * implements com.sun.jna.** { *; }
+-keep class net.i2p.crypto.** { *; }
+# JWT (Jackson-mapped models), SD-JWT and CBOR (claim 169 QR) used alongside verification.
+-keep class io.fusionauth.** { *; }
+-keep class com.authlete.** { *; }
+-keep class co.nstant.in.** { *; }
+-keep class com.upokecenter.** { *; }
+
 -keepclassmembers,allowobfuscation class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
