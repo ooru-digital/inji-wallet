@@ -369,7 +369,18 @@ dependencies {
     // The library asks for io.inji:vcverifier-jar 1.8.1; the app keeps its own vcverifier-aar
     // below, which has the two classes the library uses (DidPublicKeyResolver and
     // ED25519SignatureVerifierImpl), so both coordinates of the jar are excluded.
-    implementation("io.inji:inji-openid4vp-aar:1.0.0-rc.1"){
+    //
+    // TEMPORARY, local only: "-credissuer.2" is rc.1 with two CredIssuer patches:
+    //  1. A DCQL type_values entry also matches a credential whose written type is the IRI's
+    //     local name (after '#' or '/'), the rule Inji Verify 1.0 itself applies. CredIssuer
+    //     contexts map types to IRIs like "iri:3425", so otherwise no CredIssuer card matches an
+    //     Inji Verify DCQL request.
+    //  2. constructUnsignedVPToken takes a fallback holder DID (the wallet's did:jwk), used as the
+    //     ldp_vc VP holder when credentialSubject.id is not a DID. CredIssuer subjects are
+    //     urn:uuid, which the library otherwise rejects ("Holder ID must be a valid did...").
+    // It is installed in ~/.m2 on this machine only; other machines and CI can't resolve it
+    // until it is published.
+    implementation("io.inji:inji-openid4vp-aar:1.0.0-rc.1-credissuer.2"){
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
         exclude group: 'io.mosip', module: 'vcverifier-jar'

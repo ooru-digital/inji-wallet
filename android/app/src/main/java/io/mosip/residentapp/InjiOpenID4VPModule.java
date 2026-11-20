@@ -146,12 +146,16 @@ public class InjiOpenID4VPModule extends ReactContextBaseJavaModule {
         }
     }
 
-    /** selectedVCs: {queryOrInputDescriptorId: [{format, credentialId, credential}]}. */
+    /**
+     * selectedVCs: {queryOrInputDescriptorId: [{format, credentialId, credential}]}.
+     * fallbackHolderId: the wallet's did:jwk. The patched library uses it as the ldp_vc VP holder
+     * only when a card's credentialSubject.id is not a supported DID (CredIssuer's urn:uuid).
+     */
     @ReactMethod
-    public void constructUnsignedVPToken(ReadableMap selectedVCs, Promise promise) {
+    public void constructUnsignedVPToken(ReadableMap selectedVCs, @Nullable String fallbackHolderId, Promise promise) {
         try {
             Map<String, List<Credential>> selectedCredentials = OpenId4VPUtils.parseSelectedVCs(selectedVCs);
-            List<UnsignedVPToken> vpTokens = openID4VP.constructUnsignedVPToken(selectedCredentials);
+            List<UnsignedVPToken> vpTokens = openID4VP.constructUnsignedVPToken(selectedCredentials, fallbackHolderId);
             promise.resolve(parseUnsignedVPTokens(vpTokens));
         } catch (Exception e) {
             rejectWithOpenID4VPExceptions(e, promise);

@@ -194,9 +194,12 @@ class OpenID4VP {
       selectedVCs,
       selectedDisclosuresByVc,
     );
+    // Android: holderId is only a fallback. The (patched) library uses it as the ldp_vc VP holder
+    // when a card's credentialSubject.id is not a DID, as with CredIssuer's urn:uuid subjects.
     const unSignedVpTokens = usesOpenID4VP1()
       ? await openID4VP.InjiOpenID4VP.constructUnsignedVPToken(
           updatedSelectedVCs,
+          holderId,
         )
       : await openID4VP.InjiOpenID4VP.constructUnsignedVPToken(
           updatedSelectedVCs,
