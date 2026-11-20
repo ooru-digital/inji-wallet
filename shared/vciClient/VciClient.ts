@@ -5,6 +5,16 @@ import {
   VerifiableCredential,
 } from '../../machines/VerifiableCredential/VCMetaMachine/vc';
 import {signatureSuite} from '../../machines/openID4VP/openID4VPServices';
+import {isAndroid} from '../constants';
+import {getWalletConfig} from '../openID4VP/OpenID4VPHelper';
+
+/**
+ * The last argument of the native download calls. Android's VCI client 1.0 takes the OpenID4VP 1.0
+ * wallet config, for presentation during issuance; iOS (0.7) takes the LDP VP signature suite.
+ */
+async function presentationConfigArgument(): Promise<any> {
+  return isAndroid() ? await getWalletConfig(true) : signatureSuite;
+}
 
 const emitter = new NativeEventEmitter(NativeModules.InjiVciClient);
 
@@ -141,7 +151,7 @@ class VciClient {
       response = await this.InjiVciClient.requestCredentialByOffer(
         credentialOffer,
         JSON.stringify(clientMetadata),
-        signatureSuite,
+        await presentationConfigArgument(),
       );
     } catch (error) {
       console.error('Error requesting credential by offer:', error);
@@ -226,7 +236,7 @@ class VciClient {
         credentialIssuerUri,
         credentialConfigurationId,
         JSON.stringify(clientMetadata),
-        signatureSuite,
+        await presentationConfigArgument(),
       );
     } catch (error) {
       console.error('Error requesting credential from trusted issuer:', error);
