@@ -1,30 +1,20 @@
 import {NativeModules} from 'react-native';
+import forge from 'node-forge';
 import {
-  createSignature,
   createSignatureECK1,
+  createSignatureECR1,
   createSignatureED,
-  encodeB64,
   fetchKeyPair,
   replaceCharactersInB64,
 } from '../cryptoutil/cryptoUtil';
 import convertDerToRsFormat from '../cryptoutil/signFormatConverter';
 import {base64ToByteArray, canonicalize} from '../Utils';
 import getAllConfigurations, {CACHED_API} from '../api';
-import {OpenID4VP_Proof_Sign_Algo} from './OpenID4VP';
-import {VCFormat} from '../VCFormat';
 import {isIOS, JWT_ALG_TO_KEY_TYPE} from '../constants';
-import {getMdocAuthenticationAlorithm} from '../../components/VC/common/VCUtils';
 import {KeyTypes} from '../cryptoutil/KeyTypes';
-import {signatureSuite} from '../../machines/openID4VP/openID4VPServices';
 import {walletConfig as defaultWalletConfig} from './walletMetadata';
-import {
-  UnsignedVPTokensV2,
-  UnsignedVPTokenV2,
-  VPTokenSigningResultsV2,
-  VPTokenSigningResultV2,
-} from './openid4vp.types';
 
-/** An unsigned VP token from inji-openid4vp 1.0 (Android); dataToSign is base64url bytes. */
+/** An unsigned VP token from inji-openid4vp 1.0; dataToSign is base64url bytes. */
 export type UnsignedVPTokenV1 = {
   id: string;
   format: string;
@@ -36,44 +26,14 @@ export type UnsignedVPTokenV1 = {
 /** What inji-openid4vp 1.0 takes back: the raw signature, base64url, per token id. */
 export type VPTokenSigningResultV1 = {id: string; signedData: string};
 
-export async function constructDetachedJWT(
-  privateKey: any,
-  vpToken: string,
-  keyType: string,
-): Promise<string> {
-  const jwtHeader = {
-    alg: OpenID4VP_Proof_Sign_Algo,
-    crit: ['b64'],
-    b64: false,
-  };
-  const header64 = encodeB64(JSON.stringify(jwtHeader));
-  const headerBytes = new TextEncoder().encode(header64);
-  const vpTokenBytes = base64ToByteArray(vpToken);
-  const payloadBytes = new Uint8Array([...headerBytes, 46, ...vpTokenBytes]);
-
-  const signature = await createSignatureED(privateKey, payloadBytes);
-
-  return header64 + '..' + signature;
-}
-
 export async function isClientValidationRequired() {
   const config = await getAllConfigurations();
   return config.openid4vpClientValidation === 'true';
 }
 
-export async function getWalletMetadata() {
-  const config = await getAllConfigurations();
-  if (!config.walletMetadata) {
-    return null;
-  }
-  const walletMetadata = JSON.parse(config.walletMetadata);
-  return walletMetadata;
-}
-
 /**
- * Wallet config for inji-openid4vp 1.0 (Android): `openid4vpWalletConfig` from the Mimoto config
- * when set, else the bundled default. The 0.7 `walletMetadata` above is a different shape and is
- * not used here.
+ * Wallet config for inji-openid4vp 1.0: `openid4vpWalletConfig` from the Mimoto config when set,
+ * else the bundled default.
  *
  * withTrustedVerifiers adds the trusted list and the validation flag, for the VCI client's
  * presentation during issuance. OpenID4VP sharing passes those per scan instead.
@@ -105,9 +65,23 @@ export async function getWalletConfig(withTrustedVerifiers = false) {
 }
 
 /**
- * Signs inji-openid4vp 1.0 unsigned VP tokens (Android). The library builds the whole VP, proof
- * included; the wallet only signs `dataToSign` (raw bytes, base64url) with the key that matches
- * `signatureAlgorithm`, which the library derived from the credential's holder key.
+ * JSON-LD canonicalization for the iOS libraries (OpenID4VP and the VCI client's presentation
+ * during issuance), which hand the unsigned ldp_vc VP to JS as a JSON string. Returns
+ * base64url(sha256(canonical proof) || sha256(canonical document)), the bytes they sign over.
+ * Android's libraries canonicalize natively.
+ */
+export async function jsonLdCanonicalize(data: string): Promise<string> {
+  const canonicalized = await canonicalize(JSON.parse(data));
+  if (!canonicalized) {
+    throw new Error('Canonicalized data to sign is undefined');
+  }
+  return canonicalized;
+}
+
+/**
+ * Signs inji-openid4vp 1.0 unsigned VP tokens. The library builds the whole VP, proof included;
+ * the wallet only signs `dataToSign` (raw bytes, base64url) with the key that matches
+ * `signatureAlgorithm`, which the library derived from the holder key.
  */
 export async function signUnsignedVPTokens(
   unsignedVPTokens: UnsignedVPTokenV1[],
@@ -141,8 +115,15 @@ async function signBytes(
     }
     case KeyTypes.ES256:
     case KeyTypes.RS256: {
-      // Hardware keys. RNSecureKeystoreModule.sign would sign the UTF-8 bytes of a string and
-      // corrupt binary payloads such as mdoc DeviceAuthentication; signBytes signs them as is.
+      if (isIOS()) {
+        // iOS keeps these as software keys that JS can read, so it signs the bytes itself.
+        const {privateKey} = await fetchKeyPair(keyType);
+        return keyType === KeyTypes.ES256
+          ? createSignatureECR1(privateKey, payload)
+          : signRsaBytes(privateKey, payload);
+      }
+      // Android hardware keys. RNSecureKeystoreModule.sign would sign the UTF-8 bytes of a string
+      // and corrupt binary payloads such as mdoc DeviceAuthentication; signBytes signs them as is.
       const {RNSecureKeystoreModule} = NativeModules;
       const signature64: string = await RNSecureKeystoreModule.signBytes(
         keyType,
@@ -161,219 +142,15 @@ async function signBytes(
   }
 }
 
-export const signDataForVpPreparation = async (
-  unSignedVpTokens,
-  context: any,
-) => {
-  // private key, key type and selected VCs are available in context
-  const vpTokenSigningResultMap: Record<any, any> = {};
-  for (const formatType in unSignedVpTokens) {
-    const credentials = unSignedVpTokens[formatType];
-    let dataToSign = credentials.dataToSign;
-    if (formatType === VCFormat.ldp_vc.valueOf()) {
-      if (isIOS()) {
-        const canonicalized = await canonicalize(JSON.parse(dataToSign));
-        if (!canonicalized) {
-          throw new Error('Canonicalized data to sign is undefined');
-        }
-        dataToSign = canonicalized;
-      }
-      const proof = await constructDetachedJWT(
-        context.privateKey,
-        dataToSign,
-        context.keyType,
-      );
-      vpTokenSigningResultMap[formatType] = {
-        jws: proof,
-        proofValue: null,
-        signatureAlgorithm: signatureSuite,
-      };
-    } else if (formatType === VCFormat.mso_mdoc.valueOf()) {
-      const signedData: Record<string, any> = {};
-
-      const mdocCredentialsByDocType = Object.values(context.selectedVCs)
-        .flat()
-        .reduce((acc, credential) => {
-          if (credential.format === 'mso_mdoc') {
-            const docType =
-              credential?.verifiableCredential?.processedCredential?.docType;
-            if (docType) {
-              acc[docType] = credential;
-            }
-          }
-          return acc;
-        }, {});
-
-      await Promise.all(
-        Object.entries(credentials.docTypeToDeviceAuthenticationBytes).map(
-          async ([docType, payload]) => {
-            const cred = mdocCredentialsByDocType[docType];
-
-            if (!cred) return;
-
-            const mdocAuthenticationAlgorithm = getMdocAuthenticationAlorithm(
-              cred.verifiableCredential.processedCredential.issuerSigned
-                ?.issuerAuth?.[2] ??
-                cred.verifiableCredential.processedCredential?.issuerAuth?.[2],
-            );
-
-            if (mdocAuthenticationAlgorithm === KeyTypes.ES256.valueOf()) {
-              const key = await fetchKeyPair(mdocAuthenticationAlgorithm);
-              const signature = await createSignature(
-                key.privateKey,
-                payload,
-                mdocAuthenticationAlgorithm,
-              );
-
-              if (signature) {
-                signedData[docType] = {
-                  signature,
-                  mdocAuthenticationAlgorithm,
-                };
-              }
-            } else {
-              throw new Error(
-                `Unsupported algorithm: ${mdocAuthenticationAlgorithm}`,
-              );
-            }
-          },
-        ),
-      );
-
-      vpTokenSigningResultMap[formatType] = signedData;
-    } else if (
-      formatType === VCFormat.vc_sd_jwt.valueOf() ||
-      formatType === VCFormat.dc_sd_jwt.valueOf()
-    ) {
-      const uuidToUnsignedKBJWT = credentials.uuidToUnsignedKBT;
-      const uuidToSignature: Record<string, string> = {};
-
-      for (const [uuid, unsignedKBJWT] of Object.entries(uuidToUnsignedKBJWT)) {
-        const header = JSON.parse(atob(unsignedKBJWT.split('.')[0]));
-        const alg = header.alg;
-        const keyType = JWT_ALG_TO_KEY_TYPE[alg];
-
-        let privateKey: string;
-
-        if (keyType === KeyTypes.ED25519) {
-          privateKey = context.privateKey;
-        } else {
-          const keypair = await fetchKeyPair(keyType);
-          privateKey = keypair.privateKey;
-        }
-        const signature = await createSignature(
-          privateKey,
-          unsignedKBJWT,
-          keyType,
-        );
-        if (signature) {
-          uuidToSignature[uuid] = signature;
-        } else {
-          throw new Error(`Failed to create signature for UUID: ${uuid}`);
-        }
-      }
-
-      vpTokenSigningResultMap[formatType] = uuidToSignature;
-    }
-  }
-  return vpTokenSigningResultMap;
-};
-
 /**
- *
- * unsignedVPTokens : [{
- *   format: 'ldp_vc' | 'mso_mdoc' | 'vc_sd_jwt' | 'dc_sd_jwt',
- *   holderKeyReference: string,
- *   signatureAlgorithm: string,
- *   dataToSign: string
- * }]
- * @param unSignedVpTokens
- * @param context
+ * RS256 over raw bytes with a PEM private key (iOS). createSignatureRSA hashes its input as UTF-8
+ * text, which would change any byte above 0x7F, so the bytes go to the digest as a binary string.
  */
-export const signDataForVpPreparationV2 = async (
-  unSignedVpTokens: Array<UnsignedVPTokenV2>,
-  context: any,
-): Promise<VPTokenSigningResultsV2> => {
-  const result: Promise<VPTokenSigningResultV2[]> = unSignedVpTokens.map(
-    async unsignedVPToken => {
-      let privateKey: string;
-      let keyType: KeyTypes;
-      let signature: string | undefined = '';
-      const formatType = unsignedVPToken.format;
-      let payload: string = unsignedVPToken.dataToSign;
-      const signatureAlgorithm: string = unsignedVPToken.signatureAlgorithm;
-
-      switch (formatType) {
-        case VCFormat.ldp_vc.valueOf():
-          if (isIOS()) {
-            const canonicalized = await canonicalize(JSON.parse(payload));
-            if (!canonicalized) {
-              throw new Error('Canonicalized data to sign is undefined');
-            }
-            payload = canonicalized;
-          }
-          signature = await constructDetachedJWT(
-            context.privateKey,
-            payload,
-            signatureAlgorithm,
-          );
-          return {signedData: signature} as VPTokenSigningResultV2;
-          break;
-
-        case VCFormat.mso_mdoc.valueOf():
-          if (signatureAlgorithm === KeyTypes.ES256.valueOf()) {
-            const key = await fetchKeyPair(KeyTypes.ES256);
-            const signature = await createSignature(
-              key.privateKey,
-              payload,
-              KeyTypes.ES256,
-            );
-            if (signature) {
-              return {signedData: signature} as VPTokenSigningResultV2;
-            } else {
-              throw new Error(
-                `Failed to create signature for VP Token of format: ${formatType}`,
-              );
-            }
-          } else {
-            throw new Error(`Unsupported algorithm: ${signatureAlgorithm}`);
-          }
-
-        case VCFormat.vc_sd_jwt.valueOf():
-        case VCFormat.dc_sd_jwt.valueOf():
-          keyType =
-            JWT_ALG_TO_KEY_TYPE[
-              signatureAlgorithm as keyof typeof JWT_ALG_TO_KEY_TYPE
-            ];
-
-          if (!keyType) {
-            throw new Error(
-              `Unsupported signature algorithm: ${signatureAlgorithm}`,
-            );
-          }
-
-          if (keyType === KeyTypes.ED25519) {
-            privateKey = context.privateKey;
-          } else {
-            const keypair = await fetchKeyPair(keyType);
-            privateKey = keypair.privateKey;
-          }
-
-          signature = await createSignature(privateKey, payload, keyType);
-          if (signature) {
-            return {signedData: signature} as VPTokenSigningResultV2;
-          } else {
-            throw new Error(
-              `Failed to create signature for VP Token of format: ${formatType}`,
-            );
-          }
-
-        default:
-          throw new Error(`Unsupported VP Token format: ${formatType}`);
-      }
-    },
+function signRsaBytes(privateKeyPem: string, payload: Uint8Array): string {
+  const key = forge.pki.privateKeyFromPem(privateKeyPem);
+  const md = forge.md.sha256.create();
+  md.update(forge.util.binary.raw.encode(payload));
+  return replaceCharactersInB64(
+    Buffer.from(key.sign(md), 'binary').toString('base64'),
   );
-
-  const vpTokenSigningResults = await Promise.all(result);
-  return vpTokenSigningResults as VPTokenSigningResultsV2;
-};
+}

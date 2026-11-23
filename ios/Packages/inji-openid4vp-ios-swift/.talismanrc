@@ -43,4 +43,8 @@ fileignoreconfig:
   checksum: bbb2c45b2f6825fd1e5ee979d8c395acf5d479adb61e6e2ec26fc03116625d2d
 - filename: Sources/OpenId4VP/AuthorizationRequest/AuthorizationRequest.swift
   checksum: 5e8889a35d4474e662e5382c5eabd70b407a88af19106189b1949dc46cb6916b
+- filename: Sources/OpenID4VP/AuthorizationResponse/UnsignedVPToken/types/SdJwt/UnsignedSdJwtVPTokenBuilder.swift
+  checksum: bac15638cc64018837eef76eaf47ec830bd1143c450d0c67332f62aa0ed27648
+- filename: Tests/OpenID4VPTests/AuthorizationResponse/UnsignedVPToken/UnsignedSdJwtVPTokenBuilderTests.swift
+  checksum: dd4fc312cb29519c91c4304fae88aa51f560cdc2fd862bd9a76012fd555b6f57
 version: ""

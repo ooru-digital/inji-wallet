@@ -15,14 +15,14 @@ func parseAndValidatePresentationDefinition(
     if hasPresentationDefinition && hasPresentationDefinitionUri {
         throw InvalidData(
             message: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
-            className: AuthorizationRequest.className
+            className: className
         )
     }
 
     if !hasPresentationDefinition && !hasPresentationDefinitionUri {
         throw InvalidData(
             message: "Either presentation_definition or presentation_definition_uri request param must be present",
-            className: AuthorizationRequest.className
+            className: className
         )
     }
     
@@ -33,11 +33,11 @@ func parseAndValidatePresentationDefinition(
             guard let valueStr = getStringValue(presentationDefinitionString), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
                 throw InvalidInput(
                     fieldPath: ["presentation_definition"],
-                    className: AuthorizationRequest.className
+                    className: className
                 )
             }
             
-            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition.rawValue], className: AuthorizationRequest.className)
+            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition], className: className)
         } else if let presentationDefinitionJson = value as? [String: Any] {
             //Presentation Definition is of type Dictionary when auth request obtained by reference
             do {
@@ -45,23 +45,23 @@ func parseAndValidatePresentationDefinition(
             } catch {
                 throw InvalidData(
                     message: "presentation_definition data is not valid",
-                    className: AuthorizationRequest.className,
+                    className: className,
                     code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
                 )
             }
         } else {
             throw InvalidData(
                 message: "presentation_definition data is not valid",
-                className: AuthorizationRequest.className,
+                className: className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
-    } else if hasPresentationDefinitionUri, let uriValue = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+    } else if hasPresentationDefinitionUri, let uriValue = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri] {
         
         if !isPresentationDefinitionUriSupported {
             throw InvalidData(
                 message: "presentation_definition_uri is not supported",
-                className: AuthorizationRequest.className,
+                className: className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
@@ -70,15 +70,15 @@ func parseAndValidatePresentationDefinition(
               isNeitherNullNorEmpty(field: uriString),
               uriString != "null" else {
             throw InvalidInput(
-                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue],
-                className: AuthorizationRequest.className
+                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri],
+                className: className
             )
         }
         
         guard isValidUri(uriString) else {
             throw InvalidData(
                 message: "presentation_definition_uri is not valid",
-                className: AuthorizationRequest.className,
+                className: className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
             )
         }
@@ -91,13 +91,13 @@ func parseAndValidatePresentationDefinition(
             if(!response.isOK){
                 throw InvalidData(
                     message: "Error while fetching presentation_definition from presentation_definition_uri: \(uriString), status code: \(response.statusCode) with body: \(response.body)",
-                    className: AuthorizationRequest.className
+                    className: className
                 )
             }
         } catch {
             throw InvalidData(
                 message: "presentation_definition_uri could not be reached: \(uriString)",
-                className: AuthorizationRequest.className,
+                className: className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
             )
         }
@@ -105,7 +105,7 @@ func parseAndValidatePresentationDefinition(
         guard let data = response.body.data(using: .utf8) else {
             throw InvalidData(
                 message: "presentation_definition_uri response body is not valid",
-                className: AuthorizationRequest.className,
+                className: className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
@@ -115,7 +115,7 @@ func parseAndValidatePresentationDefinition(
         } catch {
             throw InvalidData(
                 message: "presentation_definition_uri did not contain valid presentation_definition",
-                className: AuthorizationRequest.className,
+                className: className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
@@ -124,15 +124,15 @@ func parseAndValidatePresentationDefinition(
     } else {
         throw InvalidData(
             message: "Either presentation_definition or presentation_definition_uri request param must be present",
-            className: AuthorizationRequest.className
+            className: className
         )
     }
     
-    let responseMode = getStringValue(authorizationRequest[AuthorizationRequestFieldConstants.responseMode.rawValue])
+    let responseMode = getStringValue(authorizationRequest[AuthorizationRequestFieldConstants.responseMode])
     try validateForCredentialFormat(finalPresentationDefinition, responseMode: responseMode)
     
     var mutableParams = authorizationRequest
-    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition.rawValue] = finalPresentationDefinition
+    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition] = finalPresentationDefinition
     
     return mutableParams
 }
@@ -141,9 +141,12 @@ func parseAndValidatePresentationDefinition(
 fileprivate func validateForCredentialFormat(_ presentationDefinition: PresentationDefinition, responseMode: String?) throws {
     //In case of mso_mdoc format VCs requested in Authorization Request, direct_post.jwt is the allowed response_mode
     let hasMsoMdocFormat: Bool =  presentationDefinition.format?.contains(where: { $0.key == FormatType.mso_mdoc.rawValue }) ?? false || presentationDefinition.inputDescriptors.contains(where: {$0.format?.contains(where: { $0.key == FormatType.mso_mdoc.rawValue }) ?? false})
-    if(hasMsoMdocFormat && (responseMode != ResponseMode.directPostJwt.rawValue && responseMode != ResponseMode.iarPostJwt.rawValue)){
+    if (hasMsoMdocFormat &&
+        (responseMode != ResponseMode.directPostJwt.rawValue &&
+        responseMode != ResponseMode.iarPostJwt.rawValue &&
+        responseMode != ResponseMode.iaePostJwt.rawValue)){
         throw InvalidData(
-            message: "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt or iar_post.jwt",
+            message: "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt, iar-post.jwt or iae_post.jwt",
             className: className
         )
     }

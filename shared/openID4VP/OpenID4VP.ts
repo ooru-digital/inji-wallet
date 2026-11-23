@@ -1,28 +1,22 @@
-import {NativeModules} from 'react-native';
+import {NativeEventEmitter, NativeModules} from 'react-native';
 import {__AppId} from '../GlobalVariables';
-import {
-  SelectedCredentialsForVPSharing,
-  VC,
-} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
-import {walletMetadata} from './walletMetadata';
+import {VC} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
 import {
   getWalletConfig,
-  getWalletMetadata,
   isClientValidationRequired,
+  jsonLdCanonicalize,
 } from './OpenID4VPHelper';
-import {parseJSON} from '../Utils';
+import {jsonLdExpand, parseJSON} from '../Utils';
 import {VCFormat} from '../VCFormat';
 import {VCMetadata} from '../VCMetadata';
-import {isAndroid} from '../constants';
+import {isIOS} from '../constants';
 
 export const OpenID4VP_Proof_Sign_Algo = 'EdDSA';
 
-/**
- * Android runs inji-openid4vp 1.0 (DCQL and presentation definition requests); iOS still runs the
- * patched 0.7 copy in ios/Packages. authenticateVerifier and sendErrorToVerifier have the same
- * shape on both; the credential and signing payloads differ, so those branch here.
+/*
+ * Both platforms run inji-openid4vp 1.0 (DCQL and presentation definition requests): Android the
+ * patched AAR, iOS the patched copy in ios/Packages. The two native modules take the same calls.
  */
-const usesOpenID4VP1 = isAndroid;
 
 /** Formats the native layer can take as a wallet credential. */
 const SHAREABLE_FORMATS: string[] = [
@@ -44,8 +38,50 @@ class OpenID4VP {
   private static instance: OpenID4VP;
   private InjiOpenID4VP = NativeModules.InjiOpenID4VP;
 
-  private constructor(walletMetadata: any) {
-    this.InjiOpenID4VP.initSdk(__AppId.getValue(), walletMetadata);
+  private constructor(walletConfig: any) {
+    if (isIOS()) {
+      this.addJsonLdListeners();
+    }
+    this.InjiOpenID4VP.initSdk(__AppId.getValue(), walletConfig);
+  }
+
+  /**
+   * The iOS library hands JSON-LD work to JS: expansion for DCQL type matching and
+   * canonicalization of the ldp_vc VP it signs. Each event gets exactly one reply, or the native
+   * call waits forever. A failed expansion leaves that card with no expanded types; a failed
+   * canonicalization fails the share.
+   */
+  private addJsonLdListeners() {
+    const emitter = new NativeEventEmitter(this.InjiOpenID4VP);
+    emitter.addListener('onJsonLdExpand', async ({data}: {data: any}) => {
+      try {
+        this.InjiOpenID4VP.sendJsonLdExpandResultFromJS(
+          await jsonLdExpand(data),
+        );
+      } catch (error) {
+        console.error('[OpenID4VP] JSON-LD expansion failed', error);
+        this.InjiOpenID4VP.notifyJsonLdExpansionFailureFromJS(
+          'server_error',
+          'An error occurred during JSON-LD expansion',
+        );
+      }
+    });
+    emitter.addListener(
+      'onJsonLdCanonicalize',
+      async ({data}: {data: string}) => {
+        try {
+          this.InjiOpenID4VP.sendJsonLdCanonicalizeResultFromJS(
+            await jsonLdCanonicalize(data),
+          );
+        } catch (error) {
+          console.error('[OpenID4VP] JSON-LD canonicalization failed', error);
+          this.InjiOpenID4VP.notifyCanonicalizationFailureFromJS(
+            'server_error',
+            'An error occurred during JSON-LD canonicalization',
+          );
+        }
+      },
+    );
   }
 
   private static async getInstance(): Promise<OpenID4VP> {
@@ -60,10 +96,7 @@ class OpenID4VP {
             Object.keys(NativeModules).sort().join(', '),
         );
       }
-      const config = usesOpenID4VP1()
-        ? await getWalletConfig()
-        : (await getWalletMetadata()) || walletMetadata;
-      OpenID4VP.instance = new OpenID4VP(config);
+      OpenID4VP.instance = new OpenID4VP(await getWalletConfig());
     }
     return OpenID4VP.instance;
   }
@@ -115,9 +148,8 @@ class OpenID4VP {
   }
 
   /**
-   * Matches the wallet's credentials against a DCQL request (Android only: the 0.7 library on
-   * iOS rejects DCQL requests before this point). The library evaluates format, meta (vct,
-   * doctype, W3C types) and claims.
+   * Matches the wallet's credentials against a DCQL request. The library evaluates format, meta
+   * (vct, doctype, W3C types) and claims.
    */
   static async getDcqlMatchingVCs(
     authenticationResponse: object,
@@ -178,38 +210,27 @@ class OpenID4VP {
   }
 
   /**
-   * Android (1.0): a list of {id, format, holderKeyReference, signatureAlgorithm, dataToSign}.
-   * iOS (0.7): one token per format. holderId and signatureAlgorithm are only used by 0.7; 1.0
-   * takes both from the credential.
+   * Returns [{id, format, holderKeyReference, signatureAlgorithm, dataToSign}]. The library takes
+   * the holder from each credential; holderId (the wallet's did:jwk) is only a fallback, which the
+   * patched library uses as the ldp_vc VP holder when a card's credentialSubject.id is not a DID,
+   * as with CredIssuer's urn:uuid subjects.
    */
   static async constructUnsignedVPToken(
     selectedVCs: Record<string, VC[]>,
     selectedDisclosuresByVc: any,
     holderId: string,
-    signatureAlgorithm: string,
   ) {
     const openID4VP = await OpenID4VP.getInstance();
 
-    const updatedSelectedVCs = openID4VP.processSelectedVCs(
-      selectedVCs,
-      selectedDisclosuresByVc,
-    );
-    // Android: holderId is only a fallback. The (patched) library uses it as the ldp_vc VP holder
-    // when a card's credentialSubject.id is not a DID, as with CredIssuer's urn:uuid subjects.
-    const unSignedVpTokens = usesOpenID4VP1()
-      ? await openID4VP.InjiOpenID4VP.constructUnsignedVPToken(
-          updatedSelectedVCs,
-          holderId,
-        )
-      : await openID4VP.InjiOpenID4VP.constructUnsignedVPToken(
-          updatedSelectedVCs,
-          holderId,
-          signatureAlgorithm,
-        );
+    const unSignedVpTokens =
+      await openID4VP.InjiOpenID4VP.constructUnsignedVPToken(
+        openID4VP.processSelectedVCs(selectedVCs, selectedDisclosuresByVc),
+        holderId,
+      );
     return parseJSON(unSignedVpTokens);
   }
 
-  /** Android (1.0): [{id, signedData}]. iOS (0.7): the per-format signing result map. */
+  /** vpTokenSigningResults: [{id, signedData}]. */
   static async shareVerifiablePresentation(vpTokenSigningResults: any) {
     const openID4VP = await OpenID4VP.getInstance();
 
@@ -226,54 +247,27 @@ class OpenID4VP {
     return openID4VP.InjiOpenID4VP.sendErrorToVerifier(errorMessage, errorCode);
   }
 
-  /**
-   * Android (1.0): {requestId: [{format, credentialId, credential}]}.
-   * iOS (0.7): {requestId: {format: [credential]}}.
-   */
+  /** {requestId: [{format, credentialId, credential}]}. */
   private processSelectedVCs(
     selectedVCs: Record<string, VC[]>,
     selectedDisclosuresByVc: any,
   ) {
-    if (usesOpenID4VP1()) {
-      const selected: Record<
-        string,
-        {format: string; credentialId: string; credential: any}[]
-      > = {};
-      Object.entries(selectedVCs).forEach(([requestId, vcsArray]) => {
-        selected[requestId] = vcsArray.map(vcData => ({
-          format: vcData.vcMetadata.format,
-          credentialId: credentialIdOf(vcData),
-          credential: this.extractCredential(
-            vcData,
-            vcData.vcMetadata.format,
-            selectedDisclosuresByVc[credentialIdOf(vcData)],
-          ),
-        }));
-      });
-      return selected;
-    }
-
-    const selectedVcsData: SelectedCredentialsForVPSharing = {};
-    Object.entries(selectedVCs).forEach(([inputDescriptorId, vcsArray]) => {
-      vcsArray.forEach(vcData => {
-        const credentialFormat = vcData.vcMetadata.format;
-        const credential = this.extractCredential(
+    const selected: Record<
+      string,
+      {format: string; credentialId: string; credential: any}[]
+    > = {};
+    Object.entries(selectedVCs).forEach(([requestId, vcsArray]) => {
+      selected[requestId] = vcsArray.map(vcData => ({
+        format: vcData.vcMetadata.format,
+        credentialId: credentialIdOf(vcData),
+        credential: this.extractCredential(
           vcData,
-          credentialFormat,
-          selectedDisclosuresByVc[
-            VCMetadata.fromVcMetadataString(vcData.vcMetadata).getVcKey()
-          ],
-        );
-        if (!selectedVcsData[inputDescriptorId]) {
-          selectedVcsData[inputDescriptorId] = {};
-        }
-        if (!selectedVcsData[inputDescriptorId][credentialFormat]) {
-          selectedVcsData[inputDescriptorId][credentialFormat] = [];
-        }
-        selectedVcsData[inputDescriptorId][credentialFormat].push(credential);
-      });
+          vcData.vcMetadata.format,
+          selectedDisclosuresByVc[credentialIdOf(vcData)],
+        ),
+      }));
     });
-    return selectedVcsData;
+    return selected;
   }
 
   private extractCredential(

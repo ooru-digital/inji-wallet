@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 @testable import OpenID4VP
 import XCTest
 
@@ -6,7 +7,7 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     var verifiers: [Verifier] = []
     
     for verifierData in verifierList {
-        if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId.rawValue] as? String,
+        if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId] as? String,
            let responseUris = verifierData["response_uris"] as? [String] {
             let jwksUri = verifierData["jwks_uri"] as? String
             
@@ -27,22 +28,19 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
 func createUrlEncodedAuthorizationRequest(
     requestParams: [String: Any?],
     verifierSentAuthRequestByReference: Bool? = false,
-    clientIdScheme: ClientIdScheme,
+    clientIdPrefix: ClientIdPrefix,
     applicableFields: [String]? = nil,
-    draftVersion: Int = 23
+    specVersion: SpecVersion = .v1,
+    addEncryptionClientMetadataParams: Bool = true
 ) -> String {
     let paramList: [String]
     if verifierSentAuthRequestByReference == true {
-        if draftVersion == 23 {
-            paramList = authRequestParamsByReferenceDraft23
-        } else {
-            paramList = authRequestParamsByReferenceDraft21
-        }
+        paramList = applicableFields ?? authRequestParamsByReference
     } else {
-        paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+        paramList = applicableFields ?? authRequestClientIdPrefixMap[clientIdPrefix]!
     }
     
-    let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams)
+    let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams, specVersion: specVersion, addEncryptionClientMetadataParams: addEncryptionClientMetadataParams)
     let queryString = encodeToQueryParameters(authorizationRequestParam)
     
     return "OPENID4VP://authorize?\(queryString)"
@@ -74,35 +72,80 @@ private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
 func createAuthorizationRequest(
     paramList: [String],
     requestParams: [String: Any?],
-    isSigned: Bool = false
+    isSigned: Bool = false,
+    specVersion: SpecVersion = .v1,
+    isPresentationExchangeByReference: Bool = false,
+    addEncryptionClientMetadataParams: Bool = true
 ) -> [String: Any?] {
+    var requestParamsKeysList = paramList
+    if(specVersion == .v1) {
+        requestParamsKeysList = requestParamsKeysList + ["dcql_query"]
+    } else {
+        if(isPresentationExchangeByReference) {
+            requestParamsKeysList = requestParamsKeysList + ["presentation_definition_uri"]
+        } else {
+            requestParamsKeysList = requestParamsKeysList + ["presentation_definition"]
+        }
+    }
     var authorizationRequestParam: [String: Any?] = [:]
-    for param in paramList {
+    for param in requestParamsKeysList {
         if let value = requestParams[param], value != nil {
-            authorizationRequestParam[param] = value
+            // the value is version specific pick the internal value accordingly
+            if let versionSpecificValue = (value as? [SpecVersion: Any]) {
+                authorizationRequestParam[param] = versionSpecificValue[specVersion]
+            } else {
+                authorizationRequestParam[param] = value
+            }
+            
+        }
+    }
+    
+    if(!addEncryptionClientMetadataParams) {
+        if let clientMetadata = authorizationRequestParam["client_metadata"] as? [String: Any] {
+            var modifiedClientMetadata = clientMetadata
+            // Draft 23 specific encryption metadata fields
+            modifiedClientMetadata["authorization_signed_response_alg"] = nil
+            modifiedClientMetadata["authorization_encrypted_response_alg"] = nil
+            modifiedClientMetadata["authorization_encrypted_response_enc"] = nil
+            
+            // Spec version 1 specific encryption metadata fields
+            modifiedClientMetadata["encrypted_response_enc_values_supported"] = nil
+            
+            authorizationRequestParam["client_metadata"] = modifiedClientMetadata
         }
     }
     if(isSigned){
         let request = JWSUtil.create(payload: authorizationRequestParam as [String : Any])
         authorizationRequestParam = [
-            AuthorizationRequestFieldConstants.request.rawValue: request,
-            AuthorizationRequestFieldConstants.clientId.rawValue: requestParams[AuthorizationRequestFieldConstants.clientId.rawValue] ?? ""
+            AuthorizationRequestFieldConstants.request: request,
+            AuthorizationRequestFieldConstants.clientId: requestParams[AuthorizationRequestFieldConstants.clientId] ?? ""
         ]
     }
     return authorizationRequestParam
 }
 
 func createAuthorizationRequestObject(
-    clientIdScheme: ClientIdScheme,
+    clientIdPrefix: ClientIdPrefix,
     authorizationRequestParams: [String: Any],
     jwsHeaderData: [String: Any]? = nil,
     applicableFields: [String]? = nil,
-    addValidSignature: Bool = true
+    addValidSignature: Bool = true,
+    isPresentationExchangeByReference: Bool = false,
+    specVersion: SpecVersion = .v1,
+    addEncryptionClientMetadataParams: Bool = true
 ) -> String {
-    
-    let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
-    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
-    //    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
+    var parametersList = applicableFields ?? authRequestClientIdPrefixMap[clientIdPrefix]!
+    if(specVersion == .v1) {
+        parametersList += ["dcql_query"]
+    } else {
+        if(isPresentationExchangeByReference) {
+            parametersList += ["presentation_definition_uri"]
+        } else {
+            parametersList += ["presentation_definition"]
+        }
+    }
+    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams, specVersion: specVersion, isPresentationExchangeByReference: isPresentationExchangeByReference, addEncryptionClientMetadataParams: addEncryptionClientMetadataParams)
+//        authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce] = "mock-nonce"
     
     return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
 }
@@ -132,7 +175,7 @@ func convertToJsonString<T: Encodable>(_ object: T) -> String {
         return String(data: jsonData, encoding: .utf8) ?? ""
     } catch {
         print("Error converting object to JSON string: \(error)")
-        return ""
+        return "{}"
     }
 }
 
@@ -191,84 +234,92 @@ func jsonString(_ any: Any, prettyPrinted: Bool = false) -> String? {
 func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
     let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
     let decoder = JSONDecoder()
-    return (try? decoder.decode(T.self, from: jsonData!))!
+    do {
+        return try decoder.decode(T.self, from: jsonData!)
+    } catch {
+        print("Error decoding JSON: \(error)")
+        return (try? decoder.decode(T.self, from: jsonData!))!
+    }
 }
 
-func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {    
+func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil, specVersion: SpecVersion = .v1) -> (body: String, httpUrlResponse: HTTPURLResponse) {
     let defaultHttpUrlResponse = httpUrlResponseForJWS
     let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
     
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil) -> AuthorizationRequest {
+func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1, dcqlQuery: DCQLQuery? = nil, presentationDefinition: PresentationDefinition? = nil) -> AuthorizationRequest {
     let responseType = responseType ?? ResponseType.vp_token.rawValue
-    return AuthorizationRequest(
-        clientId: "client_id",
-        clientIdScheme: nil,
-        presentationDefinition: mockPresentationDefinitionObject,
-        responseType: responseType,
-        responseMode: responseModeValue ?? responseMode.rawValue,
-        nonce: "nonce",
-        state: "state",
-        redirectUri: "1234",
-        responseUri: "https://mock-verifier.com",
-        walletNonce: nil,
-        clientMetadata: mockClientMetadataObject
-    )
-}
-
-@available(*, deprecated, renamed: "createWalletMetadataV2", message: "This uses deprecated WalletMetadata initializer. Use `createWalletMetadataV2` instead")
-func createWalletMetadataV1(
-    presentationDefinitionURISupported: Bool = true,
-        vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
-        clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
-        requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
-        authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
-        authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
-    ) throws -> WalletMetadata {
-        return try WalletMetadata(
-            presentationDefinitionURISupported: presentationDefinitionURISupported,
-            vpFormatsSupported: vpFormatsSupported,
-            clientIdSchemesSupported: clientIdSchemesSupported,
-            requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
-            authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
-            authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+    
+    if(specVersion == .draft23) {
+        return AuthorizationPresentationExchangeRequest(
+            clientId: "client_id",
+            responseType: responseType,
+            responseMode: responseModeValue ?? responseMode.rawValue,
+            responseUri: "https://mock-verifier.com",
+            redirectUri: "1234",
+            nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
+            walletNonce: nil,
+            state: "state",
+            presentationDefinition: presentationDefinition ?? mockPresentationDefinitionObject,
+            clientMetadata: mockClientMetadataSpecVersionDraft23[.directPostJwt]
         )
     }
 
-
-func createWalletMetadataV2(
-    presentationDefinitionURISupported: Bool = true,
-    vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
-        .ldp_vc: VPFormatSupported(algValuesSupported: ["EdDSA"]),
-        .ldp_vp: VPFormatSupported(algValuesSupported: ["EdDSA"]),
-        .mso_mdoc: VPFormatSupported(algValuesSupported: ["EdDSA"])
-    ],
-    clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did],
-    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
-    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
-    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM]
-) throws -> WalletMetadata {
-    return try WalletMetadata(
-        presentationDefinitionURISupported: presentationDefinitionURISupported,
-        vpFormatsSupported: vpFormatsSupported,
-        clientIdSchemesSupported: clientIdSchemesSupported,
-        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
-        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
-        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+    return AuthorizationDcqlRequest(
+        clientId: "client_id",
+        responseType: responseType,
+        responseMode: responseModeValue ?? responseMode.rawValue,
+        responseUri: "https://mock-verifier.com",
+        redirectUri: "1234",
+        nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
+        walletNonce: nil,
+        state: "state",
+        dcqlQuery: dcqlQuery ?? validDcqlQuery,
+        clientMetadata: mockClientMetadataSpecVersion1[responseMode]
     )
 }
 
-func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://www.w3.org/2018/credentials/examples/v1",
-    [
-        "sec": "https://w3id.org/security#"
-    ]
-    
-]) -> [String: Any] {
-    let data : [String: Any] = [
+func createWalletConfig(
+    vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
+        .ldp_vc: LdpVpFormatSupported(),
+        .mso_mdoc: MsoMdocVpFormatSupported(),
+        .dc_sd_jwt: SdJwtVpFormatSupported()
+    ],
+    clientIdPrefixesSupported: [ClientIdPrefix] = [.preRegistered, .redirectUri, .decentralizedIdentifier],
+    requestObjectSigningAlgValuesSupported: [SignatureAlgorithm]? = [.edDsa],
+    authorizationEncryptionAlgValuesSupported: [EncryptionAlgorithm]? = [.ecdhES],
+    authorizationEncryptionEncValuesSupported: [EncryptionMethod]? = [.a256GCM],
+    responseTypesSupported: [ResponseType] = [.vp_token],
+    responseMode: ResponseMode = .directPost,
+    trustedVerifiers: [Verifier] = preRegisteredVerifiers,
+    validatePreregisteredVerifier: Bool = true
+) -> WalletConfig {
+    return WalletConfig(
+        vpFormatsSupported: vpFormatsSupported,
+        clientIdPrefixesSupported: clientIdPrefixesSupported,
+        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
+        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
+        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,
+        responseTypesSupported: responseTypesSupported,
+        trustedVerifiers: trustedVerifiers,
+        validateTrustedVerifier: validatePreregisteredVerifier
+    )
+}
+
+func ldpVC(
+    credentialType : String = "IDCardCredential",
+    context: [Any] = [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1",
+        [
+            "sec": "https://w3id.org/security#"
+        ],
+    ],
+    addHolderBinding: Bool = true
+) -> [String: Any] {
+    var data : [String: Any] = [
         "@context": context,
         "id": "https://example.com/credentials/1872",
         "type": [
@@ -280,6 +331,7 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
         ],
         "issuanceDate": "2010-01-01T19:23:24Z",
         "credentialSubject": [
+            "id": didJwkKey,
             "given_name": "MockUser",
             "family_name": "Mockister",
             "birthdate": "1949-01-22"
@@ -292,5 +344,55 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
             "verificationMethod": "did:example:issuer#keys-1"
         ]
     ]
+    if(addHolderBinding) {
+        data["credentialSubject"] = [
+            "id": didJwkKey,
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ]
+    } else {
+        data["credentialSubject"] = [
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ]
+    }
     return data
 }
+
+let jwtDispatchInfoEncKeyJson: [String: Any] = [
+    "kty": "OKP", "crv": "X25519", "use": "enc",
+    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+    "alg": "ECDH-ES", "kid": "ed-key1"
+]
+
+func makeJwtDispatchInfo(
+    responseUrl: String = "https://mock-verifier.com",
+    includeEncryption: Bool = true,
+    nonce: String = "tHwahwI6M5_Cd_Sj5k2_Aw",
+    walletNonce: String = "_G6UkKgcsUPFlHAbzUMerA",
+    state: String? = "state"
+) throws -> ResponseDispatchInfo {
+    let encSpec: ResponseEncryptionSpecification?
+    if includeEncryption {
+        let jwk = try JSONDecoder().decode(JWK.self, from: JSONSerialization.data(withJSONObject: jwtDispatchInfoEncKeyJson))
+        encSpec = ResponseEncryptionSpecification(
+            keyEncryptionAlg: EncryptionAlgorithm(rawValue: "ECDH-ES")!,
+            contentEncryptionAlg: EncryptionMethod(rawValue: "A256GCM")!,
+            verifierPublicKey: jwk
+        )
+    } else {
+        encSpec = nil
+    }
+    return ResponseDispatchInfo(
+        responseMode: ResponseMode.directPostJwt.rawValue,
+        nonce: nonce,
+        walletNonce: walletNonce,
+        state: state,
+        clientId: "client_id",
+        responseUrl: responseUrl,
+        responseEncryptionSpecification: encSpec
+    )
+}
+

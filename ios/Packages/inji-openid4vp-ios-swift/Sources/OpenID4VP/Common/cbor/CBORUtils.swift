@@ -82,3 +82,39 @@ func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> CBOR {
         )
     }
 }
+
+func unwrapCbor(_ cbor: SwiftCBOR.CBOR) -> Any? {
+    switch cbor {
+    case let .utf8String(s): return s
+    case let .boolean(b): return b
+    case let .unsignedInt(u): return Int(exactly: u)
+    case let .negativeInt(n):
+        guard let magnitude = Int(exactly: n) else { return nil }
+        return -magnitude - 1
+    case let .double(d): return d
+    case let .float(f): return f
+    case let .half(h): return h
+    case let .byteString(bytes): return Data(bytes)
+    case let .map(m):
+        var dict: [String: Any] = [:]
+        for (k, v) in m {
+            guard let strK = unwrapCbor(k) as? String,
+                  let unwrappedV = unwrapCbor(v) else {
+                return nil
+            }
+            dict[strK] = unwrappedV
+        }
+        return dict
+    case let .array(a):
+        var arr: [Any] = []
+        for element in a {
+            guard let unwrapped = unwrapCbor(element) else {
+                return nil
+            }
+            arr.append(unwrapped)
+        }
+        return arr
+    default:
+        return nil
+    }
+}

@@ -1,114 +1,191 @@
-import CryptoKit
 import Foundation
-import JSONWebSignature
 
-public struct AuthorizationRequest: Encodable {
-    let clientId: String
-    let clientIdScheme: String?
-    var presentationDefinition: PresentationDefinition
-    let responseType: String
-    let responseMode: String?
-    let nonce: String
-    let state: String?
-    let redirectUri: String?
-    let responseUri: String?
-    // As per spec, walletNonce is available if post call to request_uri is made with wallet_nonce (optional) in the request body. Library will add wallet_nonce to the request body in case of post call to request_uri.
-    let walletNonce: String?
-    var clientMetadata: ClientMetadata?
-    static let className = String(describing: AuthorizationRequest.self)
-    static var authorizationRequest: AuthorizationRequest?
-
+public class AuthorizationRequest: Encodable {
+    public let clientId: String
+    public let responseType: String
+    public let responseMode: String?
+    public let responseUri: String?
+    public let redirectUri: String?
+    public let nonce: String
+    public let walletNonce: String?
+    public let state: String?
+    
+    static let className: String = String(describing: AuthorizationRequest.self)
+    
     enum CodingKeys: String, CodingKey {
-        case client_id
-        case client_id_scheme
-        case presentation_definition
-        case response_type
-        case response_mode
+        case clientId = "client_id"
+        case responseType = "response_type"
+        case responseMode = "response_mode"
+        case responseUri = "response_uri"
+        case redirectUri = "redirect_uri"
         case nonce
+        case walletNonce = "wallet_nonce"
         case state
-        case redirect_uri
-        case response_uri
-        case client_metadata
     }
-
+    
+    init(
+        clientId: String,
+        responseType: String,
+        responseMode: String?,
+        responseUri: String?,
+        redirectUri: String?,
+        nonce: String,
+        walletNonce: String?,
+        state: String?
+    ) {
+        self.clientId = clientId
+        self.responseType = responseType
+        self.responseMode = responseMode
+        self.responseUri = responseUri
+        self.redirectUri = redirectUri
+        self.nonce = nonce
+        self.walletNonce = walletNonce
+        self.state = state
+    }
+    
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(clientId, forKey: .client_id)
-        try container.encodeIfPresent(clientIdScheme, forKey: .client_id_scheme)
-        try container.encode(presentationDefinition, forKey: .presentation_definition)
-        try container.encode(responseType, forKey: .response_type)
-        try container.encode(responseMode, forKey: .response_mode)
+        try container.encode(clientId, forKey: .clientId)
+        try container.encode(responseType, forKey: .responseType)
+        try container.encodeIfPresent(responseMode, forKey: .responseMode)
+        try container.encodeIfPresent(responseUri, forKey: .responseUri)
+        try container.encodeIfPresent(redirectUri, forKey: .redirectUri)
         try container.encode(nonce, forKey: .nonce)
-        try container.encode(state, forKey: .state)
-        try container.encode(responseUri, forKey: .response_uri)
-        try container.encode(redirectUri, forKey: .redirect_uri)
-        try container.encode(clientMetadata, forKey: .client_metadata)
+        try container.encodeIfPresent(walletNonce, forKey: .walletNonce)
+        try container.encodeIfPresent(state, forKey: .state)
     }
-
+    
+    
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,
-                                                      trustedVerifier: [Verifier],
-                                                      walletMetadata: WalletMetadata?,
-                                                      setResponseUri: @escaping (String) -> Void,
-                                                      shouldValidateClient: Bool,
+                                                      walletConfig: WalletConfig,
+                                                      setResponseDispatchInfo: @escaping (ResponseDispatchInfo) -> Void,
                                                       walletNonce: String,
                                                       networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
-
+        
         return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters,
-                                                 trustedVerifiers: trustedVerifier,
-                                                 walletMetadata: walletMetadata,
-                                                 setResponseUri: setResponseUri,
-                                                 shouldValidateClient: shouldValidateClient,
+                                                 walletConfig: walletConfig,
+                                                 setResponseDispatchInfo: setResponseDispatchInfo,
                                                  walletNonce: walletNonce,
                                                  networkManager: networkManager)
     }
-
+    
     
     static func validateAndCreateAuthorizationRequest(
         authRequest: [String: Any],
-        trustedVerifiers: [Verifier],
-        walletMetadata: WalletMetadata?,
-        setResponseUri: @escaping (String) -> Void,
-        shouldValidateClient: Bool,
+        walletConfig: WalletConfig,
+        setResponseDispatchInfo: @escaping (ResponseDispatchInfo) -> Void,
         walletNonce: String,
         networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
         return try await getAuthorizationRequest(
             authorizationRequestParameters: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: walletMetadata,
-            setResponseUri: setResponseUri,
-            shouldValidateClient: shouldValidateClient,
+            walletConfig: walletConfig,
+            setResponseDispatchInfo: setResponseDispatchInfo,
             walletNonce: walletNonce,
             networkManager: networkManager
         )
     }
-
+    
     private static func getAuthorizationRequest(authorizationRequestParameters: [String: Any],
-                                                trustedVerifiers: [Verifier],
-                                                walletMetadata: WalletMetadata?,
-                                                setResponseUri: @escaping (String) -> Void,
-                                                shouldValidateClient: Bool,
+                                                walletConfig: WalletConfig,
+                                                setResponseDispatchInfo: @escaping (ResponseDispatchInfo) -> Void,
                                                 walletNonce: String,
                                                 networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
-        let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: trustedVerifiers,
-                                                                             walletMetadata: walletMetadata,
-                                                                             shouldValidateClient: shouldValidateClient,
-                                                                             setResponseUri: setResponseUri,
-                                                                             walletNonce: walletNonce,
-                                                                             networkManager: networkManager)
-
-        try await processAndValidateAuthorizationRequestParameter(authorizationRequestHandler)
-
-        return authorizationRequestHandler.createAuthorizationRequest()
+        let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
+                                                                               walletConfig: walletConfig,
+                                                                               setResponseDispatchInfo: setResponseDispatchInfo,
+                                                                               walletNonce: walletNonce,
+                                                                               networkManager: networkManager)
+        
+        return try await authorizationRequestHandler.handle()
     }
+}
 
-    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler) async throws {
-        try authorizationRequestHandler.validateClientId()
-        try await authorizationRequestHandler.fetchAuthorizationRequest()
-        try authorizationRequestHandler.setResponseUrl()
-        try await authorizationRequestHandler.validateAndParseRequestFields()
+public final class AuthorizationPresentationExchangeRequest: AuthorizationRequest {
+    public let presentationDefinition: PresentationDefinition
+    public let clientMetadata: ClientMetadataDraft23?
+    
+    private enum SubCodingKeys: String, CodingKey {
+        case presentationDefinition = "presentation_definition"
+        case clientMetadata = "client_metadata"
+    }
+    
+    init(
+        clientId: String,
+        responseType: String,
+        responseMode: String?,
+        responseUri: String?,
+        redirectUri: String?,
+        nonce: String,
+        walletNonce: String?,
+        state: String?,
+        presentationDefinition: PresentationDefinition,
+        clientMetadata: ClientMetadataDraft23?
+    ) {
+        self.presentationDefinition = presentationDefinition
+        self.clientMetadata = clientMetadata
+        super.init(
+            clientId: clientId,
+            responseType: responseType,
+            responseMode: responseMode,
+            responseUri: responseUri,
+            redirectUri: redirectUri,
+            nonce: nonce,
+            walletNonce: walletNonce,
+            state: state
+        )
+    }
+    
+    public override func encode(to encoder: Encoder) throws {
+        try super.encode(to: encoder)
+        var container = encoder.container(keyedBy: SubCodingKeys.self)
+        try container.encode(presentationDefinition, forKey: .presentationDefinition)
+        try container.encodeIfPresent(clientMetadata, forKey: .clientMetadata)
+    }
+}
+
+public final class AuthorizationDcqlRequest: AuthorizationRequest {
+    public let dcqlQuery: DCQLQuery
+    public let clientMetadata: ClientMetadata?
+    
+    private enum SubCodingKeys: String, CodingKey {
+        case dcqlQuery = "dcql_query"
+        case clientMetadata = "client_metadata"
+    }
+    
+    init(
+        clientId: String,
+        responseType: String,
+        responseMode: String?,
+        responseUri: String?,
+        redirectUri: String?,
+        nonce: String,
+        walletNonce: String?,
+        state: String?,
+        dcqlQuery: DCQLQuery,
+        clientMetadata: ClientMetadata?
+    ) {
+        self.dcqlQuery = dcqlQuery
+        self.clientMetadata = clientMetadata
+        super.init(
+            clientId: clientId,
+            responseType: responseType,
+            responseMode: responseMode,
+            responseUri: responseUri,
+            redirectUri: redirectUri,
+            nonce: nonce,
+            walletNonce: walletNonce,
+            state: state
+        )
+    }
+    
+    public override func encode(to encoder: Encoder) throws {
+        try super.encode(to: encoder)
+        var container = encoder.container(keyedBy: SubCodingKeys.self)
+        try container.encode(dcqlQuery, forKey: .dcqlQuery)
+        try container.encodeIfPresent(clientMetadata, forKey: .clientMetadata)
     }
 }

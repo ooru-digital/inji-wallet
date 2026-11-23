@@ -7,15 +7,10 @@ import {OVP_ERROR_CODE, OVP_ERROR_MESSAGES} from '../../shared/constants';
 import {getVerifierKey, VCShareFlowType} from '../../shared/Utils';
 import {
   isClientValidationRequired,
-  signDataForVpPreparation,
-  signDataForVpPreparationV2,
   signUnsignedVPTokens,
 } from '../../shared/openID4VP/OpenID4VPHelper';
 import {NativeModules} from 'react-native';
-import {isAndroid} from '../../shared/constants';
 import VciClient from '../../shared/vciClient/VciClient';
-
-export const signatureSuite = 'JsonWebSignature2020';
 
 export const openID4VPServices = () => {
   return {
@@ -119,16 +114,13 @@ export const openID4VPServices = () => {
       );
     },
 
-    // Presentation during issuance: the VCI client hands over the tokens to sign. Android's VCI
-    // client runs OpenID4VP 1.0, which wants [{id, signedData}] over raw bytes.
+    // Presentation during issuance: the VCI client hands over the tokens to sign. It runs
+    // OpenID4VP 1.0, which wants [{id, signedData}] over raw bytes.
     signVP: (context: any) => async () => {
-      if (isAndroid()) {
-        return await signUnsignedVPTokens(context.unsignedVPToken);
-      }
-      return await signDataForVpPreparationV2(context.unsignedVPToken, context);
+      return await signUnsignedVPTokens(context.unsignedVPToken);
     },
 
-    // DCQL requests (OpenID4VP 1.0, Android): the library matches the credentials. Invoked on
+    // DCQL requests (OpenID4VP 1.0): the library matches the credentials. Invoked on
     // DOWNLOADED_VCS, so the event carries the wallet's credentials.
     getDcqlMatchingVCs: (context: any, event: any) => async () => {
       const result = await OpenID4VP.getDcqlMatchingVCs(
@@ -153,13 +145,11 @@ export const openID4VPServices = () => {
         context.selectedVCs,
         context.selectedDisclosuresByVc,
         holderId,
-        signatureSuite,
       );
-      // Android runs OpenID4VP 1.0: a list of tokens, each signed over raw bytes. iOS (0.7) signs
-      // one token per format.
-      const vpTokenSigningResults = isAndroid()
-        ? await signUnsignedVPTokens(unSignedVpTokens)
-        : await signDataForVpPreparation(unSignedVpTokens, context);
+      // OpenID4VP 1.0: a list of tokens, each signed over raw bytes.
+      const vpTokenSigningResults = await signUnsignedVPTokens(
+        unSignedVpTokens,
+      );
       const verifierResponse = await OpenID4VP.shareVerifiablePresentation(
         vpTokenSigningResults,
       );

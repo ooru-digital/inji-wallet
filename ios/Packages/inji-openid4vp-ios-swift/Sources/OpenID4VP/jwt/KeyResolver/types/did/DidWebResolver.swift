@@ -15,35 +15,50 @@ class DidWebResolver : BaseDidPublicKeyResolver {
     
     func extractPublicKey(parsedDID: ParsedDID, keyId: String? = nil) async throws -> PublicKeyType {
         do {
-            
-            let urlString = constructDIDUrl(from: parsedDID)
-            
-            let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
-            
-            if(!response.isOK){
-                throw InvalidData(
-                    message: "Error while resolving did, status code: \(response.statusCode) with body: \(response.body)",
-                    className: AuthorizationRequest.className
-                )
-            }
-            guard let responseBody = response.body.data(using: .utf8) else {
-                throw InvalidData(
-                    message: "Conversion failed: resolved DID response body could not be encoded",
-                    className: Self.className
-                )
-            }
-            guard let didResponse = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
-                throw InvalidData(
-                    message: "Conversion failed: resolved DID response is not a valid JSON object",
-                    className: Self.className
-                )
-            }
+            let didResponse = try await extractDidResponse(parsedDID)
             let verificationMethodId = keyId ?? parsedDID.didUrl
             
             return try self.extractPublicKey(for: verificationMethodId, from: didResponse)!
         } catch {
             throw DidResolutionFailed(message: error.localizedDescription, className: Self.className)
         }
+    }
+    
+    func extractJWSAlgorithm(parsedDid: ParsedDID) async throws -> String {
+        let publicKey = try await extractPublicKey(parsedDID: parsedDid)
+        switch publicKey {
+        case .ed25519:
+            return "EdDSA"
+        case .secKey:
+            return "ES256"
+        }
+    }
+    
+    private func extractDidResponse(_ parsedDID: ParsedDID) async throws -> [String: Any] {
+        let urlString = constructDIDUrl(from: parsedDID)
+        
+        let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
+        
+        if(!response.isOK){
+            throw InvalidData(
+                message: "Error while resolving did, status code: \(response.statusCode) with body: \(response.body)",
+                className: Self.className
+            )
+        }
+        guard let responseBody = response.body.data(using: .utf8) else {
+            throw InvalidData(
+                message: "Conversion failed: resolved DID response body could not be encoded",
+                className: Self.className
+            )
+        }
+        guard let didResponse = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
+            throw InvalidData(
+                message: "Conversion failed: resolved DID response is not a valid JSON object",
+                className: Self.className
+            )
+        }
+        
+        return didResponse
     }
     
     private func constructDIDUrl(from parsedDID: ParsedDID) -> String {
