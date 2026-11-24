@@ -1,3 +1,4 @@
+import {useEffect} from 'react';
 import {useSelector} from '@xstate/react';
 import {
   selectSupportedCredentialTypes,
@@ -51,7 +52,11 @@ import {CredentialTypes} from '../../machines/VerifiableCredential/VCMetaMachine
 
 export function useIssuerScreenController({route, navigation}) {
   const service = route.params.service;
-  if (__DEV__) service.subscribe(logState);
+  useEffect(() => {
+    if (__DEV__) {
+      return service.subscribe(logState).unsubscribe;
+    }
+  }, [service]);
 
   return {
     isPresentationAuthorization: useSelector(
