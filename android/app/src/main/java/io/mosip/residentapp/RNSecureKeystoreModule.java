@@ -181,6 +181,38 @@ public class RNSecureKeystoreModule extends ReactContextBaseJavaModule {
         getCurrentActivity());
   }
 
+  /**
+   * Like {@link #sign}, but over raw bytes: {@code base64Data} is decoded and signed as is.
+   * {@link #sign} signs the UTF-8 bytes of its string, which corrupts binary payloads such as
+   * mdoc DeviceAuthentication. Resolves with the base64 signature (DER for ES256).
+   */
+  @ReactMethod
+  public void signBytes(String signAlgorithm, String alias, String base64Data, Promise promise) {
+    String algorithm;
+    if ("RS256".equals(signAlgorithm)) {
+      algorithm = "SHA256withRSA";
+    } else if ("ES256".equals(signAlgorithm)) {
+      algorithm = "SHA256withECDSA";
+    } else {
+      promise.reject("", "Unsupported algorithm for signing");
+      return;
+    }
+    android.app.Activity activity = getCurrentActivity();
+    if (activity == null) {
+      promise.reject("", "No current activity for the biometric prompt");
+      return;
+    }
+    try {
+      byte[] data = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
+      byte[] signature =
+          io.mosip.residentapp.mdoc.RawBytesSigner.sign(
+              keystore, cipherBox, biometrics, activity, algorithm, alias, data);
+      promise.resolve(android.util.Base64.encodeToString(signature, android.util.Base64.NO_WRAP));
+    } catch (Exception e) {
+      promise.reject("", e.getMessage(), e);
+    }
+  }
+
   @ReactMethod(isBlockingSynchronousMethod = true)
   public void clearKeys() {
     keystore.removeAllKeys();

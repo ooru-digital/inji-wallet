@@ -111,4 +111,30 @@ class DidPublicKeyResolverTests: XCTestCase {
             )
         }
     }
+    
+    // Get JWS Algorithm from the resolved public key
+    func testGetJWSAlgorithmFromResolvedPublicKey() async {
+        let ecR1DidJwkUri = "did:jwk:eyJrdHkiOiJFQyIsInVzZSI6InNpZyIsImNydiI6IlAtMjU2IiwieCI6IlE2ZExER0pIT3RyalFnX1RQNW5GZkZ6Tlg1LUdjal9kYUhjZ29VT2FWLU0iLCJ5Ijoia1lBa19lejYxQkt2Vi1RUDlpWC01eUEtNS1pSHlqRWprc3RKejZUdVhicyJ9#0" // EC key and secpr1 curve which should resolve to ES256 algorithm
+        let rsaDidJwkUri = "did:jwk:eyJrdHkiOiJSU0EiLCJlIjoiQVFBQiIsInVzZSI6InNpZyIsImtpZCI6InpubTJ5NjhzLUxDX1M0a0dITkxoVXJ1YmlteUIwVWNRcXM0cUgzb1poWWsiLCJuIjoicWdoRnNPOWJYcUtiRWpNR2dMZ2NJenJHS3dyVjZxLUV6MFZaNXA1cW1Qdkw0bjQtQUFIbTdSbEpaVGw1Xzg2NDlJUHMxUUQtQWdscEpEaEJrZm1LVXg4ODMxeU95WjJKeGNpNjhILVBXTVgyUU9qYXlycjRoamQzQXRnNXIzY3lPZWJpWG4yUFEzZHZ6MmtlSnF5dUZiSkx0aVNGdHREeXJZT2ZLNnNsUDFZOFhwMHdMNHRZS0JWNEE3LU0yOWlhT2xGOGU4MWtFWDdCUzZ3U2pldGNDLUFybklldU04S3hNNFZXeHRnNXd3WmFGaGtXNjQydnJZa1ZQRlNxZE1wcUV4ZkV4dUNhbWVBN2xDMGdYZEtEOERxRWIyQ2UwNmIzQXRvM0M3TWFqR2ZJZmh2bExRQzVhc2luZTZXOGxGbG1ldFFHMHhGRE8xMGJXdzVSQTJOYmR3In0#0"
+        
+        let resolvedJWSAlgrithm1 = try? await didKeyResolver.getJWSAlgorithm(uri: ecR1DidJwkUri)
+        let resolvedJWSAlgrithm2 = try? await didKeyResolver.getJWSAlgorithm(uri: rsaDidJwkUri)
+        
+        XCTAssertEqual("ES256", resolvedJWSAlgrithm1)
+        XCTAssertEqual("RS256", resolvedJWSAlgrithm2)
+    }
+    
+    func testDidJwkWithBase64UrlPaddingResolvesToSameKeyAsWithoutPadding() async throws {
+        let unpaddedDid = "did:jwk:eyJrdHkiOiAiT0tQIiwgImNydiI6ICJFZDI1NTE5IiwgIngiOiAiOGc5ZF9NQjBpVTJubWdiXzlQNERmMFRSUW01UkpUbWFpRWsySGtaeTVwRSIsICJhbGciOiAiRWREU0EiLCAia2V5X29wcyI6IFsidmVyaWZ5Il0sICJ1c2UiOiAic2lnIn0"
+        let paddedDid = unpaddedDid + "="
+        let expectedJWSAlgorithm = try await didKeyResolver.getJWSAlgorithm(uri: unpaddedDid + "#0")
+        
+        for did in [paddedDid, paddedDid + "#0", unpaddedDid + "#0"] {
+            let publicKey = try await didKeyResolver.resolve(uri: did)
+            assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: publicKey)
+            
+            let jwsAlgorithm = try await didKeyResolver.getJWSAlgorithm(uri: did)
+            XCTAssertEqual(jwsAlgorithm, expectedJWSAlgorithm)
+        }
+    }
 }

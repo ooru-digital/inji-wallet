@@ -93,7 +93,7 @@ final class PresentationDefinitionUtilTests: XCTestCase {
         for testCase in testCases {
             await XCTAssertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
                 assertOpenID4VPException(error,
-                    expectedMessage: "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt or iar_post.jwt",
+                expectedMessage: "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt, iar-post.jwt or iae_post.jwt",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             }

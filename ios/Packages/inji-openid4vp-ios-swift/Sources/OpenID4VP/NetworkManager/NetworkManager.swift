@@ -65,9 +65,9 @@ public struct NetworkManager: NetworkManaging {
                         let exception = NetworkRequestException.networkRequestTimeout
                         OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
+                        return
                     }
                     if let statusCode = response.response?.statusCode {
-                        let message = HTTPURLResponse.localizedString(forStatusCode: statusCode)
                         let response = NetworkResponse(
                             statusCode: statusCode,
                             body: response.data.flatMap { String(data: $0, encoding: .utf8) } ?? "",

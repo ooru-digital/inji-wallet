@@ -148,7 +148,7 @@ final class DidJwkResolverTests: XCTestCase {
         let key = try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: did)
         assertPublicKey(expectedBase64Encoded: "BDCgQkzSHClEg4otdckrN+duog2fAIk6O07uijwKr+w+4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM=", actualKey: key)
     }
-
+    
     func testUnsupportedCurveForECKeyType() async {
         let jwk = """
         {

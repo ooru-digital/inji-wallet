@@ -201,22 +201,26 @@ func assertOpenID4VPException(
     expectedMessage: String,
     expectedCode: String,
     expectedVerifierResponse: VerifierResponse? = nil,
+    expectedUnderlyingErrorMessage: String? = nil,
     file: StaticString = #file,
     line: UInt = #line
 ) {
-    guard let ex = error as? OpenID4VPException else {
+    guard let ovpException = error as? OpenID4VPException else {
         XCTFail("Expected OpenID4VPException but got \(error)", file: file, line: line)
         return
     }
-    XCTAssertEqual(expectedMessage, ex.message, file: file, line: line)
-    XCTAssertEqual(expectedCode, ex.errorCode, file: file, line: line)
+    XCTAssertEqual(expectedMessage, ovpException.message, file: file, line: line)
+    XCTAssertEqual(expectedCode, ovpException.errorCode, file: file, line: line)
     if(expectedVerifierResponse != nil) {
-        let actualVerifierReponse = (error as? OpenID4VPException)?.verifierResponse
+        let actualVerifierReponse = ovpException.verifierResponse
         XCTAssertEqual(expectedVerifierResponse?.body(), actualVerifierReponse?.body(), file: file, line: line)
         XCTAssertEqual(expectedVerifierResponse?.headers, actualVerifierReponse?.headers, file: file, line: line)
         XCTAssertEqual(expectedVerifierResponse?.statusCode, actualVerifierReponse?.statusCode, file: file, line: line)
         XCTAssertEqual(expectedVerifierResponse?.redirectUri, actualVerifierReponse?.redirectUri, file: file, line: line)
         XCTAssertEqual(expectedVerifierResponse?.additionalParams, actualVerifierReponse?.additionalParams, file: file, line: line)
+    }
+    if(expectedUnderlyingErrorMessage != nil) {
+        XCTAssertEqual(expectedUnderlyingErrorMessage, ovpException.cause?.localizedDescription, file: file, line: line)
     }
 }
 

@@ -214,3 +214,48 @@ class InjiSecureKeystoreSecureArea(
         }
     }
 }
+
+/**
+ * Signs raw bytes with a hardware keystore key (RS256 / ES256 aliases), for callers outside the
+ * multipaz [SecureArea] API — RNSecureKeystoreModule.signBytes, used by OpenID4VP 1.0 sharing.
+ *
+ * Same reason as the class above: [SecureKeystoreImpl.sign] signs the UTF-8 bytes of a String,
+ * which corrupts binary payloads (every byte >= 0x80), and OpenID4VP 1.0 hands the wallet binary
+ * data to sign, e.g. an mdoc's CBOR DeviceAuthentication. Same try-then-biometric flow.
+ */
+object RawBytesSigner {
+
+    /** Returns the signature as the JCA produces it: DER for ECDSA, raw for RSA. */
+    @JvmStatic
+    fun sign(
+        keystore: SecureKeystoreImpl,
+        cipherBox: CipherBoxImpl,
+        biometrics: Biometrics,
+        context: android.content.Context,
+        jcaAlgorithm: String,
+        alias: String,
+        data: ByteArray,
+    ): ByteArray = kotlinx.coroutines.runBlocking {
+        val privateKey = keystore.getKeyOrThrow(alias) as PrivateKey
+        var signed: ByteArray? = null
+        var failure: Throwable? = null
+        biometrics.authenticateAndPerform(
+            { BiometricPrompt.CryptoObject(cipherBox.createSignature(privateKey, jcaAlgorithm)) },
+            { cryptoObject: BiometricPrompt.CryptoObject ->
+                // Do NOT catch SignatureException / UserNotAuthenticatedException here: the
+                // biometric helper relies on them to show the prompt, then calls this again with
+                // an authenticated CryptoObject.
+                val signature = cryptoObject.signature
+                    ?: throw IllegalStateException("Biometric CryptoObject has no Signature")
+                signature.update(data)
+                signed = signature.sign()
+            },
+            { code: Int, message: String ->
+                failure = IllegalStateException("Keystore sign failed: $code $message")
+            },
+            context,
+        )
+        failure?.let { throw it }
+        signed ?: throw IllegalStateException("Keystore sign produced no signature")
+    }
+}

@@ -2,9 +2,11 @@ import XCTest
 @testable import OpenID4VP
 
 final class AuthorizationResponseTests: XCTestCase {
-
+    
+    // MARK: - DIF Presentation Exchange Tests
+    
     let mdocVPToken = MdocVPToken(base64EncodedDeviceResponse: "mdoc")
-
+    
     let ldpVPToken = LdpVPToken(
         context: ["context"],
         type: ["typ1"],
@@ -22,14 +24,14 @@ final class AuthorizationResponseTests: XCTestCase {
             proofValue: "test"
         )
     )
-
+    
     let presentationSubmissionWithMdoc = PresentationSubmission(
         definitionId: "client-identifier",
         descriptorMap: [
             DescriptorMap(id: "input_1", format: .ldp_vp, path: "$",pathNested: nil)
         ]
     )
-
+    
     let presentationSubmissionWithLdpVPAndMdoc = PresentationSubmission(
         definitionId: "client-identifier",
         descriptorMap: [
@@ -37,6 +39,23 @@ final class AuthorizationResponseTests: XCTestCase {
             DescriptorMap(id: "input_2", format: .mso_mdoc, path: "$[1]", pathNested: nil)
         ]
     )
+    
+    // direct_post.jwt encrypts payloadData(); a single mdoc token is a bare JSON string.
+    func testPayloadDataWithSingleMdocToken() throws {
+        let response = AuthorizationResponse.presentationExchange(
+            vpToken: .vpTokenElement(mdocVPToken),
+            presentationSubmission: presentationSubmissionWithMdoc,
+            state: "state"
+        )
+
+        let payload = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: try response.payloadData()) as? [String: Any]
+        )
+
+        XCTAssertEqual(payload["vp_token"] as? String, "mdoc")
+        XCTAssertEqual(payload["state"] as? String, "state")
+        XCTAssertNotNil(payload["presentation_submission"] as? [String: Any])
+    }
 
     func testToJsonEncodedMapWithSingleToken() throws {
         let expectedPresentationSubmission: [String: Any] = [
@@ -45,24 +64,24 @@ final class AuthorizationResponseTests: XCTestCase {
             ],
             "definition_id": "client-identifier"
         ]
-
-        let authorizationResponse = AuthorizationResponse(
+        
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
             vpToken: .vpTokenElement(mdocVPToken),
             presentationSubmission: presentationSubmissionWithMdoc,
             state: "test-state"
         )
-
+        
         let result = try authorizationResponse.toJsonEncodedMap()
-
+        
         XCTAssertEqual(result["state"], "test-state")
-
+        
         let decodedPresentation = decodeJsonDict(result["presentation_submission"])
         assertDictionariesEqual(expected: expectedPresentationSubmission, actual: decodedPresentation, strict: false)
-
+        
         let decodedVPToken = decodeJsonString(result["vp_token"])
         XCTAssertEqual(decodedVPToken, "mdoc")
     }
-
+    
     func testToJsonEncodedMapWithTokenArray() throws {
         let expectedVPToken: [Any] = [
             "mdoc",
@@ -86,17 +105,17 @@ final class AuthorizationResponseTests: XCTestCase {
                 "@context": ["context"]
             ]
         ]
-
-        let authorizationResponse = AuthorizationResponse(
+        
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
             vpToken: .vpTokenArray([mdocVPToken, ldpVPToken]),
             presentationSubmission: presentationSubmissionWithLdpVPAndMdoc,
             state: "test-state"
         )
-
+        
         let result = try authorizationResponse.toJsonEncodedMap()
-
+        
         XCTAssertEqual(result["state"], "test-state")
-
+        
         let decodedPresentation = decodeJsonDict(result["presentation_submission"])
         assertDictionariesEqual(expected: [
             "descriptor_map": [
@@ -118,11 +137,11 @@ final class AuthorizationResponseTests: XCTestCase {
             ],
             "definition_id": "client-identifier"
         ], actual: decodedPresentation, strict: false)
-
+        
         let decodedVPToken = decodeJsonArray(result["vp_token"])
         assertJsonString(expected: convertToJsonString(expectedVPToken), actual: convertToJsonString(decodedVPToken))
     }
-
+    
     func testToJsonEncodedMapWithoutState() throws {
         let expectedPresentationSubmission: [String: Any] = [
             "descriptor_map": [
@@ -130,25 +149,25 @@ final class AuthorizationResponseTests: XCTestCase {
             ],
             "definition_id": "client-identifier"
         ]
-
-        let authorizationResponse = AuthorizationResponse(
+        
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
             vpToken: .vpTokenElement(mdocVPToken),
             presentationSubmission: presentationSubmissionWithMdoc,
             state: nil
         )
-
+        
         let result = try authorizationResponse.toJsonEncodedMap()
         XCTAssertNil(result["state"])
-
+        
         let decodedPresentation = decodeJsonDict(result["presentation_submission"])
         assertDictionariesEqual(expected: expectedPresentationSubmission, actual: decodedPresentation, strict: false)
-
+        
         let decodedVPToken = decodeJsonString(result["vp_token"])
         XCTAssertEqual(decodedVPToken, "mdoc")
     }
-
+    
     // MARK: - Mock Verifiable Credential
-
+    
     static func ldpVC() -> [String: Any] {
         return [
             "type": ["VerifiableCredential", "IDCardCredential"],
@@ -174,32 +193,79 @@ final class AuthorizationResponseTests: XCTestCase {
             "issuanceDate": "2010-01-01T19:23:24Z"
         ]
     }
-
+    
+    // MARK: - DCQL Presentation Exchange Tests
+    
+    func testDcqlToJsonEncodedMapWithState() throws {
+        let vpToken: [String: [VPToken]] = [
+            "input_1": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")]
+        ]
+        
+        let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: "test-state")
+        let result = try authorizationResponse.toJsonEncodedMap()
+        
+        assertDictionariesEqual(
+            expected: ["vp_token": "{\"input_1\":[\"eyJhbGciOiJFZERTQSJ9.payload.signature\"]}", "state": "test-state"],
+            actual: result
+        )
+    }
+    
+    func testDcqlToJsonEncodedMapWithoutState() throws {
+        let vpToken: [String: [VPToken]] = [
+            "input_1": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")]
+        ]
+        
+        let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: nil)
+        let result = try authorizationResponse.toJsonEncodedMap()
+        
+        XCTAssertNil(result["state"])
+        XCTAssertNil(result["presentation_submission"])
+        
+        let decodedVPToken = decodeJsonDict(result["vp_token"])
+        XCTAssertEqual(decodedVPToken["input_1"] as? [String], ["eyJhbGciOiJFZERTQSJ9.payload.signature"])
+    }
+    
+    func testDcqlToJsonEncodedMapWithMultipleCredentials() throws {
+        let vpToken: [String: [VPToken]] = [
+            "input_1": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")],
+            "input_2": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")]
+        ]
+        
+        let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: "multi-state")
+        let result = try authorizationResponse.toJsonEncodedMap()
+        
+        XCTAssertEqual(result["state"], "multi-state")
+        
+        let decodedVPToken = decodeJsonDict(result["vp_token"])
+        XCTAssertEqual(decodedVPToken["input_1"] as? [String], ["eyJhbGciOiJFZERTQSJ9.payload.signature"])
+        XCTAssertEqual(decodedVPToken["input_2"] as? [String], ["eyJhbGciOiJFZERTQSJ9.payload.signature"])
+    }
+    
     // MARK: - Helpers
-
+    
     func decodeJsonDict(_ json: String?) -> [String: Any] {
         guard let json else { return [:] }
         let data = Data(json.utf8)
         return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
     }
-
+    
     func decodeJsonArray(_ json: String?) -> [Any] {
         guard let json else { return [] }
         let data = Data(json.utf8)
         return (try? JSONSerialization.jsonObject(with: data)) as? [Any] ?? []
     }
-
+    
     func decodeJsonString(_ json: String?) -> String {
         guard let json else { return "" }
         let data = Data(json.utf8)
         return (try? JSONDecoder().decode(String.self, from: data)) ?? ""
     }
-
+    
     func convertToJsonString(_ object: Any) -> String {
         guard JSONSerialization.isValidJSONObject(object) else {
             return "⚠️ Invalid top-level JSON object"
         }
-
+        
         do {
             let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
             return String(data: data, encoding: .utf8) ?? ""
@@ -207,25 +273,25 @@ final class AuthorizationResponseTests: XCTestCase {
             return "⚠️ JSON serialization failed: \(error.localizedDescription)"
         }
     }
-
-
-
+    
+    
+    
     func assertJsonString(expected: String, actual: String) {
         XCTAssertEqual(expected, actual, "JSON strings don't match.\nExpected:\n\(expected)\n\nActual:\n\(actual)")
     }
-
+    
     func assertDictionariesEqual(expected: [String: Any], actual: [String: Any], strict: Bool = true) {
         for (key, expectedValue) in expected {
             guard let actualValue = actual[key] else {
                 XCTFail("Missing key: \(key)")
                 continue
             }
-
+            
             let expectedJson = convertToJsonString(expectedValue)
             let actualJson = convertToJsonString(actualValue)
             XCTAssertEqual(expectedJson, actualJson, "Mismatch at key: \(key)")
         }
-
+        
         if strict {
             for key in actual.keys where expected[key] == nil {
                 XCTFail("Unexpected extra key: \(key)")

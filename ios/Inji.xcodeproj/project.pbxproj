@@ -972,7 +972,7 @@
 				CODE_SIGN_ENTITLEMENTS = Inji/Inji.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = ZSY3UCY8A4;
 				ENABLE_BITCODE = NO;
@@ -1016,7 +1016,7 @@
 				CODE_SIGN_ENTITLEMENTS = Inji/InjiRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = ZSY3UCY8A4;
@@ -1253,8 +1253,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/inji/inji-vci-client-ios-swift";
 			requirement = {
-				kind = exactVersion;
-				version = 0.7.0;
+				kind = revision;
+				revision = 244e9241b52e6936b38f137c6a8ef9fc2bfae509;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

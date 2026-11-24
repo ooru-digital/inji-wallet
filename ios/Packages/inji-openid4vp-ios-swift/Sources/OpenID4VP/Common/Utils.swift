@@ -29,25 +29,22 @@ func base64URLEscaped(_ base64String: String) -> String {
         .replacingOccurrences(of: "=", with: "")
 }
 
-func determineHttpMethod(method: String) throws -> HttpMethod {
-    let methodValue = method.lowercased()
-    if methodValue == "get" {
-        return .get
-    } else if methodValue == "post" {
-        return .post
-    } else {
-        throw UnsupportedHttpMethod(message: method, className: AuthorizationRequest.className)
-    }
-}
-
 func getStringValue(_ value: Any?) -> String? {
     return value as? String
 }
 
+// RFC 3986 (https://www.rfc-editor.org/rfc/rfc3986#section-3) https URI, compiled once
+private let urlValidationRegex: NSRegularExpression? = {
+    let pattern = #"^https://(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:/(?:[\w\-.~!$&'()*+,;=:@]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w\-.~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w\-.~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*)?$"#
+    return try? NSRegularExpression(pattern: pattern)
+}()
+
 public func isValidUri(_ urlString: String) -> Bool {
-    let urlRegex = #"^https:\/\/(?:[\w-]+\.)+[\w-]+(?:\/[\w\-.~!$&'()*+,;=:@%]+)*\/?(?:\?[^#\s]*)?(?:#.*)?$"#
-    
-    return urlString.range(of: urlRegex, options: .regularExpression) != nil
+    guard let regex = urlValidationRegex else { return false }
+    let range = NSRange(urlString.startIndex..., in: urlString)
+    guard let match = regex.firstMatch(in: urlString, options: [], range: range) else { return false }
+    // require the match to span the whole string (ICU's `$` allows a trailing newline)
+    return match.range == range
 }
 
 func convertToInstance<T: Decodable>(_ dictionary: [String: Any], as type: T.Type) throws -> T {
@@ -65,7 +62,7 @@ func convertToInstance<T: Decodable>(_ input: String, as type: T.Type, fieldPath
 
 func toData(_ input: [String: Any]) throws -> Data {
     var processedInput: [String: Any] = [:]
-
+    
     for (key, value) in input {
         if let encodableValue = value as? Encodable {
             if let converted = encodableValue.toDictionary() {
@@ -142,7 +139,7 @@ func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, classNam
             )
         }
         let data = try response.body.data(using: .utf8) ?? {
-           throw InvalidData(
+            throw InvalidData(
                 message: "unable to convert the jwks response to data",
                 className: className
             )
@@ -153,7 +150,7 @@ func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, classNam
             message: "Public key extraction failed - Unable to fetch/parse jwks from \(uri) due to \(error.localizedDescription)",
             className: className,
             code: OpenID4VPErrorCodes.invalidRequestObject
-                )
+        )
     }
 }
 
@@ -163,38 +160,8 @@ internal func validate(_ value: String, fieldPath: String,className: String) thr
     }
 }
 
-func flattenUnsignedVPTokens(
-        unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
-        formatMappings: [FormatType: [CredentialInputDescriptorMapping]],
-        holderId: String?,
-        signatureSuite: String?
-    ) async throws -> [UnsignedVPTokenV2] {
-
-        var result: [UnsignedVPTokenV2] = []
-
-        for format in unsignedVPTokenResults.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
-            guard let pair = unsignedVPTokenResults[format] else { continue }
-            guard let mappings = formatMappings[format] else {
-                throw InvalidData(message: "Missing mapping for \(format)", className: "OpenID4VPUtils")
-            }
-
-            switch format {
-            case .ldp_vc:
-                result += try flattenLdp(pair.1, mappings, signatureSuite, holderId: holderId)
-
-            case .mso_mdoc:
-                result += try flattenMdoc(pair.1, mappings)
-
-            case .dc_sd_jwt, .vc_sd_jwt:
-                result += try await flattenSdJwt(pair.1, mappings, format)
-            }
-        }
-
-        return result
-    }
-
 func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, alg: String) {
-
+    
     
     guard let data = Data(base64UrlEncoded: mdocCredential) else {
         throw InvalidData(
@@ -202,27 +169,31 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
             className: "OpenID4VPUtils"
         )
     }
-
-    var decoded = try CBORDecoder(input: [UInt8](data)).decodeItem()
-
     
-    guard case let CBOR.map(rootMap)? = decoded,
-          let issuerSigned = rootMap[CBOR.utf8String("issuerSigned")],
-          case let CBOR.map(issuerSignedMap) = issuerSigned else {
-        throw InvalidData(message: "issuerSigned missing", className: "OpenID4VPUtils")
+    var decoded = try CBORDecoder(input: [UInt8](data)).decodeItem()
+    guard let decodedMdoc = decoded else {
+        throw InvalidData(
+            message: "Invalid base64url mdoc credential",
+            className: "OpenID4VPUtils"
+        )
+    }
+    
+    let issuerSigned = try getIssuerSigned(from: decodedMdoc, className: "OpenID4VPUtils")
+    guard case let CBOR.map(issuerSignedMap) = issuerSigned else {
+        throw InvalidData(message: "issuerSigned is not a map", className: "OpenID4VPUtils")
     }
 
     
     guard let issuerAuth = issuerSignedMap[CBOR.utf8String("issuerAuth")],
-          case let CBOR.array(issuerAuthArray) = issuerAuth,
-          issuerAuthArray.count > 2,
-          case let CBOR.byteString(payloadBytes) = issuerAuthArray[2] else {
-        throw InvalidData(message: "issuerAuth payload missing", className: "OpenID4VPUtils")
-    }
-
+              case let CBOR.array(issuerAuthArray) = issuerAuth,
+              issuerAuthArray.count > 2,
+              case let CBOR.byteString(payloadBytes) = issuerAuthArray[2] else {
+            throw InvalidData(message: "issuerAuth payload missing", className: "OpenID4VPUtils")
+        }
+    
     
     decoded = try CBORDecoder(input: payloadBytes).decodeItem()
-
+    
     
     if case let CBOR.tagged(tag, inner)? = decoded, tag.rawValue == CBOR_TAG_ENCODED_CBOR {
         guard case let CBOR.byteString(innerBytes) = inner else {
@@ -230,7 +201,7 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
         }
         decoded = try CBORDecoder(input: innerBytes).decodeItem()
     }
-
+    
     
     guard case let CBOR.map(msoMap)? = decoded,
           let deviceKeyInfo = msoMap[CBOR.utf8String("deviceKeyInfo")],
@@ -239,11 +210,11 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
           case let CBOR.map(deviceKeyMap) = deviceKey else {
         throw InvalidData(message: "deviceKey missing", className: "OpenID4VPUtils")
     }
-
+    
     
     let keyBytes = Data(cborEncode(deviceKey))
     let keyRef = keyBytes.toBase64UrlEncoded()
-
+    
     
     if let algItem = deviceKeyMap[CBOR.unsignedInt(3)]{
         let coseAlg = try readCoseInt(algItem)
@@ -254,12 +225,12 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
             throw InvalidData(message: "Unsupported COSE alg \(coseAlg)", className: "OpenID4VPUtils")
         }
     }
-
+    
     
     guard let crvItem = deviceKeyMap[CBOR.negativeInt(0)] else {
         throw InvalidData(message: "crv missing for alg inference", className: "OpenID4VPUtils")
     }
-
+    
     let crv = try readCoseInt(crvItem)
     switch crv {
     case COSE_CRV_P256: return (keyRef, "ES256")
@@ -278,272 +249,149 @@ func readCoseInt(_ cbor: CBOR) throws -> Int {
     }
 }
 
-
-
-    // MARK: - CONSTRUCT SIGNING RESULTS V2
-
-     func constructSigningResults(
-        unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
-        formatMappings: [FormatType: [CredentialInputDescriptorMapping]],
-        signingResults: [VPTokenSigningResultV2],
-        signatureSuite: String
-    ) throws -> [FormatType: VPTokenSigningResult] {
-
-        var iterator = signingResults.makeIterator()
-        var reconstructed: [FormatType: VPTokenSigningResult] = [:]
-
-        for format in unsignedVPTokenResults.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
-            guard let pair = unsignedVPTokenResults[format] else { continue }
-
-            let unsignedToken = pair.1
-            guard let mappings = formatMappings[format] else {
-                throw InvalidData(message: "Missing mapping for \(format)", className: "OpenID4VPUtils")
-            }
-
-            switch format {
-            case .ldp_vc:
-                reconstructed[format] = try constructLdp(&iterator, signatureSuite: signatureSuite)
-
-            case .mso_mdoc:
-                reconstructed[format] = try constructMdoc(unsignedToken, mappings, &iterator)
-
-            case .dc_sd_jwt, .vc_sd_jwt:
-                reconstructed[format] = try constructSdJwt(unsignedToken, &iterator)
-            }
-        }
-
-        if iterator.next() != nil {
-            throw InvalidData(message: "Extra signing results provided", className: "OpenID4VPUtils")
-        }
-
-        return reconstructed
-    }
-
-    // MARK: - LDP
-
-private func flattenLdp(
-        _ unsignedToken: UnsignedVPToken,
-        _ mappings: [CredentialInputDescriptorMapping],
-        _ signatureSuite: String?,
-        holderId: String?
-    ) throws -> [UnsignedVPTokenV2] {
-
-        guard let ldp = unsignedToken as? UnsignedLdpVPToken else {
-            throw InvalidData(message: "Invalid LDP unsigned vp token", className: "OpenID4VPUtils")
-        }
-
-        let holdervalue = try holderId ??
-        (mappings.first?.credential.value as? [String: Any]).flatMap { ($0["credentialSubject"] as? [String: Any])?["id"] as? String } ??
-        { throw InvalidData(message: "Invalid LDP credential structure", className: "OpenID4VPUtils") }()
-
-
-        guard let suite = signatureSuite else {
-            throw InvalidData(message: "signatureSuite required for LDP", className: "OpenID4VPUtils")
-        }
-
-        return [
-            UnsignedVPTokenV2(
-                format: .ldp_vc,
-                holderKeyReference: holdervalue,
-                signatureAlgorithm: suite,
-                dataToSign: ldp.dataToSign
-            )
-        ]
-    }
-
-    private  func constructLdp(
-        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>,
-        signatureSuite: String
-    ) throws -> VPTokenSigningResult {
-
-        guard let signed = iterator.next() else {
-            throw InvalidData(message: "Missing LDP signature", className: "OpenID4VPUtils")
-        }
-
-        if(signatureSuite == SignatureAlgorithm.jsonWebSignature2020.rawValue || signatureSuite == SignatureAlgorithm.rsaSignature2018.rawValue ||
-           signatureSuite == SignatureAlgorithm.ed25519Signature2018.rawValue){
-            return LdpVPTokenSigningResult(
-                jws: signed.signedData,
-                proofValue: nil,
-                signatureAlgorithm: signatureSuite
-            )
-        }
-        return LdpVPTokenSigningResult(
-            proofValue: signed.signedData,
-            signatureAlgorithm: signatureSuite
+func constructSigningResults(
+    unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])],
+    signingResults: [VPTokenSigningResult]
+) throws -> [FormatType: [VPTokenSigningResult]] {
+    let expectedIdentifiers = Set(unsignedVPTokenResults.values.flatMap { $0.1.map(\.id) })
+    let unexpectedIdentifiers = Set(signingResults.map(\.id)).subtracting(expectedIdentifiers)
+    guard unexpectedIdentifiers.isEmpty else {
+        throw InvalidData(
+            message: "Unexpected VP token signing result for credential identifier(s): \(unexpectedIdentifiers.sorted().joined(separator: ", "))",
+            className: "Openid4VPUtils"
         )
     }
+    
+    var vpTokenSigningResultsByFormat: [FormatType: [VPTokenSigningResult]] = [:]
 
-    // MARK: - MDOC
-
-    private  func flattenMdoc(
-        _ unsignedToken: UnsignedVPToken,
-        _ mappings: [CredentialInputDescriptorMapping]
-    ) throws -> [UnsignedVPTokenV2] {
-
-        guard let mdoc = unsignedToken as? UnsignedMdocVPToken else {
-            throw InvalidData(message: "Expected MDOC token", className: "OpenID4VPUtils")
+    for (format, unsignedVPTokenResultByFormat) in unsignedVPTokenResults {
+        let unsignedTokens = unsignedVPTokenResultByFormat.1
+        
+        var resultsForFormat: [VPTokenSigningResult] = []
+        for unsignedToken in unsignedTokens {
+            let identifier = unsignedToken.id
+            let vpTokenSigningResult = try getVPTokenSigningResult(vpTokenSigningResults: signingResults, identifier: identifier, className: "Openid4VPUtils")
+            resultsForFormat.append(vpTokenSigningResult)
         }
-
-        return try mdoc.docTypeToDeviceAuthenticationBytes.keys.sorted().map { (docType) in
-            guard let mapping = mappings.first(where: { $0.identifier == docType }) else {
-                throw InvalidData(message: "No mapping for docType \(docType)", className: "OpenID4VPUtils")
-            }
-            guard let credential = mapping.credential.value as? String else {
-                throw InvalidData(message: "Expected mdoc credential as String", className: "OpenID4VPUtils")
-            }
-            
-            let (keyRef, alg) = try resolveMdocKeyAndAlg(credential)
-
-            return UnsignedVPTokenV2(
-                format: .mso_mdoc,
-                holderKeyReference: keyRef,
-                signatureAlgorithm: alg,
-                dataToSign: mdoc.docTypeToDeviceAuthenticationBytes[docType] ?? ""
-            )
+        if(!resultsForFormat.isEmpty){
+            vpTokenSigningResultsByFormat[format] = resultsForFormat
         }
     }
 
-
-
-
-
-
-    private  func constructMdoc(
-        _ unsignedToken: UnsignedVPToken,
-        _ mappings: [CredentialInputDescriptorMapping],
-        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>
-    ) throws -> VPTokenSigningResult {
-
-        guard let mdoc = unsignedToken as? UnsignedMdocVPToken else {
-            throw InvalidData(message: "Expected MDOC token", className: "OpenID4VPUtils")
-        }
-
-        var map: [String: DeviceAuthentication] = [:]
-
-        for docType in mdoc.docTypeToDeviceAuthenticationBytes.keys.sorted() {
-            guard let signed = iterator.next() else {
-                throw InvalidData(message: "Missing mdoc signature for \(docType)", className: "OpenID4VPUtils")
-            }
-
-            guard let mapping = mappings.first(where: { $0.identifier == docType }) else {
-                throw InvalidData(message:"Invalid mdoc" , className:"OpenID4VPUtils")
-            }
-            
-            guard let credential = mapping.credential.value as? String else {
-                throw InvalidData(message: "Expected string as mdoc credential", className: "OpenID4VPUtils")
-            }
-            let (_, alg) = try resolveMdocKeyAndAlg(credential)
-
-            map[docType] = DeviceAuthentication(signature: signed.signedData, algorithm: alg)
-        }
-
-        return MdocVPTokenSigningResult(docTypeToDeviceAuthentication: map)
-    }
-
-    // MARK: - SD-JWT
-
-    private func flattenSdJwt(
-        _ unsignedToken: UnsignedVPToken,
-        _ mappings: [CredentialInputDescriptorMapping],
-        _ format: FormatType
-    ) async throws -> [UnsignedVPTokenV2] {
-
-        guard let sdjwt = unsignedToken as? UnsignedSdJwtVPToken else {
-            throw InvalidData(message: "Expected Unsigned SdJwt VPToken", className: "OpenID4VPUtils")
-        }
-
-        let uuidMap = Dictionary(uniqueKeysWithValues: mappings.compactMap { ($0.identifier, $0) })
-
-        var results: [UnsignedVPTokenV2] = []
-        results.reserveCapacity(sdjwt.uuidToUnsignedKBT.count)
-
-        for uuid in sdjwt.uuidToUnsignedKBT.keys.sorted() {
-            let kb = sdjwt.uuidToUnsignedKBT[uuid]!
-            guard let mapping = uuidMap[uuid] else {
-                throw InvalidData(message: "No SD-JWT mapping for uuid \(uuid)", className: "OpenID4VPUtils")
-            }
-            guard let credential = mapping.credential.value as? String else {
-                throw InvalidData(message: "Expected string as sd jwt credential", className: "OpenID4VPUtils")
-            }
-            let (kid, alg) = try await resolveSdJwtKeyAndAlg(credential)
-
-            results.append(
-                UnsignedVPTokenV2(
-                    format: format,
-                    holderKeyReference: kid,
-                    signatureAlgorithm: alg,
-                    dataToSign: kb
-                )
-            )
-        }
-
-        return results
-    }
+    return vpTokenSigningResultsByFormat
+}
 
 func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: String, alg: String) {
-
     let parts = sdJwtCredential.split(separator: "~")
     guard let sdJwt = parts.first else {
         throw InvalidData(message: "Invalid SD-JWT credential format", className: "OpenID4VPUtils")
     }
-
+    
     let jwsParts = sdJwt.split(separator: ".")
     guard jwsParts.count >= 2 else {
         throw InvalidData(message: "Invalid SD-JWT JWS format", className: "OpenID4VPUtils")
     }
-
+    
     guard let payloadData = Data(base64UrlEncoded: String(jwsParts[1])) else {
         throw InvalidData(message: "Invalid SD-JWT payload encoding", className: "OpenID4VPUtils")
     }
-
+    
     guard let json = try JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
           let cnf = json["cnf"] as? [String: Any],
           let kid = cnf["kid"] as? String else {
         throw InvalidData(message: "cnf.kid missing in SD-JWT", className: "OpenID4VPUtils")
     }
-
+    
     
     let resolver = DidPublicKeyResolver()
     let publicKey = try await resolver.resolve(
         uri: kid.trimmingCharacters(in: CharacterSet(charactersIn: "=")),
         keyId: nil
     )
-
+    
     
     let alg: String
-
+    
     switch publicKey {
     case .ed25519:
         alg = "EdDSA"
-
+        
     case .secKey:
         alg = "ES256"
     }
-
+    
     return (kid, alg)
 }
 
+func getEncryptionKey(_ jwks: JWKSet, _ supportedEncryptionAlgorithms: [String]) throws -> JWK {
+    let matchingKeys = jwks.keys.filter { supportedEncryptionAlgorithms.contains($0.algorithm ?? "") }
 
-
-
-    private  func constructSdJwt(
-        _ unsignedToken: UnsignedVPToken,
-        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>
-    ) throws -> VPTokenSigningResult {
-
-        guard let sd = unsignedToken as? UnsignedSdJwtVPToken else {
-            throw InvalidData(message: "Invalid sd jwt UnsignedVPToken type", className: "OpenID4VPUtils")
-        }
-
-        var map: [String: String] = [:]
-
-        for (uuid) in sd.uuidToUnsignedKBT.keys.sorted() {
-            guard let signed = iterator.next() else {
-                throw InvalidData(message: "Missing SD-JWT signature for \(uuid)", className: "OpenID4VPUtils")
-            }
-            map[uuid] = signed.signedData
-        }
-
-        return SdJwtVpTokenSigningResult(uuidToKbJWTSignature: map)
+    guard !matchingKeys.isEmpty else {
+        throw InvalidData(
+            message: "No jwk matching the specified algorithm found for encryption",
+            className: "OpenID4VPUtils"
+        )
     }
+
+    if matchingKeys.count == 1 {
+        return matchingKeys[0]
+    }
+
+    let encryptionKeys = matchingKeys.filter { $0.publicKeyUse == .encryption }
+
+    if encryptionKeys.count == 1 {
+        return encryptionKeys[0]
+    }
+
+    throw InvalidData(
+        message: "Multiple jwks matching the specified algorithm found for encryption",
+        className: "OpenID4VPUtils"
+    )
+}
+
+func matchingDCQLCredentialQuery(_  authorizationRequest: AuthorizationRequest, for credentialQueryId: String, className: String) throws -> CredentialQuery {
+    let matchingCredentialQuery = try (authorizationRequest as? AuthorizationDcqlRequest)?.dcqlQuery.credentials.first(where: { $0.id == credentialQueryId }) ?? {
+        throw InvalidData(message: "No matching credential query found for credentialQueryId: \(credentialQueryId)", className: className)
+    }()
+    return matchingCredentialQuery
+}
+
+private enum DIDPrefix {
+    static let key = "did:key:"
+    static let jwk = "did:jwk:"
+}
+
+// MARK: - Utility Function
+/// Extracts the JWS 'alg' string based on a Subject ID (DID) without hardcoded magic strings.
+/// Reference: https://www.w3.org/TR/vc-data-model-1.1/#identifiers
+func getJWSAlgorithm(from uri: String) async throws -> String {
+    
+    if(uri.hasPrefix("did:")) {
+        return try await DidPublicKeyResolver().getJWSAlgorithm(uri: uri)
+    }
+    
+    throw UnsupportedOperationException(message: "Unsupported identifier format for JWS algorithm resolution", className: "OpenID4VPUtils")
+}
+
+// MARK: - JWK Utility Functions
+
+private let jwkUtilsClassName = "JwkUtils"
+
+func resolveAlgFromJwk(_ jwk: [String: Any]) throws -> String {
+    let parsedJwk: JWK
+    do {
+        parsedJwk = try convertToInstance(jwk, as: JWK.self)
+    } catch {
+        throw InvalidData(message: "Failed to decode JWK: \(error.localizedDescription)", className: jwkUtilsClassName)
+    }
+
+    return try parsedJwk.resolveJWSAlgorithm(className: jwkUtilsClassName)
+}
+
+func serializeJwkToJson(_ jwk: [String: Any]) throws -> String {
+    let data = try JSONSerialization.data(withJSONObject: jwk, options: [.sortedKeys])
+    guard let jsonString = String(data: data, encoding: .utf8) else {
+        throw InvalidData(message: "Failed to serialize JWK to JSON string", className: jwkUtilsClassName)
+    }
+    return jsonString
+}

@@ -239,8 +239,31 @@ export const openID4VPMachine = model.createMachine(
       getVCsSatisfyingAuthRequest: {
         entry: ['dismissTrustModal'],
         on: {
-          DOWNLOADED_VCS: {
-            actions: 'getVcsMatchingAuthRequest',
+          DOWNLOADED_VCS: [
+            {
+              // OpenID4VP 1.0 DCQL request (Android): the library matches, asynchronously.
+              cond: 'isDcqlRequest',
+              target: 'matchingDcqlVCs',
+            },
+            {
+              actions: 'getVcsMatchingAuthRequest',
+              target: 'checkIfAnyMatchingVCs',
+            },
+          ],
+        },
+      },
+
+      matchingDcqlVCs: {
+        invoke: {
+          src: 'getDcqlMatchingVCs',
+          onDone: {
+            actions: 'setDcqlMatchingVCs',
+            target: 'checkIfAnyMatchingVCs',
+          },
+          onError: {
+            // Treated as no match, so the user sees the no-matching-credentials screen rather
+            // than a stuck share.
+            actions: 'setDcqlMatchingError',
             target: 'checkIfAnyMatchingVCs',
           },
         },

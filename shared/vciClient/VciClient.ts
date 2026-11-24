@@ -4,7 +4,19 @@ import {
   SelectedCredentialsForVPSharing,
   VerifiableCredential,
 } from '../../machines/VerifiableCredential/VCMetaMachine/vc';
-import {signatureSuite} from '../../machines/openID4VP/openID4VPServices';
+import {isIOS} from '../constants';
+import {
+  getWalletConfig,
+  jsonLdCanonicalize,
+} from '../openID4VP/OpenID4VPHelper';
+
+/**
+ * The last argument of the native download calls: the OpenID4VP 1.0 wallet config, for
+ * presentation during issuance (VCI client 1.0 on both platforms).
+ */
+async function presentationConfigArgument(): Promise<any> {
+  return await getWalletConfig(true);
+}
 
 const emitter = new NativeEventEmitter(NativeModules.InjiVciClient);
 
@@ -13,7 +25,33 @@ class VciClient {
   private InjiVciClient = NativeModules.InjiVciClient;
 
   private constructor() {
+    if (isIOS()) {
+      this.addJsonLdCanonicalizeListener();
+    }
     this.InjiVciClient.init(__AppId.getValue());
+  }
+
+  /**
+   * The iOS VCI client canonicalizes the ldp_vc VP of a presentation during issuance in JS, as
+   * the iOS OpenID4VP library does for sharing (see OpenID4VP.ts). Each event needs one reply.
+   */
+  private addJsonLdCanonicalizeListener() {
+    emitter.addListener(
+      'onJsonLdCanonicalize',
+      async ({data}: {data: string}) => {
+        try {
+          this.InjiVciClient.sendJsonLdCanonicalizeResultFromJS(
+            await jsonLdCanonicalize(data),
+          );
+        } catch (error) {
+          console.error('[VciClient] JSON-LD canonicalization failed', error);
+          this.InjiVciClient.notifyCanonicalizationFailureFromJS(
+            'server_error',
+            'An error occurred during JSON-LD canonicalization',
+          );
+        }
+      },
+    );
   }
 
   static getInstance(): VciClient {
@@ -141,7 +179,7 @@ class VciClient {
       response = await this.InjiVciClient.requestCredentialByOffer(
         credentialOffer,
         JSON.stringify(clientMetadata),
-        signatureSuite,
+        await presentationConfigArgument(),
       );
     } catch (error) {
       console.error('Error requesting credential by offer:', error);
@@ -226,7 +264,7 @@ class VciClient {
         credentialIssuerUri,
         credentialConfigurationId,
         JSON.stringify(clientMetadata),
-        signatureSuite,
+        await presentationConfigArgument(),
       );
     } catch (error) {
       console.error('Error requesting credential from trusted issuer:', error);

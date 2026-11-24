@@ -7,14 +7,10 @@ import {OVP_ERROR_CODE, OVP_ERROR_MESSAGES} from '../../shared/constants';
 import {getVerifierKey, VCShareFlowType} from '../../shared/Utils';
 import {
   isClientValidationRequired,
-  signDataForVpPreparation,
-  signDataForVpPreparationV2,
+  signUnsignedVPTokens,
 } from '../../shared/openID4VP/OpenID4VPHelper';
 import {NativeModules} from 'react-native';
 import VciClient from '../../shared/vciClient/VciClient';
-import {SelectedCredentialsForVPSharing} from '../VerifiableCredential/VCMetaMachine/vc';
-
-export const signatureSuite = 'JsonWebSignature2020';
 
 export const openID4VPServices = () => {
   return {
@@ -107,7 +103,8 @@ export const openID4VPServices = () => {
     },
 
     sendSelectedCredentialsForVP: (context: any) => async () => {
-      const selectedCredentials: SelectedCredentialsForVPSharing =
+      // Android (OpenID4VP 1.0) and iOS (0.7) differ in shape; see processSelectedVCs.
+      const selectedCredentials: any =
         await OpenID4VP.prepareCredentialsForVPSharing(
           context.selectedVCs,
           context.selectedDisclosuresByVc,
@@ -117,8 +114,27 @@ export const openID4VPServices = () => {
       );
     },
 
+    // Presentation during issuance: the VCI client hands over the tokens to sign. It runs
+    // OpenID4VP 1.0, which wants [{id, signedData}] over raw bytes.
     signVP: (context: any) => async () => {
-      return await signDataForVpPreparationV2(context.unsignedVPToken, context);
+      return await signUnsignedVPTokens(context.unsignedVPToken);
+    },
+
+    // DCQL requests (OpenID4VP 1.0): the library matches the credentials. Invoked on
+    // DOWNLOADED_VCS, so the event carries the wallet's credentials.
+    getDcqlMatchingVCs: (context: any, event: any) => async () => {
+      const result = await OpenID4VP.getDcqlMatchingVCs(
+        context.authenticationResponse,
+        event.vcs ?? [],
+      );
+      if (Object.keys(result.matchingVCs).length === 0) {
+        // Same as the presentation definition path: tell the verifier only when nothing matched.
+        void OpenID4VP.sendErrorToVerifier(
+          OVP_ERROR_MESSAGES.NO_MATCHING_VCS,
+          OVP_ERROR_CODE.NO_MATCHING_VCS,
+        );
+      }
+      return result;
     },
 
     sendVP: (context: any) => async () => {
@@ -129,14 +145,13 @@ export const openID4VPServices = () => {
         context.selectedVCs,
         context.selectedDisclosuresByVc,
         holderId,
-        signatureSuite,
       );
-      const vpTokenSigningResultMap = await signDataForVpPreparation(
+      // OpenID4VP 1.0: a list of tokens, each signed over raw bytes.
+      const vpTokenSigningResults = await signUnsignedVPTokens(
         unSignedVpTokens,
-        context,
       );
       const verifierResponse = await OpenID4VP.shareVerifiablePresentation(
-        vpTokenSigningResultMap,
+        vpTokenSigningResults,
       );
       if (verifierResponse['status_code'] !== 200) {
         console.error(

@@ -22,6 +22,11 @@ export const openID4VPGuards = () => {
     isSelectedVCMatchingRequest: context =>
       Object.values(context.selectedVCs).length === 1,
 
+    // OpenID4VP 1.0 DCQL request. Only Android's library accepts these; iOS (0.7) rejects them in
+    // authenticateVerifier.
+    isDcqlRequest: (context: any) =>
+      context.authenticationResponse?.dcql_query != null,
+
     isFlowTypeSimpleShare: context =>
       context.flowType === VCShareFlowType.SIMPLE_SHARE,
 

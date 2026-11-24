@@ -46,6 +46,15 @@
       }
     },
     {
+      "identity" : "multiformatskit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ATProtoKit/MultiformatsKit.git",
+      "state" : {
+        "revision" : "cfb8003e2d6bd8c3520a1b38cdbef8e757876e6d",
+        "version" : "0.3.1"
+      }
+    },
+    {
       "identity" : "secp256k1.swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GigaBitcoin/secp256k1.swift.git",
@@ -61,6 +70,24 @@
       "state" : {
         "revision" : "e325083424688055363bbfcb7f1a440d7d7a1bae",
         "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "eb50cbd14606a9161cbc5d452f18797c90ef0bab",
+        "version" : "1.7.0"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     },
     {

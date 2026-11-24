@@ -17,11 +17,15 @@ final class ResponseModeBasedHandlerFactoryTests: XCTestCase {
         let responseModeHandler2: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "direct_post.jwt")
         let responseModeHandler3: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iar-post")
         let responseModeHandler4: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iar-post.jwt")
+        let responseModeHandler5: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iae_post")
+        let responseModeHandler6: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iae_post.jwt")
         
         XCTAssertTrue(responseModeHandler1 is DirectPostResponseModeHandler)
         XCTAssertTrue(responseModeHandler2 is DirectPostJwtResponseModeHandler)
         XCTAssertTrue(responseModeHandler3 is DirectPostResponseModeHandler)
         XCTAssertTrue(responseModeHandler4 is DirectPostJwtResponseModeHandler)
+        XCTAssertTrue(responseModeHandler5 is DirectPostResponseModeHandler)
+        XCTAssertTrue(responseModeHandler6 is DirectPostJwtResponseModeHandler)
     }
     
     func testShouldThrowErrorForEmptyResponseMode() {
@@ -42,7 +46,7 @@ final class ResponseModeBasedHandlerFactoryTests: XCTestCase {
         ) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Given response_mode -  is not supported",
+                expectedMessage: "Given response_mode - nil is not supported",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

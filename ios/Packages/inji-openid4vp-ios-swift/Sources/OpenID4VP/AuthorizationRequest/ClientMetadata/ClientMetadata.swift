@@ -3,90 +3,98 @@ import JSONWebKey
 
 public struct ClientMetadata: Codable {
     let clientName: String?
-    let logoUri:String?
-    let authorizationEncryptedResponseAlg: String?
-    let authorizationEncryptedResponseEnc: String?
-    let vpFormats: [String: [String: [String]]]
+    let logoUri: String?
+    let vpFormatsSupported: [String: VPFormatSupported]
+    let encryptedResponseEncValuesSupported: [String]?
     let jwks: JWKSet?
+
     static let className = String(describing: ClientMetadata.self)
-    
+
     enum CodingKeys: String, CodingKey {
         case clientName = "client_name"
         case logoUri = "logo_uri"
-        case authorizationEncryptedResponseAlg = "authorization_encrypted_response_alg"
-        case authorizationEncryptedResponseEnc = "authorization_encrypted_response_enc"
-        case vpFormats = "vp_formats"
+        case vpFormatsSupported = "vp_formats_supported"
+        case encryptedResponseEncValuesSupported = "encrypted_response_enc_values_supported"
         case jwks
     }
-    
-    public init(clientName: String? = nil,
-                logoUri: String? = nil,
-                authorizationEncryptedResponseAlg: String? = nil,
-                authorizationEncryptedResponseEnc: String? = nil,
-                vpFormats: [String: [String: [String]]],
-                jwks: JWKSet? = nil) {
+
+    public init(
+        clientName: String? = nil,
+        logoUri: String? = nil,
+        vpFormatsSupported: [String: VPFormatSupported],
+        authorizationEncryptedResponseAlg: String? = nil,
+        encryptedResponseEncValuesSupported: [String]? = nil,
+        jwks: JWKSet? = nil
+    ) {
         self.clientName = clientName
         self.logoUri = logoUri
-        self.authorizationEncryptedResponseAlg = authorizationEncryptedResponseAlg
-        self.authorizationEncryptedResponseEnc = authorizationEncryptedResponseEnc
-        self.vpFormats = vpFormats
+        self.vpFormatsSupported = vpFormatsSupported
+        self.encryptedResponseEncValuesSupported = encryptedResponseEncValuesSupported
         self.jwks = jwks
     }
-    
-    public init(from decoder: any Decoder) throws {
+
+    public init(from decoder: Decoder) throws {
         do {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            
-            self .clientName = try container.decodeRequired(
-                String.self,
-                forKey: .clientName,
-                fieldPath: ["client_metadata", "client_name"],
-                className: ClientMetadata.className,
-                isMandatory: false
-            )
-            
-            self .logoUri = try container.decodeRequired(
-                String.self,
-                forKey: .logoUri,
-                fieldPath: ["client_metadata", "logo_uri"],
-                className: ClientMetadata.className,
-                isMandatory: false
-            )
-            
-            self .authorizationEncryptedResponseAlg = try container.decodeRequired(
-                String.self,
-                forKey: .authorizationEncryptedResponseAlg,
-                fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
-                className: ClientMetadata.className,
-                isMandatory: false
-            )
-            
-            self .authorizationEncryptedResponseEnc = try container.decodeRequired(
-                String.self,
-                forKey: .authorizationEncryptedResponseEnc,
-                fieldPath: ["client_metadata", "authorization_encrypted_response_enc"],
-                className: ClientMetadata.className,
-                isMandatory: false
-            )
-            
-            self .vpFormats = try container.decodeRequired(
-                [String: [String: [String]]].self,
-                forKey: .vpFormats,
-                fieldPath: ["client_metadata", "vp_formats"],
-                className: ClientMetadata.className,
-                isMandatory: true
-            )!
-            
-            self .jwks = try container.decodeRequired(
-                JWKSet.self,
+            self.clientName = try container.decodeIfPresent(String.self, forKey: .clientName)
+            self.logoUri = try container.decodeIfPresent(String.self, forKey: .logoUri)
+            self.encryptedResponseEncValuesSupported = try container.decodeIfPresent([String].self, forKey: .encryptedResponseEncValuesSupported)
+            self.jwks = try container.decodeRequired(
+                LenientJWKSet.self,
                 forKey: .jwks,
                 fieldPath: ["client_metadata", "jwks"],
                 className: ClientMetadata.className,
                 isMandatory: false
-            )
-            try validate(self)
+            )?.jwkSet
+
+            let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
+            var decodedFormats: [String: VPFormatSupported] = [:]
+            for key in vpFormatsContainer.allKeys {
+                switch key {
+                case .ldp_vc, .ldp_vp:
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(LdpVpFormatSupported.self, forKey: key)
+                case .mso_mdoc:
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(MsoMdocVpFormatSupported.self, forKey: key)
+                case .dc_sd_jwt, .vc_sd_jwt:
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(SdJwtVpFormatSupported.self, forKey: key)
+                }
+            }
+            self.vpFormatsSupported = decodedFormats
+            guard !self.vpFormatsSupported.isEmpty else {
+                throw InvalidData(
+                    message: "vp_formats_supported cannot be empty in client metadata",
+                    className: ClientMetadata.className
+                )
+            }
         } catch {
             throw wrapError(error, customError: { message in InvalidData(message: "Error during client metadata decoding - \(message)", className: ClientMetadata.className) })
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(clientName, forKey: .clientName)
+        try container.encodeIfPresent(logoUri, forKey: .logoUri)
+        try container.encodeIfPresent(jwks, forKey: .jwks)
+        try container.encodeIfPresent(encryptedResponseEncValuesSupported, forKey: .encryptedResponseEncValuesSupported)
+
+        var vpFormatsContainer = container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
+        for (key, value) in vpFormatsSupported {
+            guard let formatType = VPFormatType(rawValue: key) else { continue }
+            switch formatType {
+            case .ldp_vc, .ldp_vp:
+                if let typed = value as? LdpVpFormatSupported {
+                    try vpFormatsContainer.encode(typed, forKey: formatType)
+                }
+            case .mso_mdoc:
+                if let typed = value as? MsoMdocVpFormatSupported {
+                    try vpFormatsContainer.encode(typed, forKey: formatType)
+                }
+            case .dc_sd_jwt, .vc_sd_jwt:
+                if let typed = value as? SdJwtVpFormatSupported {
+                    try vpFormatsContainer.encode(typed, forKey: formatType)
+                }
+            }
         }
     }
     
@@ -105,14 +113,5 @@ public struct ClientMetadata: Codable {
     
     fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadata {
         return try encodedData.toInstance(as: ClientMetadata.self)
-    }
-    
-    private func validate(_ decodedClientMetadata: ClientMetadata) throws{
-        
-        try validateField(decodedClientMetadata.clientName, ["client_metadata", "client_name"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.logoUri, ["client_metadata", "logo_uri"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.authorizationEncryptedResponseAlg, ["client_metadata", "authorization_encrypted_response_alg"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.authorizationEncryptedResponseEnc, ["client_metadata", "authorization_encrypted_response_enc"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.vpFormats, ["client_metadata", "vp_formats"], ClientMetadata.className)
     }
 }

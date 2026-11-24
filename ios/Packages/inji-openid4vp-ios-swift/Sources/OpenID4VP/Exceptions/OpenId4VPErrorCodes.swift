@@ -11,6 +11,7 @@ public enum OpenID4VPErrorCodes {
     static let invalidRequestUriMethod = "invalid_request_uri_method"
     public static let invalidTransactionData = "invalid_transaction_data"
     public static let accessDenied = "access_denied"
+    public static let serverError = "server_error"
     
     // custom error codes
     public static let errorDispatchFailure = "error_dispatch_failure"
