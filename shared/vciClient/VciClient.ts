@@ -1,4 +1,8 @@
-import {NativeModules, NativeEventEmitter} from 'react-native';
+import {
+  EmitterSubscription,
+  NativeModules,
+  NativeEventEmitter,
+} from 'react-native';
 import {__AppId} from '../GlobalVariables';
 import {
   SelectedCredentialsForVPSharing,
@@ -11,9 +15,19 @@ const emitter = new NativeEventEmitter(NativeModules.InjiVciClient);
 class VciClient {
   private static instance: VciClient;
   private InjiVciClient = NativeModules.InjiVciClient;
+  private flowListeners: EmitterSubscription[] = [];
 
   private constructor() {
     this.InjiVciClient.init(__AppId.getValue());
+  }
+
+  /**
+   * A cancelled download's native call never settles, so its `finally` never removes its
+   * listeners; without this they would keep forwarding the next download's events.
+   */
+  private replaceFlowListeners(listeners: EmitterSubscription[]) {
+    this.flowListeners.forEach(listener => listener.remove());
+    this.flowListeners = listeners;
   }
 
   static getInstance(): VciClient {
@@ -132,6 +146,17 @@ class VciClient {
       },
     );
 
+    const listeners = [
+      proofListener,
+      authListener,
+      txCodeListener,
+      tokenResponseListener,
+      trustIssuerListener,
+      presentationRequestListener,
+      signVPListener,
+    ];
+    this.replaceFlowListeners(listeners);
+
     let response = '';
     try {
       const clientMetadata = {
@@ -147,13 +172,7 @@ class VciClient {
       console.error('Error requesting credential by offer:', error);
       throw error;
     } finally {
-      proofListener.remove();
-      authListener.remove();
-      txCodeListener.remove();
-      tokenResponseListener.remove();
-      trustIssuerListener.remove();
-      presentationRequestListener.remove();
-      signVPListener.remove();
+      listeners.forEach(listener => listener.remove());
     }
 
     const parsedResponse = JSON.parse(response);
@@ -220,6 +239,15 @@ class VciClient {
       },
     );
 
+    const listeners = [
+      proofListener,
+      authListener,
+      tokenResponseListener,
+      presentationRequestListener,
+      signVPListener,
+    ];
+    this.replaceFlowListeners(listeners);
+
     let response = '';
     try {
       response = await this.InjiVciClient.requestCredentialFromTrustedIssuer(
@@ -232,11 +260,7 @@ class VciClient {
       console.error('Error requesting credential from trusted issuer:', error);
       throw error;
     } finally {
-      proofListener.remove();
-      authListener.remove();
-      tokenResponseListener.remove();
-      presentationRequestListener.remove();
-      signVPListener.remove();
+      listeners.forEach(listener => listener.remove());
     }
 
     const parsedResponse = JSON.parse(response);

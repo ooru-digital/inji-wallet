@@ -178,9 +178,16 @@ describe('IssuersModel', () => {
       expect(initialContext.authorizationSuccess).toBe(false);
     });
 
-    it('should have all 43 required properties', () => {
+    it('should start with no transaction code failure', () => {
+      expect(initialContext.txCodeError).toBe('');
+      expect(initialContext.txCodeAttemptsRemaining).toBeNull();
+      expect(initialContext.txCodeInputResetKey).toBe(0);
+      expect(initialContext.isTxCodeVerifying).toBe(false);
+    });
+
+    it('should have all 47 required properties', () => {
       const properties = Object.keys(initialContext);
-      expect(properties).toHaveLength(43);
+      expect(properties).toHaveLength(47);
     });
   });
 
