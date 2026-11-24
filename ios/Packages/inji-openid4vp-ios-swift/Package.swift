@@ -10,7 +10,9 @@
 //   credentialSubject.id is not a DID, as with CredIssuer's urn:uuid subjects
 //   (UnsignedLdpVPTokenBuilder.resolveHolder);
 // - request query values are decoded once, form-style ("+" is a space), as Android's URLDecoder
-//   does (AuthorizationRequestUtils), so verifier names don't show as "CredIssuer+Verifier+App".
+//   does (AuthorizationRequestUtils), so verifier names don't show as "CredIssuer+Verifier+App";
+// - the direct_post.jwt payload accepts a bare-string VP token (AuthorizationResponse.payloadData),
+//   so a single mdoc can be shared to an encrypting verifier (iOS only; not in the Android AAR).
 // The 0.7.1 copy's JWE and mdoc DeviceSigned fixes are no longer needed: release-1.0.x does both.
 
 import PackageDescription

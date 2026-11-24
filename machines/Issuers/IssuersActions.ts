@@ -368,8 +368,13 @@ export const IssuersActions = (model: any) => {
       },
     }),
     setCNonce: model.assign({
-      cNonce: (_: any, event: any) => {
-        return event.cNonce;
+      // Prefer the token response's c_nonce. For issuers advertising a nonce_endpoint, the VCI
+      // client 1.0 fetches a fresh nonce from it without the access token (as OpenID4VCI 1.0
+      // specifies), but CredIssuer's issuer binds only the token-response nonce to the offer and
+      // rejects any other with 400 invalid_nonce. The token response is cleared at the start of
+      // every download, so this is never a nonce from an earlier one.
+      cNonce: (context: any, event: any) => {
+        return context.tokenResponse?.c_nonce || event.cNonce;
       },
     }),
     setCredentialConfigurationId: model.assign({

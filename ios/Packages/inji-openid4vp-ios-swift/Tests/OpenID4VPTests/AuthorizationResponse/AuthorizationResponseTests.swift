@@ -40,6 +40,23 @@ final class AuthorizationResponseTests: XCTestCase {
         ]
     )
     
+    // direct_post.jwt encrypts payloadData(); a single mdoc token is a bare JSON string.
+    func testPayloadDataWithSingleMdocToken() throws {
+        let response = AuthorizationResponse.presentationExchange(
+            vpToken: .vpTokenElement(mdocVPToken),
+            presentationSubmission: presentationSubmissionWithMdoc,
+            state: "state"
+        )
+
+        let payload = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: try response.payloadData()) as? [String: Any]
+        )
+
+        XCTAssertEqual(payload["vp_token"] as? String, "mdoc")
+        XCTAssertEqual(payload["state"] as? String, "state")
+        XCTAssertNotNil(payload["presentation_submission"] as? [String: Any])
+    }
+
     func testToJsonEncodedMapWithSingleToken() throws {
         let expectedPresentationSubmission: [String: Any] = [
             "descriptor_map": [

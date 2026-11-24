@@ -9,6 +9,10 @@ enum AuthorizationResponse {
     // Draft 23 compliant: DIF Presentation Exchange structure
     case presentationExchange(vpToken: VPTokenType, presentationSubmission: PresentationSubmission, state: String?)
     
+    // CredIssuer patch: every jsonObject(with:) here passes .fragmentsAllowed. A single mdoc VP
+    // token encodes to a bare JSON string (the base64url DeviceResponse), which JSONSerialization
+    // otherwise rejects ("The data couldn't be read because it isn't in the correct format"),
+    // failing every mdoc share to a direct_post.jwt verifier.
     func payloadData() throws -> Data {
            var payload: [String: Any] = [:]
 
@@ -20,7 +24,7 @@ enum AuthorizationResponse {
                }
 
                let vpTokenData = try JSON.encoder.encode(encodableMap)
-               payload["vp_token"] = try JSONSerialization.jsonObject(with: vpTokenData)
+               payload["vp_token"] = try JSONSerialization.jsonObject(with: vpTokenData, options: .fragmentsAllowed)
 
                if let state {
                    payload["state"] = state
@@ -34,15 +38,15 @@ enum AuthorizationResponse {
 
                case .vpTokenArray(let tokens):
                    let data = try JSON.encoder.encode(tokens.map { AnyEncodable($0) })
-                   payload["vp_token"] = try JSONSerialization.jsonObject(with: data)
+                   payload["vp_token"] = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)
 
                case .vpTokenElement(let token):
                    let data = try JSON.encoder.encode(AnyEncodable(token))
-                   payload["vp_token"] = try JSONSerialization.jsonObject(with: data)
+                   payload["vp_token"] = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)
                }
 
                let psData = try JSON.encoder.encode(presentationSubmission)
-               payload["presentation_submission"] = try JSONSerialization.jsonObject(with: psData)
+               payload["presentation_submission"] = try JSONSerialization.jsonObject(with: psData, options: .fragmentsAllowed)
 
                if let state {
                    payload["state"] = state
