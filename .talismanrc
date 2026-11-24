@@ -6,7 +6,7 @@ fileignoreconfig:
   - filename: shared/displayLanguage.ts
     checksum: eeefb4cebb78e6d406d5d3cb5599fc78b1d37fef573e54b774ca1591d63c5514
   - filename: ios/Packages/inji-openid4vp-ios-swift/README.md
-    checksum: fc1f2125cb2e102655a431e1695f93975c945059a97558d3538829abdc114c8e
+    checksum: d6959ae6277dd2b0a3324e221f7d48c5b8b010aaa8eddd32c5b345b8835f2610
   - filename: ios/Packages/inji-openid4vp-ios-swift/Sources/OpenID4VP/AuthorizationResponse/AuthorizationResponseHandler.swift
     checksum: 61df353163d81b9e3b7daa566eb7713eb89c6afa6bb50518abd2c4d375fce39b
   - filename: ios/Packages/inji-openid4vp-ios-swift/Tests/OpenID4VPTests/Common/cbor/CBORUtilsTest.swift
