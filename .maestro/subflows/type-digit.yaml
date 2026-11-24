@@ -1,0 +1,7 @@
+# Types ${DIGIT} six times: a passcode or PIN made of one repeated digit.
+appId: io.ooru.credissuerwallet
+---
+- repeat:
+    times: 6
+    commands:
+      - inputText: ${DIGIT}

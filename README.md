@@ -271,13 +271,6 @@ npm start -- --reset-cache                 # Metro cache
 
 ---
 
-## 11. Known gaps on the current branch
-
-- **`patches/@react-native+gradle-plugin+0.74.87.patch`** is named for RN 0.74 while the repo is on
-  0.79. It is stale and worth reviewing.
-
----
-
 ## Source of truth
 
 When this document and the build files disagree, **the build files win**:

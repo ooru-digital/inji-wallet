@@ -1,0 +1,24 @@
+appId: io.ooru.credissuerwallet
+name: A wrong passcode is refused
+---
+- startRecording: recording
+- runFlow: ../subflows/set-up-once.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Your cards are locked."
+    timeout: 30000
+- tapOn: "Unlock"
+- extendedWaitUntil:
+    visible: "Enter your passcode"
+    timeout: 30000
+- repeat:
+    times: 6
+    commands:
+      - inputText: "2"
+- extendedWaitUntil:
+    visible: "Passcode did not match."
+    timeout: 30000
+- takeScreenshot: 1-refused
+- assertNotVisible: "No cards yet"
+- stopRecording

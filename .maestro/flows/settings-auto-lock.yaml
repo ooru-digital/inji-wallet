@@ -1,0 +1,57 @@
+appId: io.ooru.credissuerwallet
+name: Auto-lock
+---
+- startRecording: recording
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: "Auto-lock"
+- extendedWaitUntil:
+    visible: "Choose how long the wallet can stay in the background before it locks."
+    timeout: 10000
+- assertVisible: "After 1 minute"
+- assertVisible: "After 5 minutes"
+- assertVisible: "After 15 minutes"
+- assertVisible: "Never"
+- takeScreenshot: 1-auto-lock
+- tapOn: "After 1 minute"
+- extendedWaitUntil:
+    visible: "Security and Privacy"
+    timeout: 10000
+- assertVisible: "After 1 minute"
+# Away for longer than a minute, then back to the same app: a relaunch always locks, so it
+# would prove nothing.
+- pressKey: Home
+- extendedWaitUntil:
+    visible: "This text never appears"
+    timeout: 70000
+    optional: true
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: "Your cards are locked.|Enter your passcode"
+    timeout: 15000
+- takeScreenshot: 2-locked-after-a-minute
+- runFlow:
+    when:
+      visible: "Your cards are locked."
+    commands:
+      - tapOn: "Unlock"
+      - extendedWaitUntil:
+          visible: "Enter your passcode"
+          timeout: 15000
+- runFlow: ../subflows/type-passcode.yaml
+# Back to Never, so the other flows are not locked out part-way.
+- extendedWaitUntil:
+    visible: "Security and Privacy|No cards yet"
+    timeout: 30000
+- runFlow:
+    when:
+      notVisible: "Security and Privacy"
+    commands:
+      - tapOn: "Settings"
+- tapOn: "Auto-lock"
+- tapOn: "Never"
+- extendedWaitUntil:
+    visible: "Security and Privacy"
+    timeout: 10000
+- assertVisible: "Never"
+- stopRecording

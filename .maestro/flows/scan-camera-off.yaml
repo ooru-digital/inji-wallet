@@ -1,0 +1,24 @@
+appId: io.ooru.credissuerwallet
+name: Scan with the camera off
+---
+- startRecording: recording
+- runFlow:
+    file: ../subflows/home.yaml
+    env:
+      CAMERA: deny
+- tapOn: "Scan to Add or Share"
+# The camera isn't granted, so Android asks first.
+- runFlow:
+    when:
+      visible: "Don.t allow"
+    commands:
+      - tapOn: "Don.t allow"
+- extendedWaitUntil:
+    visible: "Camera access is off"
+    timeout: 15000
+- takeScreenshot: 1-camera-off
+- tapOn: "Close"
+- extendedWaitUntil:
+    visible: "No cards yet"
+    timeout: 15000
+- stopRecording
