@@ -115,10 +115,8 @@ fileignoreconfig:
     checksum: e9b85cf0405d777faee9345269f6f9eb861ed205728dca63cf27a5db79c876a7
   - filename: assets/Issuer_search_clearing_button.svg
     checksum: f4e8a054fc4168e08bc9e9fe3e644cebabacdfc31ef0cbe36dd281766f47df5e
-  - filename: screens/Settings/BackupController.tsx
-    checksum: 054665c377b4a8e246ae1bfb419ab86d0cb1c120ae92cdc27ceed9cf1f39679b
-  - filename: screens/Settings/BackupController.tsx
-    checksum: 4a031b46646aa982c8f40e4c7fe0bd3e05a76a6af1ff1c2de7350ba6ebf9a839
+  - filename: screens/backupAndRestore/BackupController.tsx
+    checksum: e88c79815499d169da4ff890596054f9aef88e1d82c417f772a75bf676a3b0b2
   - filename: screens/Settings/BackupViaPassword.tsx
     checksum: d2a355356bcaf8f7ef3b53ba93710cec15fefd0fdf31efd779eebd2bfab61c19
   - filename: shared/api.ts
