@@ -314,13 +314,17 @@ platform :ios do
     # Named per build, so two builds on one Mac never delete each other's keychain.
     keychain_name = "credissuer-build-#{SecureRandom.hex(4)}"
     keychain_password = SecureRandom.hex(16)
-    # Profiles Xcode already had, so that only the one this build installs is removed afterwards.
-    profile_dirs = [
-      File.expand_path("~/Library/MobileDevice/Provisioning Profiles"),
-      File.expand_path("~/Library/Developer/Xcode/UserData/Provisioning Profiles")
-    ]
-    installed_profiles = lambda { profile_dirs.flat_map { |dir| Dir.glob(File.join(dir, "*")) } }
-    profiles_before = installed_profiles.call
+    # Removed afterwards only if this build installed it: the profile is matched by its UUID, and
+    # left alone when it was already there before the build.
+    profile_uuid = sh(
+      "security cms -D -i '#{profile_path}' 2>/dev/null | plutil -extract UUID raw -o - -",
+      log: false
+    ).strip
+    profile_copies = [
+      "~/Library/MobileDevice/Provisioning Profiles",
+      "~/Library/Developer/Xcode/UserData/Provisioning Profiles"
+    ].map { |dir| File.expand_path(File.join(dir, "#{profile_uuid}.mobileprovision")) }
+    profile_was_installed = profile_uuid.empty? || profile_copies.any? { |copy| File.exist?(copy) }
 
     begin
       create_keychain(
@@ -370,7 +374,7 @@ platform :ios do
       )
     ensure
       delete_temp_keychain(keychain_name)
-      (installed_profiles.call - profiles_before).each { |profile| File.delete(profile) }
+      profile_copies.each { |copy| File.delete(copy) if File.exist?(copy) } unless profile_was_installed
     end
   end
 end

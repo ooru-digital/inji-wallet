@@ -224,6 +224,10 @@ jobs:
     name: iOS (signed IPA)
     if: inputs.ios != 'none'
     runs-on: ${{ vars.CREDISSUER_IOS_RUNNER || 'xcode-27' }}
+    # One iOS build at a time, so builds on a self-hosted Mac never share its keychains or profiles.
+    concurrency:
+      group: credissuer-ios-build
+      cancel-in-progress: false
     timeout-minutes: 120
     environment: credissuer-release
     env:
@@ -326,11 +330,17 @@ jobs:
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
           printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
-          # Swift Package Manager logs in to the BioChq Nexus through ~/.netrc. A self-hosted Mac
-          # may have its own: it is kept, added to, and put back afterwards.
+          # Swift Package Manager logs in to the BioChq Nexus through ~/.netrc. A self-hosted Mac may
+          # have its own: ours goes first (a "default" entry must stay last), and the original is put
+          # back afterwards. The marker tells the cleanup that this step ran.
+          touch "$RUNNER_TEMP/netrc.ours"
           if [ -f ~/.netrc ]; then cp -p ~/.netrc "$RUNNER_TEMP/netrc.original"; fi
-          printf 'machine nexus-biochq.credissuer.com login %s password %s\n' \
-            "$ARTIFACTORY_USERNAME" "$ARTIFACTORY_PASSWORD" >> ~/.netrc
+          {
+            printf 'machine nexus-biochq.credissuer.com login %s password %s\n' \
+              "$ARTIFACTORY_USERNAME" "$ARTIFACTORY_PASSWORD"
+            if [ -f "$RUNNER_TEMP/netrc.original" ]; then cat "$RUNNER_TEMP/netrc.original"; fi
+          } > "$RUNNER_TEMP/netrc.new"
+          mv "$RUNNER_TEMP/netrc.new" ~/.netrc
           chmod 600 ~/.netrc
           if [ "$IOS_SIGNING" = development ]; then
             P12_BASE64="$DEV_P12_BASE64"; PROFILE_BASE64="$DEV_PROFILE_BASE64"
@@ -408,8 +418,10 @@ jobs:
         if: always()
         run: |
           rm -rf "$RUNNER_TEMP/signing" .env.local
+          # Only if the preparation step ran: otherwise the ~/.netrc there is not ours.
           if [ -f "$RUNNER_TEMP/netrc.original" ]; then
             mv "$RUNNER_TEMP/netrc.original" ~/.netrc
-          else
+          elif [ -f "$RUNNER_TEMP/netrc.ours" ]; then
             rm -f ~/.netrc
           fi
+          rm -f "$RUNNER_TEMP/netrc.ours"
