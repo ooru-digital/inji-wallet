@@ -38,6 +38,10 @@ export const API_URLS: ApiUrls = {
     method: 'GET',
     buildURL: (): `/${string}` => '/v1/mimoto/verifiers',
   },
+  issuersList: {
+    method: 'GET',
+    buildURL: (): `/${string}` => '/v1/mimoto/issuers',
+  },
   issuerConfig: {
     method: 'GET',
     buildURL: (issuerId: string): `/${string}` =>
@@ -121,6 +125,20 @@ export const API = {
     return response;
   },
 
+  fetchIssuers: async () => {
+    const response = await request(
+      API_URLS.issuersList.method,
+      API_URLS.issuersList.buildURL(),
+    );
+    const issuers = response?.response?.issuers;
+    // Throw on an unexpected body rather than return [], which would be cached and show
+    // "no issuers" until it expires; throwing shows the list's retry and caches nothing.
+    if (!Array.isArray(issuers)) {
+      throw new Error('Unexpected issuers list response');
+    }
+    return issuers;
+  },
+
   fetchIssuerConfig: async (issuerId: string) => {
     const response = await request(
       API_URLS.issuerConfig.method,
@@ -158,6 +176,12 @@ export const CACHED_API = {
       isCachePreferred,
       cacheKey: API_CACHED_STORAGE_KEYS.fetchTrustedVerifiers,
       fetchCall: API.fetchTrustedVerifiersList,
+    }),
+
+  fetchIssuers: () =>
+    generateCacheAPIFunction({
+      cacheKey: API_CACHED_STORAGE_KEYS.fetchIssuers,
+      fetchCall: API.fetchIssuers,
     }),
 
   fetchIssuerWellknownConfig: (

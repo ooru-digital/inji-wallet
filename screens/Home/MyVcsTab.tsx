@@ -471,6 +471,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
             searchIndex={searchIndex}
             refreshing={controller.isRefreshingVcs}
             onRefresh={controller.REFRESH}
+            onAdd={props.onBrowseIssuers}
             isCardTourStep={controller.isTourGuide || isFirstCardTourDue}
             startCardTour={isFirstCardTourDue}
             openVcKey={props.openVcKey}
@@ -482,6 +483,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
           <WalletHeader
             countText={cardsAvailableText}
             onAvatar={() => navigation.navigate(BOTTOM_TAB_ROUTES.settings)}
+            onAdd={props.onBrowseIssuers}
             searching={false}
             menu={[
               {

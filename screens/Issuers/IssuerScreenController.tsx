@@ -16,6 +16,8 @@ import {
   selectIsCredentialAlreadyExists,
   selectIsQrScanning,
   selectIsSelectingIssuer,
+  selectIsFetchingIssuers,
+  selectIssuersFetchFailed,
   selectOfferedCredentialTypeNames,
   selectAuthWebViewStatus,
   selectAuthEndPoint,
@@ -65,6 +67,8 @@ export function useIssuerScreenController({route, navigation}) {
     downloadedVcMetadata: useSelector(service, selectDownloadedVcMetadata),
     isAuthorizationSuccess: useSelector(service, selectIsAuthorizationSuccess),
     issuers: useSelector(service, selectIssuers),
+    isFetchingIssuers: useSelector(service, selectIsFetchingIssuers),
+    issuersFetchFailed: useSelector(service, selectIssuersFetchFailed),
     ovpMachine: useSelector(service, selectOVPMachine),
     issuerLogo: useSelector(service, selectIssuerLogo),
     issuerName: useSelector(service, selectIssuerName),
@@ -122,6 +126,7 @@ export function useIssuerScreenController({route, navigation}) {
     CANCEL: () => service.send(IssuerScreenTabEvents.CANCEL()),
     SELECTED_ISSUER: id =>
       service.send(IssuerScreenTabEvents.SELECTED_ISSUER(id)),
+    FETCH_ISSUERS: () => service.send(IssuerScreenTabEvents.FETCH_ISSUERS()),
     TRY_AGAIN: () => service.send(IssuerScreenTabEvents.TRY_AGAIN()),
     RESET_ERROR: () => service.send(IssuerScreenTabEvents.RESET_ERROR()),
     DOWNLOAD_ID: () => {

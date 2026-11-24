@@ -197,10 +197,14 @@ describe('getCredentialConfigurationNames', () => {
     ).toEqual(['National ID Card', 'Driving Licence']);
   });
 
-  it('leaves out configurations without a display name or not in the metadata', () => {
+  it('uses the configuration ID when it has no display name', () => {
     expect(
-      getCredentialConfigurationNames(metadata, ['Unnamed', 'Missing']),
-    ).toEqual([]);
+      getCredentialConfigurationNames(metadata, ['NationalID', 'Unnamed']),
+    ).toEqual(['National ID Card', 'Unnamed']);
+  });
+
+  it('leaves out configurations not in the metadata', () => {
+    expect(getCredentialConfigurationNames(metadata, ['Missing'])).toEqual([]);
   });
 });
 

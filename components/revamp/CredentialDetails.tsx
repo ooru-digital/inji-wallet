@@ -34,6 +34,7 @@ import {
 } from './Icons';
 import {CARD_WIDTH, fonts, motion, radii, shadows} from './tokens';
 import {useRevampTheme} from './useRevampTheme';
+import {wt} from './walletText';
 import {CredentialCardData} from './useCredentialCard';
 import {PillButton} from '../ui/PillButton';
 
@@ -191,7 +192,7 @@ export const CredentialDetails = React.forwardRef<
         <Animated.View style={[styles.header, {opacity: bg}]}>
           <Pressable
             onPress={() => close()}
-            accessibilityLabel="Back to wallet"
+            accessibilityLabel={wt('details.backToWallet')}
             style={[
               styles.headerBtn,
               shadows.raised,
@@ -207,7 +208,9 @@ export const CredentialDetails = React.forwardRef<
           <Pressable
             onPress={actions.togglePin}
             accessibilityLabel={
-              pinned ? `Unpin ${data.title}` : `Pin ${data.title} to top`
+              pinned
+                ? wt('details.unpinTitle', {title: data.title})
+                : wt('details.pinTitle', {title: data.title})
             }
             accessibilityState={{selected: pinned}}
             style={[
@@ -236,9 +239,7 @@ export const CredentialDetails = React.forwardRef<
             <Pressable
               onPress={() => setFlipped(f => !f)}
               accessibilityLabel={
-                flipped
-                  ? 'Card back shown. Tap to show the front'
-                  : 'Card front shown. Tap to see the back'
+                flipped ? wt('details.backShown') : wt('details.frontShown')
               }
               style={[shadows.card, {borderRadius: radii.card}]}>
               <ScaledCard width={cardWidth}>
@@ -284,9 +285,7 @@ export const CredentialDetails = React.forwardRef<
           <Animated.View style={[styles.hint, risen(0)]}>
             <FlipIcon color={c.inkMuted} />
             <ScaledText style={[styles.hintText, {color: c.inkMuted}]}>
-              {flipped
-                ? 'Tap the card to see the front'
-                : 'Tap the card to see the back'}
+              {flipped ? wt('home.tapToSeeFront') : wt('home.tapToSeeBack')}
             </ScaledText>
           </Animated.View>
 
@@ -297,7 +296,7 @@ export const CredentialDetails = React.forwardRef<
 
           <Animated.View style={[styles.actions, risen(2)]}>
             <Action
-              label="Share"
+              label={wt('home.share')}
               primary
               size={56}
               disabled={inactive}
@@ -305,14 +304,14 @@ export const CredentialDetails = React.forwardRef<
               icon={col => <ShareIcon color={col} />}
             />
             <Action
-              label="Show QR"
+              label={wt('home.showQr')}
               size={56}
               disabled={inactive}
               onPress={actions.showQr}
               icon={col => <QrIcon color={col} />}
             />
             <Action
-              label="Activity"
+              label={wt('home.activity')}
               size={56}
               onPress={actions.activity}
               icon={col => <ActivityIcon color={col} />}
@@ -331,7 +330,7 @@ export const CredentialDetails = React.forwardRef<
                 accessibilityRole="button">
                 <TrashIcon color={c.fail} />
                 <ScaledText style={[styles.removeText, {color: c.fail}]}>
-                  Remove from Wallet
+                  {wt('home.removeFromWallet')}
                 </ScaledText>
               </Pressable>
             </Animated.View>
@@ -349,7 +348,7 @@ export const CredentialDetails = React.forwardRef<
               },
             ]}>
             <PillButton
-              title="Remove from Wallet"
+              title={wt('home.removeFromWallet')}
               icon={<TrashIcon color={c.onPrimary} />}
               onPress={actions.remove}
             />

@@ -24,6 +24,10 @@ describe('IssuersModel', () => {
       expect(Array.isArray(initialContext.issuers)).toBe(true);
     });
 
+    it('should have issuersFetchFailed as false', () => {
+      expect(initialContext.issuersFetchFailed).toBe(false);
+    });
+
     it('should have selectedIssuerId as empty string', () => {
       expect(initialContext.selectedIssuerId).toBe('');
     });
@@ -181,9 +185,9 @@ describe('IssuersModel', () => {
       expect(initialContext.isTxCodeVerifying).toBe(false);
     });
 
-    it('should have all 46 required properties', () => {
+    it('should have all 47 required properties', () => {
       const properties = Object.keys(initialContext);
-      expect(properties).toHaveLength(46);
+      expect(properties).toHaveLength(47);
     });
   });
 

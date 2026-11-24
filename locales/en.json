@@ -57,8 +57,6 @@
     "Wallet": "Wallet"
   },
   "FaceScanner": {
-    "livenessCaptureGuide": "Hold the phone steady, keep your face focused in the centre.",
-    "faceProcessingInfo": "Please wait while we process the data.",
     "faceVerificationTitle": "Face verification",
     "verifyingTitle": "Verifying your face",
     "verifyingMessage": "This takes a few seconds. Please don’t close the app.",
@@ -71,12 +69,7 @@
     "tipCoverings": "Remove glasses, a mask or a cap",
     "tipSteady": "Keep your face in the centre and hold steady",
     "tryAgain": "Try again",
-    "faceOutGuide": "Keep your face inside the oval!",
-    "faceInGuide": "Capturing in progress!",
-    "imageCaptureGuide": "Hold the phone steady, keep your face focused in the centre and click on Capture.",
-    "capture": "Capture",
     "cancel": "Cancel",
-    "flipCamera": "Flip Camera",
     "missingPermissionText": "Camera access is needed to verify your identity. Please allow it in Settings.",
     "allowCameraButton": "Open Settings"
   },
@@ -335,7 +328,6 @@
     "deleted": "deleted",
     "historyHeaderLabel": "History",
     "title": "Notifications",
-    "goBack": "Go back",
     "markAllAsRead": "Mark all as read",
     "allCaughtUp": "All caught up",
     "unreadCount": "{{count}} unread",
@@ -658,7 +650,21 @@
     "thisCard": "this card",
     "validUntil": "Valid until {{date}}",
     "downloadFailedPill": "Download failed",
-    "verificationFailedPill": "Couldn’t verify"
+    "verificationFailedPill": "Couldn’t verify",
+    "issuerList": {
+      "title": "Find Your Credential",
+      "lead": "Pick who issued it, then choose what to download.",
+      "searchPlaceholder": "Try “driving licence” or “university”",
+      "count": "{{count}} issuer",
+      "count_plural": "{{count}} issuers",
+      "credentialTypes": "{{count}} credential",
+      "credentialTypes_plural": "{{count}} credentials",
+      "trustNote": "Every issuer here is in the national trust registry. Credentials arrive signed, straight from the issuer.",
+      "noIssuers": "No issuers are available right now.",
+      "noMatch": "No issuers match your search.",
+      "failed": "Couldn’t load the list of issuers.",
+      "clearSearch": "Clear search"
+    }
   },
   "HelpScreen": {
     "header": "Help",
@@ -1303,14 +1309,7 @@
       }
     },
     "postFaceCapture": {
-      "captureSuccessMessage": "Face Verification is successful! Credential sharing is initiated.",
-      "captureFailureTitle": "We couldn’t match your face",
-      "captureFailureMessage": "Nothing was shared. For the next try:",
-      "retakeSelfie": "Take the selfie again",
-      "cancelSharing": "Cancel sharing",
-      "faceTipLight": "Face the light, not a window behind you",
-      "faceTipGlasses": "Take off glasses and hats",
-      "faceTipFrame": "Keep your whole face in the frame"
+      "captureSuccessMessage": "Face Verification is successful! Credential sharing is initiated."
     },
     "rational": {
       "title": "Turn on your location",
@@ -1485,8 +1484,7 @@
     "errors": {
       "invalidIdentity": {
         "title": "Face recognition failed",
-        "message": "The scanned face does not match with the photo on the card. Please try again.",
-        "messageNoRetry": "Face not recognised."
+        "message": "The scanned face does not match with the photo on the card. Please try again."
       }
     }
   },
@@ -1728,5 +1726,106 @@
     "downloadingCard": "Downloading your card…",
     "unknownIssuer": "Unknown issuer",
     "offering": "Offering"
+  },
+  "Wallet": {
+    "tabs": {
+      "home": "Home",
+      "activity": "Activity",
+      "settings": "Settings"
+    },
+    "status": {
+      "verified": "Valid",
+      "pending": "Pending",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "home": {
+      "credentialOne": "1 credential",
+      "credentialMany": "{{count}} credentials",
+      "shownOf": "{{visible}} of {{total}} shown",
+      "all": "All",
+      "pinnedToTop": "{{title}} pinned to top",
+      "unpinned": "Unpinned",
+      "notifications": "Notifications",
+      "tapToSeeFront": "Tap the card to see the front",
+      "tapToSeeBack": "Tap the card to see the back",
+      "tapToFlip": "Tap the card to flip it",
+      "share": "Share",
+      "showQr": "Show QR",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "activity": "Activity",
+      "removeFromWallet": "Remove from Wallet",
+      "openDetails": "Open {{title}} details",
+      "pinned": "Pinned",
+      "otherCredentials": "Other Credentials",
+      "noOtherMatch": "No other credentials match your search.",
+      "swipeHint": "Swipe for more · tap a card for details",
+      "noResultsTitle": "No Matching Credentials",
+      "noResultsText": "Try another name or issuer, or clear the filters.",
+      "clearFilters": "Clear Filters",
+      "previousCredential": "Previous credential",
+      "nextCredential": "Next credential",
+      "position": "Credential {{index}} of {{count}}"
+    },
+    "header": {
+      "wallet": "Wallet",
+      "openProfile": "Open profile",
+      "searchCredentials": "Search credentials",
+      "moreOptions": "More options",
+      "closeMenu": "Close menu",
+      "searchPlaceholder": "Search by name or issuer",
+      "clearSearch": "Clear search",
+      "cancel": "Cancel",
+      "filterByIssuer": "Filter by issuer"
+    },
+    "carousel": {
+      "yourCredentials": "Your credentials. Swipe left or right",
+      "newPrefix": "New. ",
+      "tapToFlipTitle": "{{title}}. Tap to flip",
+      "showTitle": "Show {{title}}",
+      "loading": "Loading credential"
+    },
+    "details": {
+      "backToWallet": "Back to wallet",
+      "unpinTitle": "Unpin {{title}}",
+      "pinTitle": "Pin {{title}} to top",
+      "backShown": "Card back shown. Tap to show the front",
+      "frontShown": "Card front shown. Tap to see the back",
+      "credentialInformation": "Credential Information",
+      "issuer": "Issuer",
+      "issuedOn": "Issued on",
+      "validUntil": "Valid until",
+      "format": "Format",
+      "signature": "Signature",
+      "foundRevokedOn": "Found revoked on {{date}}",
+      "expiredOn": "Expired on {{date}}",
+      "validUntilDate": "Valid until {{date}}",
+      "theIssuer": "The issuer",
+      "expiredTitle": "This credential has expired",
+      "revokedTitle": "Revoked by the issuer",
+      "expiredText": "Verifiers will reject it. Get an updated copy from {{issuer}}.",
+      "revokedText": "{{issuer}} has revoked this credential, so it can't be shared. Contact them if you think this is a mistake."
+    },
+    "card": {
+      "scanToVerify": "Scan to verify",
+      "verificationQr": "Verification QR code",
+      "numberShort": "No.",
+      "licenceNo": "Licence no."
+    },
+    "months": {
+      "1": "Jan",
+      "2": "Feb",
+      "3": "Mar",
+      "4": "Apr",
+      "5": "May",
+      "6": "Jun",
+      "7": "Jul",
+      "8": "Aug",
+      "9": "Sep",
+      "10": "Oct",
+      "11": "Nov",
+      "12": "Dec"
+    }
   }
 }

@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import {VCMetadata} from '../../shared/VCMetadata';
 import {useVcItemController} from '../VC/VCItemController';
 import {VCProcessor} from '../VC/common/VCProcessor';
@@ -19,6 +20,7 @@ import {getCredentialExpiryDate} from '../../shared/credentialExpiry';
 import {cardStatusOf} from './cardStatus';
 import {useIssuerQrCode} from '../IssuerQrCodeImage';
 import {VCItemEvents} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
+import {toLogoUrl} from '../../shared/commonUtil';
 
 export type CardStatus = 'verified' | 'pending' | 'expired' | 'revoked';
 
@@ -124,9 +126,12 @@ export function useCredentialCard(
         setWellknown(
           response?.matchingCredentialIssuerMetadata ?? {fallback: 'true'},
         );
-        const issuer = response?.wellknownResponse?.display;
+        // All its languages: the one shown is picked below, so it follows the app's.
+        const display = response?.wellknownResponse?.display;
         setIssuerDisplay(
-          issuer ? getDisplayObjectForCurrentLanguage(issuer) : null,
+          Array.isArray(display)
+            ? display.filter(entry => entry && typeof entry === 'object')
+            : null,
         );
         if (response?.wellknownResponse)
           controller.STORE_INCOMING_VC_WELLKNOWN_CONFIG(
@@ -139,6 +144,7 @@ export function useCredentialCard(
 
   const ready = loaded && !!vc && !!wellknown;
 
+  const {i18n} = useTranslation();
   const data = useMemo<CredentialCardData | null>(() => {
     if (!ready) return null;
     const format = vcMetadata.format;
@@ -159,11 +165,14 @@ export function useCredentialCard(
     const status = cardStatusOf(vcMetadata, controller.credential);
     return {
       title: getCredentialType(wellknown),
-      issuerName: issuerDisplay?.name ?? verifiableCredentialData?.issuer,
+      issuerName:
+        (issuerDisplay
+          ? getDisplayObjectForCurrentLanguage(issuerDisplay)?.name
+          : undefined) ?? verifiableCredentialData?.issuer,
       holderName: holderName(claims),
       number: documentNumber(claims),
       face: verifiableCredentialData?.face,
-      issuerLogoUrl: verifiableCredentialData?.issuerLogo?.url,
+      issuerLogoUrl: toLogoUrl(verifiableCredentialData?.issuerLogo?.url),
       background: display?.background_color,
       text: display?.text_color,
       status,
@@ -190,6 +199,8 @@ export function useCredentialCard(
     vcMetadata,
     verifiableCredentialData,
     controller.credential,
+    // Its labels and dates are in the app's language.
+    i18n.language,
   ]);
 
   return {data, controller, service: controller.VCItemService};
