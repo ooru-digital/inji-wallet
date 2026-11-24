@@ -1,4 +1,5 @@
 import VciClient from '../../shared/vciClient/VciClient';
+import {getItem, setItem} from '../store';
 import {IssuersService, requestIssuerMetadata} from './IssuersService';
 
 jest.mock('../../shared/vciClient/VciClient', () => {
@@ -19,6 +20,9 @@ const client = VciClient.getInstance() as unknown as {
 };
 const issuer = 'https://issuer.example';
 const metadata = {credential_issuer: issuer};
+
+// The cached copy is looked up before the network is asked.
+const cacheChecked = () => new Promise(resolve => setTimeout(resolve, 0));
 
 const startOfferDownload = () =>
   IssuersService().downloadCredentialFromOffer({qrData: 'offer'})(jest.fn());
@@ -58,6 +62,7 @@ describe('issuer metadata during an offer download', () => {
     client.getIssuerMetadata.mockClear();
 
     askForProof(issuer, null, null);
+    await cacheChecked();
 
     expect(client.getIssuerMetadata).toHaveBeenCalledWith(issuer);
   });
@@ -97,9 +102,11 @@ describe('issuer metadata during an offer download', () => {
       () => new Promise((_, reject) => (failOlder = reject)),
     );
     const older = requestIssuerMetadata(issuer).catch(() => undefined);
+    await cacheChecked();
     await startOfferDownload();
     client.getIssuerMetadata.mockClear();
     const newer = requestIssuerMetadata(issuer);
+    await cacheChecked();
 
     failOlder(new Error('offline'));
     await older;
@@ -116,14 +123,64 @@ describe('issuer metadata during an offer download', () => {
     const olderCaching = IssuersService().cacheIssuerWellknown({
       credentialOfferCredentialIssuer: issuer,
     });
+    await cacheChecked();
     await startOfferDownload();
     client.getIssuerMetadata.mockClear();
     const newer = requestIssuerMetadata(issuer);
+    await cacheChecked();
 
     finishOlder(metadata);
     await olderCaching;
 
     expect(requestIssuerMetadata(issuer)).toBe(newer);
     expect(client.getIssuerMetadata).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('issuer metadata the wallet already has', () => {
+  const store = {getItem: getItem as jest.Mock, setItem: setItem as jest.Mock};
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    client.getIssuerMetadata.mockResolvedValue(metadata);
+    // Clears what an earlier download left shared.
+    await startOfferDownload();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() =>
+    store.getItem.mockImplementation(() => Promise.resolve(null)),
+  );
+
+  it('is not downloaded again when the cached copy is under an hour old', async () => {
+    const cachedMetadata = {credential_issuer: issuer, cached: true};
+    store.getItem.mockResolvedValue({
+      response: cachedMetadata,
+      cachedTime: Date.now() - 10 * 60 * 1000,
+    });
+
+    const result = await IssuersService().cacheIssuerWellknown({
+      credentialOfferCredentialIssuer: issuer,
+    });
+
+    expect(result).toBe(cachedMetadata);
+    expect(client.getIssuerMetadata).not.toHaveBeenCalled();
+    // Saving it again would reset its time, so it would never expire.
+    expect(store.setItem).not.toHaveBeenCalled();
+  });
+
+  it('is downloaded again when the cached copy is over an hour old', async () => {
+    store.getItem.mockResolvedValue({
+      response: {credential_issuer: issuer, cached: true},
+      cachedTime: Date.now() - 2 * 60 * 60 * 1000,
+    });
+
+    const result = await IssuersService().cacheIssuerWellknown({
+      credentialOfferCredentialIssuer: issuer,
+    });
+
+    expect(result).toEqual(metadata);
+    expect(client.getIssuerMetadata).toHaveBeenCalledTimes(1);
+    expect(store.setItem).toHaveBeenCalledTimes(1);
   });
 });
