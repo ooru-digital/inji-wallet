@@ -1,4 +1,14 @@
 fileignoreconfig:
+  - filename: screens/Home/NfcTapShare.tsx
+    checksum: 738b19c47a137d090cc9dd23e4240f8c005e655c999f2559048da35392a4b831
+  - filename: android/app/src/main/java/io/mosip/residentapp/mdoc/MdocNfcEngagementService.kt
+    checksum: 7a2261bef4e927d4180d1dacbb3191a869fba29fd9a69e87d621866d5d2a8ed4
+  - filename: shared/mdoc/mdocNfcEngagement.ts
+    checksum: 1d69d8301bb547b2cacef7bdc5360dbfa26fc44e0da05c10fcd59f9286ff76b2
+  - filename: android/app/src/main/java/io/mosip/residentapp/mdoc/MdocIso18013PresentmentModule.kt
+    checksum: 7119bff0840fc5fa3919ac87d78a7063098d929b965470bb32a3e0c1d84bd643
+  - filename: android/app/src/main/java/io/mosip/residentapp/mdoc/MdocNfcEngagements.kt
+    checksum: 42081ff250d2b3d5996997078d5d84e5bcff522ba41af5e14629b409303e87de
   - filename: components/revamp/walletText.ts
     checksum: fcf693a3501a4965cd08d8fb1914013d8c8ddc8c3ea16ad1bdd7600d7fa0ceba
   - filename: components/revamp/translations.test.ts
@@ -6,7 +16,7 @@ fileignoreconfig:
   - filename: shared/displayLanguage.ts
     checksum: eeefb4cebb78e6d406d5d3cb5599fc78b1d37fef573e54b774ca1591d63c5514
   - filename: ios/Packages/inji-openid4vp-ios-swift/README.md
-    checksum: d6959ae6277dd2b0a3324e221f7d48c5b8b010aaa8eddd32c5b345b8835f2610
+    checksum: fc1f2125cb2e102655a431e1695f93975c945059a97558d3538829abdc114c8e
   - filename: ios/Packages/inji-openid4vp-ios-swift/Sources/OpenID4VP/AuthorizationResponse/AuthorizationResponseHandler.swift
     checksum: 61df353163d81b9e3b7daa566eb7713eb89c6afa6bb50518abd2c4d375fce39b
   - filename: ios/Packages/inji-openid4vp-ios-swift/Tests/OpenID4VPTests/Common/cbor/CBORUtilsTest.swift
