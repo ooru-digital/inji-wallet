@@ -80,6 +80,10 @@ export function classifyTokenRequestFailure(
     return result(IssuanceFailure.TX_CODE_REQUIRED);
   }
   if (error === 'tx_code_mismatch') {
+    // Same as invalid_grant with a remaining count: 0 means lock the input.
+    if (attemptsRemaining === 0) {
+      return result(IssuanceFailure.TX_CODE_ATTEMPTS_EXHAUSTED);
+    }
     return result(IssuanceFailure.INCORRECT_TX_CODE);
   }
   if (error === 'invalid_request') {

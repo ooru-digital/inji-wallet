@@ -28,6 +28,41 @@ describe('classifyTokenRequestFailure', () => {
     ).toBe(IssuanceFailure.TX_CODE_ATTEMPTS_EXHAUSTED);
   });
 
+  it('treats tx_code_mismatch with attempts left as retryable', () => {
+    expect(
+      classifyTokenRequestFailure(400, {
+        error: 'tx_code_mismatch',
+        tx_code_attempts_remaining: 2,
+      }),
+    ).toEqual({
+      failure: IssuanceFailure.INCORRECT_TX_CODE,
+      attemptsRemaining: 2,
+    });
+  });
+
+  it('locks the code when tx_code_mismatch reports no attempts left', () => {
+    expect(
+      classifyTokenRequestFailure(400, {
+        error: 'tx_code_mismatch',
+        tx_code_attempts_remaining: 0,
+      }),
+    ).toEqual({
+      failure: IssuanceFailure.TX_CODE_ATTEMPTS_EXHAUSTED,
+      attemptsRemaining: 0,
+    });
+  });
+
+  it('keeps tx_code_mismatch retryable when the attempts count is unknown', () => {
+    expect(
+      classifyTokenRequestFailure(400, {
+        error: 'tx_code_mismatch',
+      }),
+    ).toEqual({
+      failure: IssuanceFailure.INCORRECT_TX_CODE,
+      attemptsRemaining: null,
+    });
+  });
+
   it('reads the attempts count when it comes as a string', () => {
     expect(
       classifyTokenRequestFailure(400, {
