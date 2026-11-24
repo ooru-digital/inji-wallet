@@ -22,11 +22,54 @@ export function isCredentialOffer(qrCode: string): boolean {
   }
 }
 
+/** The last by-reference offer fetched, shared by the download and its consent screen. */
+let fetchedOffer: {uri: string; request: Promise<unknown>} | undefined;
+
+function fetchOfferByReference(uri: string): Promise<unknown> {
+  if (fetchedOffer?.uri !== uri) {
+    const request = fetchOfferUri(uri, response => response.json());
+    fetchedOffer = {uri, request};
+    request.catch(() => {
+      if (fetchedOffer?.request === request) {
+        fetchedOffer = undefined;
+      }
+    });
+  }
+  return fetchedOffer.request;
+}
+
 /**
- * The `credential_configuration_ids` of a scanned credential offer. The offer is either inline
- * (`credential_offer=`) or by reference (`credential_offer_uri=`), which is fetched again here
- * because the VCI library does not pass the ids to the trust callback. Only https links are
- * fetched, with a timeout; an issuer that allows a link to be used once makes this fetch fail.
+ * The scanned offer, with a by-reference offer replaced by its content so the VCI library doesn't
+ * fetch it again and the consent screen reuses this fetch. The scanned offer is returned unchanged
+ * when the fetch fails or doesn't return an offer, and the library then reports the failure.
+ */
+export async function withOfferInline(offer: string): Promise<string> {
+  const uri = parseQueryParams(offer).credential_offer_uri;
+  if (!uri?.startsWith('https://')) {
+    return offer;
+  }
+  // A new download asks the issuer again, in case the offer was claimed since.
+  fetchedOffer = undefined;
+  try {
+    const offerObject = (await fetchOfferByReference(uri)) as {
+      credential_issuer?: unknown;
+    } | null;
+    if (typeof offerObject?.credential_issuer !== 'string') {
+      return offer;
+    }
+    return `${CREDENTIAL_OFFER_SCHEME}?credential_offer=${encodeURIComponent(
+      JSON.stringify(offerObject),
+    )}`;
+  } catch {
+    return offer;
+  }
+}
+
+/**
+ * The `credential_configuration_ids` of a scanned credential offer, which the VCI library leaves out
+ * of the trust callback. The offer is either inline (`credential_offer=`) or by reference
+ * (`credential_offer_uri=`); a by-reference offer reuses the download's fetch. Only https links
+ * are fetched, with a timeout.
  */
 export async function getOfferedCredentialConfigurationIds(
   offer: string,
@@ -39,9 +82,9 @@ export async function getOfferedCredentialConfigurationIds(
     if (!params.credential_offer_uri.startsWith('https://')) {
       return [];
     }
-    offerObject = await fetchOfferUri(params.credential_offer_uri, response =>
-      response.json(),
-    );
+    offerObject = (await fetchOfferByReference(
+      params.credential_offer_uri,
+    )) as typeof offerObject;
   } else {
     return [];
   }

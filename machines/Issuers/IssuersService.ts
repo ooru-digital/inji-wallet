@@ -17,6 +17,7 @@ import {
   getCredentialConfigurationNames,
   getOfferedCredentialConfigurationIds,
   isCredentialOfferAlreadyUsed,
+  withOfferInline,
 } from '../../shared/openId4VCI/credentialOffer';
 import {
   IssuanceError,
@@ -317,7 +318,7 @@ export const IssuersService = () => {
 
       try {
         return await VciClient.getInstance().requestCredentialByOffer(
-          context.qrData,
+          await withOfferInline(context.qrData),
           getTxCode,
           getSignedProofJwt,
           navigateToAuthView,

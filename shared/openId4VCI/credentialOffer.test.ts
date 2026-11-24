@@ -4,6 +4,7 @@ import {
   getOfferedCredentialConfigurationIds,
   isCredentialOffer,
   isCredentialOfferAlreadyUsed,
+  withOfferInline,
 } from './credentialOffer';
 
 jest.mock('./Utils', () => ({
@@ -70,7 +71,7 @@ describe('getOfferedCredentialConfigurationIds', () => {
         ),
     );
     const qr = `openid-credential-offer://?credential_offer_uri=${encodeURIComponent(
-      'https://issuer.example.com/offers/123',
+      'https://issuer.example.com/offers/slow',
     )}`;
 
     const result = getOfferedCredentialConfigurationIds(qr);
@@ -82,6 +83,71 @@ describe('getOfferedCredentialConfigurationIds', () => {
     await expect(
       getOfferedCredentialConfigurationIds('https://example.com'),
     ).resolves.toEqual([]);
+  });
+});
+
+describe('withOfferInline', () => {
+  const uri = 'https://issuer.example.com/offers/123';
+  const byReference = `openid-credential-offer://?credential_offer_uri=${encodeURIComponent(
+    uri,
+  )}`;
+  const inline = `openid-credential-offer://?credential_offer=${encodeURIComponent(
+    JSON.stringify(offer),
+  )}`;
+
+  afterEach(() => {
+    (global as any).fetch = undefined;
+  });
+
+  it('replaces an offer link with the offer it points to', async () => {
+    (global as any).fetch = jest
+      .fn()
+      .mockResolvedValue({json: async () => offer});
+
+    await expect(withOfferInline(byReference)).resolves.toBe(inline);
+  });
+
+  it('lets the consent screen reuse the fetch', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({json: async () => offer});
+    (global as any).fetch = fetchMock;
+
+    await withOfferInline(byReference);
+    await expect(
+      getOfferedCredentialConfigurationIds(byReference),
+    ).resolves.toEqual(['NationalID', 'DrivingLicence']);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks the issuer again for each download', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({json: async () => offer});
+    (global as any).fetch = fetchMock;
+
+    await withOfferInline(byReference);
+    await withOfferInline(byReference);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the link when the issuer cannot be reached', async () => {
+    (global as any).fetch = jest.fn().mockRejectedValue(new Error('offline'));
+
+    await expect(withOfferInline(byReference)).resolves.toBe(byReference);
+  });
+
+  it('keeps the link when the issuer does not return an offer', async () => {
+    (global as any).fetch = jest
+      .fn()
+      .mockResolvedValue({json: async () => ({error: 'invalid_offer'})});
+
+    await expect(withOfferInline(byReference)).resolves.toBe(byReference);
+  });
+
+  it('leaves an inline offer as it is', async () => {
+    const fetchMock = jest.fn();
+    (global as any).fetch = fetchMock;
+
+    await expect(withOfferInline(inline)).resolves.toBe(inline);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
