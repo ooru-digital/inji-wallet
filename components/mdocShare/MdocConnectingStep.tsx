@@ -32,7 +32,12 @@ export const MdocConnectingStep: React.FC<MdocConnectingStepProps> = props => {
   }, [ring]);
 
   const steps: Array<{label: string; state: StepState}> = [
-    {label: t('mdocShare.stepQrScanned'), state: 'done'},
+    {
+      label: props.tapped
+        ? t('mdocShare.stepPhonesTapped')
+        : t('mdocShare.stepQrScanned'),
+      state: 'done',
+    },
     {label: t('mdocShare.stepBluetoothConnected'), state: 'done'},
     {label: t('mdocShare.stepSecureSession'), state: 'active'},
     {label: t('mdocShare.stepReceivingRequest'), state: 'pending'},
@@ -136,6 +141,8 @@ const StepIndicator: React.FC<{state: StepState}> = ({state}) => {
 export interface MdocConnectingStepProps {
   title: string;
   onCancel: () => void;
+  /** The session started with a tap rather than a QR scan. */
+  tapped?: boolean;
 }
 
 const PULSE_SIZE = 180;
