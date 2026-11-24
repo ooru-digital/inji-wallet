@@ -242,7 +242,7 @@ fileignoreconfig:
   - filename: shared/telemetry/TelemetryUtils.js
     checksum: a0686e9a5c006176fd720b84bc36ca947db1422caf65c90cd0c2d1102a9e96df
   - filename: ios/fastlane/Fastfile
-    checksum: a4e3772dc67a07ecbcfc58be0d6d4f7fa799cec7ac25bd269ac29459c8669ca4
+    checksum: 3bd588931624a47663706830938471dad8e2baaca1033ad9cf857cf8bfdaea92
   - filename: machines/bleShare/request/requestMachine.ts
     checksum: 23a560448f0b79f7cc399f042501c7517e9e341eff3d6f671fa3c892e030a0cc
   - filename: machines/bleShare/scan/scanMachine.ts
@@ -486,7 +486,7 @@ fileignoreconfig:
   - filename: injitest/src/test/java/androidTestCases/VerifyHistoryTest.java
     checksum: dffc4741b251b42c81d5bdac7d649c02b37bb9045285590b29f86c2d5f526fd1
   - filename: .github/workflows/credissuer-build.yml
-    checksum: af338db67ac4b3d6ccc0454d4c0834b19e5c889cbd14ef845b5d10e7e1cede97
+    checksum: b5a91b224470880c86ab9830e3be3a0923e1be66f81857cbafcbb5776d6a8200
   - filename: injitest/src/test/java/androidTestCases/VcDownloadAndVerifyUsingUinTest.java
     checksum: ca06dd901386edcd914bd39b301629589d82269b79e80fad5e3562968532b590
   - filename: machines/bleShare/scan/scanGuards.ts

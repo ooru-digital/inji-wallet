@@ -48,7 +48,8 @@ problems=()
 
 # Without the token the app still builds and runs, but silently shows the wallet-generated QR
 # instead of the CredIssuer one, so a release must not be built without it.
-if ! grep -Eq '^CREDISSUER_API_TOKEN=.+' .env.local 2>/dev/null; then
+# A value of only spaces counts as missing: the app trims it to empty.
+if ! grep -Eq '^CREDISSUER_API_TOKEN=[[:space:]]*[^[:space:]]' .env.local 2>/dev/null; then
   problems+=("CREDISSUER_API_TOKEN is missing from .env.local. Add the line: CREDISSUER_API_TOKEN=<token>")
 fi
 

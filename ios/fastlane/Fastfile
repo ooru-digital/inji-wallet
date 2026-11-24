@@ -311,9 +311,16 @@ platform :ios do
     # Its own keychain, deleted afterwards, so the certificate never lands in the login keychain.
     # Unlike the upstream lanes it is unlocked and not made the default: codesign only needs it
     # on the search list, and a self-hosted Mac keeps its own default keychain.
-    keychain_name = "credissuer-build"
+    # Named per build, so two builds on one Mac never delete each other's keychain.
+    keychain_name = "credissuer-build-#{SecureRandom.hex(4)}"
     keychain_password = SecureRandom.hex(16)
-    delete_temp_keychain(keychain_name)
+    # Profiles Xcode already had, so that only the one this build installs is removed afterwards.
+    profile_dirs = [
+      File.expand_path("~/Library/MobileDevice/Provisioning Profiles"),
+      File.expand_path("~/Library/Developer/Xcode/UserData/Provisioning Profiles")
+    ]
+    installed_profiles = lambda { profile_dirs.flat_map { |dir| Dir.glob(File.join(dir, "*")) } }
+    profiles_before = installed_profiles.call
 
     begin
       create_keychain(
@@ -363,6 +370,7 @@ platform :ios do
       )
     ensure
       delete_temp_keychain(keychain_name)
+      (installed_profiles.call - profiles_before).each { |profile| File.delete(profile) }
     end
   end
 end

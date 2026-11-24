@@ -115,7 +115,7 @@ jobs:
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
           missing=()
-          [ -n "$CREDISSUER_API_TOKEN" ] || missing+=(CREDISSUER_API_TOKEN)
+          [ -n "$(printf '%s' "$CREDISSUER_API_TOKEN" | tr -d '[:space:]')" ] || missing+=(CREDISSUER_API_TOKEN)
           [ -n "$KEYSTORE_BASE64" ] || missing+=(CREDISSUER_ANDROID_KEYSTORE_BASE64)
           [ -n "$RELEASE_KEYSTORE_ALIAS" ] || missing+=(CREDISSUER_ANDROID_KEYSTORE_ALIAS)
           [ -n "$RELEASE_KEYSTORE_PASSWORD" ] || missing+=(CREDISSUER_ANDROID_KEYSTORE_PASSWORD)
@@ -223,7 +223,7 @@ jobs:
   ios:
     name: iOS (signed IPA)
     if: inputs.ios != 'none'
-    runs-on: ${{ vars.CREDISSUER_IOS_RUNNER || 'macos-26' }}
+    runs-on: ${{ vars.CREDISSUER_IOS_RUNNER || 'xcode-27' }}
     timeout-minutes: 120
     environment: credissuer-release
     env:
@@ -248,7 +248,7 @@ jobs:
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
           missing=()
-          [ -n "$CREDISSUER_API_TOKEN" ] || missing+=(CREDISSUER_API_TOKEN)
+          [ -n "$(printf '%s' "$CREDISSUER_API_TOKEN" | tr -d '[:space:]')" ] || missing+=(CREDISSUER_API_TOKEN)
           if [ "$IOS_SIGNING" = development ]; then
             [ -n "$DEV_P12_BASE64" ] || missing+=(CREDISSUER_IOS_DEV_P12_BASE64)
             [ -n "$DEV_P12_PASSWORD" ] || missing+=(CREDISSUER_IOS_DEV_P12_PASSWORD)
@@ -326,9 +326,11 @@ jobs:
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
           printf 'CREDISSUER_API_TOKEN=%s\n' "$CREDISSUER_API_TOKEN" > .env.local
-          # Swift Package Manager logs in to the BioChq Nexus through ~/.netrc.
+          # Swift Package Manager logs in to the BioChq Nexus through ~/.netrc. A self-hosted Mac
+          # may have its own: it is kept, added to, and put back afterwards.
+          if [ -f ~/.netrc ]; then cp -p ~/.netrc "$RUNNER_TEMP/netrc.original"; fi
           printf 'machine nexus-biochq.credissuer.com login %s password %s\n' \
-            "$ARTIFACTORY_USERNAME" "$ARTIFACTORY_PASSWORD" > ~/.netrc
+            "$ARTIFACTORY_USERNAME" "$ARTIFACTORY_PASSWORD" >> ~/.netrc
           chmod 600 ~/.netrc
           if [ "$IOS_SIGNING" = development ]; then
             P12_BASE64="$DEV_P12_BASE64"; PROFILE_BASE64="$DEV_PROFILE_BASE64"
@@ -404,4 +406,10 @@ jobs:
       # A hosted runner is thrown away after the job; a self-hosted Mac is not.
       - name: Remove signing files
         if: always()
-        run: rm -rf "$RUNNER_TEMP/signing" .env.local ~/.netrc
+        run: |
+          rm -rf "$RUNNER_TEMP/signing" .env.local
+          if [ -f "$RUNNER_TEMP/netrc.original" ]; then
+            mv "$RUNNER_TEMP/netrc.original" ~/.netrc
+          else
+            rm -f ~/.netrc
+          fi
