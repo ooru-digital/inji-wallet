@@ -438,7 +438,7 @@ export const IssuersScreen: React.FC<
           icon={colour => <WarningIcon color={colour} />}
           title={t('errors.credentialAlreadyExists.title')}
           message={t('errors.credentialAlreadyExists.message', {
-            card: controller.offeredCredentialTypeNames[0] ?? t('thisCard'),
+            card: downloadCardType ?? t('thisCard'),
           })}
           primary={{
             testID: 'replaceExistingCredential',

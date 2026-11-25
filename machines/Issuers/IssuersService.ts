@@ -17,6 +17,7 @@ import {
   getCredentialConfigurationNames,
   getOfferedCredentialConfigurationIds,
   isCredentialOfferAlreadyUsed,
+  withOfferInline,
 } from '../../shared/openId4VCI/credentialOffer';
 import {
   IssuanceError,
@@ -24,12 +25,12 @@ import {
   TokenRequestError,
 } from '../../shared/openId4VCI/issuanceFailure';
 import {displayType, issuerType} from './IssuersMachine';
-import {setItem} from '../store';
+import {getItem, setItem} from '../store';
 import {
   API_CACHED_STORAGE_KEYS,
   AuthorizationType,
 } from '../../shared/constants';
-import {createCacheObject} from '../../shared/Utils';
+import {createCacheObject, isCacheExpired} from '../../shared/Utils';
 import {VerificationResult} from '../../shared/vcjs/verifyCredential';
 import {sign} from '@noble/secp256k1';
 import {
@@ -45,14 +46,44 @@ import {
  */
 const issuerMetadataRequests = new Map<string, Promise<issuerType>>();
 
+/** Metadata that came from the wallet's cache, which the caching step must not save again. */
+const metadataFromCache = new WeakSet<object>();
+
+/**
+ * The issuer's metadata cached by an earlier download or card, if it is less than an hour old.
+ * It can be a megabyte, so a fresh copy saves downloading it again.
+ */
+async function freshCachedIssuerMetadata(
+  issuer: string,
+): Promise<issuerType | undefined> {
+  const cached = await getItem(
+    API_CACHED_STORAGE_KEYS.fetchIssuerWellknownConfig(issuer),
+    null,
+    '',
+  ).catch(() => null);
+  if (
+    cached?.response &&
+    typeof cached.cachedTime === 'number' &&
+    !isCacheExpired(cached.cachedTime)
+  ) {
+    metadataFromCache.add(cached.response);
+    return cached.response;
+  }
+  return undefined;
+}
+
 export function requestIssuerMetadata(issuer: string): Promise<issuerType> {
   const pending = issuerMetadataRequests.get(issuer);
   if (pending) {
     return pending;
   }
-  const request = VciClient.getInstance().getIssuerMetadata(
-    issuer,
-  ) as Promise<issuerType>;
+  const request = freshCachedIssuerMetadata(issuer).then(
+    cached =>
+      cached ??
+      (VciClient.getInstance().getIssuerMetadata(
+        issuer,
+      ) as Promise<issuerType>),
+  );
   issuerMetadataRequests.set(issuer, request);
   // A failed request isn't kept, so the next caller asks again.
   request.catch(() => forgetIssuerMetadataRequest(issuer, request));
@@ -287,7 +318,7 @@ export const IssuersService = () => {
 
       try {
         return await VciClient.getInstance().requestCredentialByOffer(
-          context.qrData,
+          await withOfferInline(context.qrData),
           getTxCode,
           getSignedProofJwt,
           navigateToAuthView,
@@ -371,7 +402,8 @@ export const IssuersService = () => {
           request = requestIssuerMetadata(credentialIssuer);
           return request;
         });
-        if (issuerMetadata) {
+        // A copy that came from the cache keeps its own time, or it would never expire.
+        if (issuerMetadata && !metadataFromCache.has(issuerMetadata)) {
           const wellknownCacheObject = createCacheObject(issuerMetadata);
           await setItem(
             API_CACHED_STORAGE_KEYS.fetchIssuerWellknownConfig(
