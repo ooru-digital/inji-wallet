@@ -1213,6 +1213,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4B1D0E6A7C2F4E8A9B3C5D71 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/inji/inji-openid4vp-ios-swift";
+			requirement = {
+				kind = exactVersion;
+				version = "1.0.0-rc.1";
+			};
+		};
 		9CAE74EC2E2E38F800C2532C /* XCRemoteSwiftPackageReference "pixelpass-ios-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/mosip/pixelpass-ios-swift/";
@@ -1243,14 +1251,6 @@
 			requirement = {
 				kind = exactVersion;
 				version = "1.0.0-alpha.1";
-			};
-		};
-		4B1D0E6A7C2F4E8A9B3C5D71 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/inji/inji-openid4vp-ios-swift";
-			requirement = {
-				kind = exactVersion;
-				version = "1.0.0-rc.1";
 			};
 		};
 		C3F18B1B2E320C9A007DBE73 /* XCRemoteSwiftPackageReference "inji-vci-client-ios-swift" */ = {
