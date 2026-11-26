@@ -654,7 +654,7 @@
 			packageReferences = (
 				9CCCA19C2CF87A8400D5A461 /* XCRemoteSwiftPackageReference "secure-keystore-ios-swift" */,
 				9CAE74EC2E2E38F800C2532C /* XCRemoteSwiftPackageReference "pixelpass-ios-swift" */,
-				4B1D0E6A7C2F4E8A9B3C5D71 /* XCLocalSwiftPackageReference "inji-openid4vp-ios-swift" */,
+				4B1D0E6A7C2F4E8A9B3C5D71 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */,
 				C3F18B1B2E320C9A007DBE73 /* XCRemoteSwiftPackageReference "inji-vci-client-ios-swift" */,
 				C33922392E79A536004A01EC /* XCRemoteSwiftPackageReference "inji-vc-renderer-ios-swift" */,
 				9CCC57752E9D7C7000669DB7 /* XCRemoteSwiftPackageReference "tuvali-ios-swift" */,
@@ -1210,10 +1210,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BioChqFaceLivenessBinary;
 		};
-		4B1D0E6A7C2F4E8A9B3C5D71 /* XCLocalSwiftPackageReference "inji-openid4vp-ios-swift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "Packages/inji-openid4vp-ios-swift";
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1222,7 +1218,7 @@
 			repositoryURL = "https://github.com/mosip/pixelpass-ios-swift/";
 			requirement = {
 				kind = exactVersion;
-				version = 0.7.0;
+				version = "1.0.0-alpha.1";
 			};
 		};
 		9CCC57752E9D7C7000669DB7 /* XCRemoteSwiftPackageReference "tuvali-ios-swift" */ = {
@@ -1230,7 +1226,7 @@
 			repositoryURL = "https://github.com/mosip/tuvali-ios-swift/";
 			requirement = {
 				kind = exactVersion;
-				version = 0.5.0;
+				version = "1.0.0-alpha.1";
 			};
 		};
 		9CCCA19C2CF87A8400D5A461 /* XCRemoteSwiftPackageReference "secure-keystore-ios-swift" */ = {
@@ -1238,7 +1234,7 @@
 			repositoryURL = "https://github.com/mosip/secure-keystore-ios-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 0.3.0;
+				version = "1.0.0-alpha.1";
 			};
 		};
 		C33922392E79A536004A01EC /* XCRemoteSwiftPackageReference "inji-vc-renderer-ios-swift" */ = {
@@ -1246,7 +1242,15 @@
 			repositoryURL = "https://github.com/mosip/inji-vc-renderer-ios-swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 0.1.0;
+				version = "1.0.0-alpha.1";
+			};
+		};
+		4B1D0E6A7C2F4E8A9B3C5D71 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/inji/inji-openid4vp-ios-swift";
+			requirement = {
+				kind = exactVersion;
+				version = "1.0.0-rc.1";
 			};
 		};
 		C3F18B1B2E320C9A007DBE73 /* XCRemoteSwiftPackageReference "inji-vci-client-ios-swift" */ = {
@@ -1254,7 +1258,7 @@
 			repositoryURL = "https://github.com/inji/inji-vci-client-ios-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 0.7.0;
+				version = "1.0.0-rc.1";
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1287,7 +1291,7 @@
 		};
 		C3F18B192E320C85007DBE73 /* OpenID4VP */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4B1D0E6A7C2F4E8A9B3C5D71 /* XCLocalSwiftPackageReference "inji-openid4vp-ios-swift" */;
+			package = 4B1D0E6A7C2F4E8A9B3C5D71 /* XCRemoteSwiftPackageReference "inji-openid4vp-ios-swift" */;
 			productName = OpenID4VP;
 		};
 		C3F18B1C2E320C9A007DBE73 /* VCIClient */ = {

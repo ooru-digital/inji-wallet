@@ -130,10 +130,16 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
   // auth session's result URL — the parsing and failure handling are identical either way.
   const completeWithRedirectUrl = (url: string) => {
     try {
-      const code = new URL(url).searchParams.get('code');
+      const params = new URL(url).searchParams;
+      const code = params.get('code');
 
       if (!code) {
-        controller.CANCEL();
+        // The issuer's OAuth error (e.g. access_denied) decides the error screen; a redirect
+        // with neither a code nor an error is an invalid response (upstream 1.0.0-alpha.1).
+        controller.CANCEL({
+          issuerErrorCode: params.get('error') ?? 'invalid_request',
+          issuerErrorMessage: params.get('error_description') ?? undefined,
+        });
         navigation.goBack();
         return;
       }

@@ -6,6 +6,11 @@ import {AuthorizationType} from '../../shared/constants';
 
 export const IssuersGuards = () => {
   return {
+    // A CANCEL from the authorization web view that carries the issuer's error, rather than the
+    // holder backing out.
+    isCancelledWithIssuerError: (_: any, event: any) =>
+      !!event?.issuerErrorCode,
+
     /**
      * True when the wallet already holds a credential of the same specific type. The lookup itself
      * happens in the `setDuplicateCredentials` action, which records every matched card so

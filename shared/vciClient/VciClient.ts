@@ -1,19 +1,63 @@
 import {NativeModules, NativeEventEmitter} from 'react-native';
 import {__AppId} from '../GlobalVariables';
+import {VerifiableCredential} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
+import {isIOS} from '../constants';
+import type {VciClientError} from '../openId4VCI/Utils';
 import {
-  SelectedCredentialsForVPSharing,
-  VerifiableCredential,
-} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
-import {signatureSuite} from '../../machines/openID4VP/openID4VPServices';
+  getWalletConfig,
+  jsonLdCanonicalize,
+} from '../openID4VP/OpenID4VPHelper';
 
 const emitter = new NativeEventEmitter(NativeModules.InjiVciClient);
+
+/**
+ * The native modules (VCI client 1.0) reject with the VCI client's code (e.g. VCI-008) and, when
+ * the issuer answered with an error, its code and description in userInfo. Rethrown as an Error
+ * carrying those fields, which IssuersActions.setError maps to the error screen.
+ */
+function toVciClientError(error: any): Error & VciClientError {
+  const vciError = new Error(error?.message ?? String(error)) as Error &
+    VciClientError;
+  vciError.code = error?.code ?? 'UNKNOWN_ERROR';
+  vciError.issuerErrorCode = error?.userInfo?.issuerErrorCode ?? undefined;
+  vciError.issuerErrorMessage =
+    error?.userInfo?.issuerErrorDescription ?? undefined;
+  return vciError;
+}
 
 class VciClient {
   private static instance: VciClient;
   private InjiVciClient = NativeModules.InjiVciClient;
 
   private constructor() {
+    if (isIOS()) {
+      this.addJsonLdCanonicalizeListener();
+    }
     this.InjiVciClient.init(__AppId.getValue());
+  }
+
+  /**
+   * The iOS VCI client (1.0) canonicalizes the ldp_vc VP of a presentation during issuance in JS,
+   * as the iOS OpenID4VP library does for sharing. Registered once, for the singleton (upstream
+   * added it on every download and never removed it). Each event needs exactly one reply.
+   */
+  private addJsonLdCanonicalizeListener() {
+    emitter.addListener(
+      'onJsonLdCanonicalize',
+      async ({data}: {data: string}) => {
+        try {
+          this.InjiVciClient.sendJsonLdCanonicalizeResultFromJS(
+            await jsonLdCanonicalize(data),
+          );
+        } catch (error) {
+          console.error('[VciClient] JSON-LD canonicalization failed', error);
+          this.InjiVciClient.notifyCanonicalizationFailureFromJS(
+            'server_error',
+            'An error occurred during JSON-LD canonicalization',
+          );
+        }
+      },
+    );
   }
 
   static getInstance(): VciClient {
@@ -27,8 +71,9 @@ class VciClient {
     this.InjiVciClient.sendProofFromJS(jwt);
   }
 
+  /** credentials: {requestId: [{format, credentialId, credential}]} (OpenID4VP 1.0). */
   async sendSelectedCredentialsForVPSharing(
-    credentials: SelectedCredentialsForVPSharing,
+    credentials: Record<string, Array<object>>,
   ) {
     this.InjiVciClient.sendSelectedCredentialsForVPSharingFromJS(credentials);
   }
@@ -141,11 +186,11 @@ class VciClient {
       response = await this.InjiVciClient.requestCredentialByOffer(
         credentialOffer,
         JSON.stringify(clientMetadata),
-        signatureSuite,
+        await getWalletConfig(),
       );
     } catch (error) {
       console.error('Error requesting credential by offer:', error);
-      throw error;
+      throw toVciClientError(error);
     } finally {
       proofListener.remove();
       authListener.remove();
@@ -226,11 +271,11 @@ class VciClient {
         credentialIssuerUri,
         credentialConfigurationId,
         JSON.stringify(clientMetadata),
-        signatureSuite,
+        await getWalletConfig(),
       );
     } catch (error) {
       console.error('Error requesting credential from trusted issuer:', error);
-      throw error;
+      throw toVciClientError(error);
     } finally {
       proofListener.remove();
       authListener.remove();

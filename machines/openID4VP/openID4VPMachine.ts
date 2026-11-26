@@ -239,9 +239,31 @@ export const openID4VPMachine = model.createMachine(
       getVCsSatisfyingAuthRequest: {
         entry: ['dismissTrustModal'],
         on: {
-          DOWNLOADED_VCS: {
-            actions: 'getVcsMatchingAuthRequest',
+          DOWNLOADED_VCS: [
+            {
+              cond: 'isDcqlRequest',
+              target: 'matchingDcqlVCs',
+            },
+            {
+              actions: 'getVcsMatchingAuthRequest',
+              target: 'checkIfAnyMatchingVCs',
+            },
+          ],
+        },
+      },
+
+      // DCQL requests (OpenID4VP 1.0): the library matches the credentials. Invoked on
+      // DOWNLOADED_VCS, so the event carries the wallet's credentials.
+      matchingDcqlVCs: {
+        invoke: {
+          src: 'getDcqlMatchingVCs',
+          onDone: {
+            actions: 'setDcqlMatchingResult',
             target: 'checkIfAnyMatchingVCs',
+          },
+          onError: {
+            actions: 'setAuthenticationError',
+            target: 'showError',
           },
         },
       },

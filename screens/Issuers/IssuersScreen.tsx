@@ -31,6 +31,9 @@ import testIDProps, {
 } from '../../shared/commonUtil';
 import {
   ErrorMessage,
+  connectionErrors,
+  goBackErrors,
+  goHomeErrors,
   getDisplayObjectForCurrentLanguage,
   Protocols,
 } from '../../shared/openId4VCI/Utils';
@@ -501,37 +504,34 @@ export const IssuersScreen: React.FC<
   }
   if (showFullScreenError) {
     const errorType = controller.errorMessageType || ErrorMessage.GENERIC;
+    // Issuer and VCI client errors (upstream 1.0.0-alpha.1) have their own title; the older
+    // wallet errors keep the general one. A retry can't fix the goBack / goHome errors.
+    const canRetry =
+      !goBackErrors.has(errorType) && !goHomeErrors.has(errorType);
+    const backToWallet = {
+      testID: 'backToWallet',
+      title: t('backToWallet'),
+      onPress: props.navigation.goBack,
+    };
     return (
       <DownloadFailed
         testID={`${errorType}Error`}
-        kind={errorType === ErrorMessage.NO_INTERNET ? 'connection' : 'generic'}
-        title={t('couldNotAddCard')}
+        kind={connectionErrors.has(errorType) ? 'connection' : 'generic'}
+        title={t(`errors.${errorType}.title`, {
+          defaultValue: t('couldNotAddCard'),
+        })}
         message={t(`errors.${errorType}.message`)}
         onClose={goBack}
         primary={
-          errorType != ErrorMessage.TECHNICAL_DIFFICULTIES &&
-          errorType != ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED
+          canRetry
             ? {
                 testID: 'tryAgain',
                 title: t('common:tryAgain'),
                 onPress: tryAgain,
               }
-            : {
-                testID: 'backToWallet',
-                title: t('backToWallet'),
-                onPress: props.navigation.goBack,
-              }
+            : backToWallet
         }
-        secondary={
-          errorType != ErrorMessage.TECHNICAL_DIFFICULTIES &&
-          errorType != ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED
-            ? {
-                testID: 'backToWallet',
-                title: t('backToWallet'),
-                onPress: props.navigation.goBack,
-              }
-            : undefined
-        }
+        secondary={canRetry ? backToWallet : undefined}
       />
     );
   }

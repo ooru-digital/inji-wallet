@@ -720,10 +720,13 @@ export const getCredentialType = (
   if (!supportedCredentialsWellknown) {
     return i18n.t('VcDetails:identityCard');
   }
-  if (supportedCredentialsWellknown['display']) {
-    const wellknownDisplayProperty = getDisplayObjectForCurrentLanguage(
-      supportedCredentialsWellknown.display,
-    );
+  // OpenID4VCI 1.0 issuers put the credential's display under credential_metadata.
+  const credentialDisplay =
+    (supportedCredentialsWellknown as any).credential_metadata?.display ??
+    supportedCredentialsWellknown.display;
+  if (credentialDisplay) {
+    const wellknownDisplayProperty =
+      getDisplayObjectForCurrentLanguage(credentialDisplay);
     return wellknownDisplayProperty.name;
   }
   if (supportedCredentialsWellknown.format === VCFormat.ldp_vc) {

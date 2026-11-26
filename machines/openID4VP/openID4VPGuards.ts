@@ -6,6 +6,10 @@ export const openID4VPGuards = () => {
     isAuthorizationFlow: (context: any) =>
       context.flowType === VCShareFlowType.OPENID4VP_AUTHORIZATION,
 
+    /** A DCQL request (OpenID4VP 1.0) rather than a presentation definition. */
+    isDcqlRequest: (context: any) =>
+      context.authenticationResponse?.dcql_query != null,
+
     isNotAuthorizationFlow: (context: any) =>
       context.flowType !== VCShareFlowType.OPENID4VP_AUTHORIZATION,
 

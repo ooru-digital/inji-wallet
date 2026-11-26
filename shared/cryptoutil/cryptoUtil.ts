@@ -203,12 +203,18 @@ export async function createSignature(privateKey, payload, keyType: string) {
   switch (keyType) {
     case KeyTypes.RS256:
       return createSignatureRSA(privateKey, payload);
-    case KeyTypes.ES256:
-      return createSignatureECR1(privateKey, payload);
+    case KeyTypes.ES256: {
+      const payloadBytes = new TextEncoder().encode(payload);
+      return createSignatureECR1(privateKey, payloadBytes);
+    }
     case KeyTypes.ES256K:
       return createSignatureECK1(privateKey, payload);
     case KeyTypes.ED25519: {
       const payloadBytes = new TextEncoder().encode(payload);
+      return createSignatureED(privateKey, payloadBytes);
+    }
+    case 'EdDSA': {
+      const payloadBytes: Uint8Array = new TextEncoder().encode(payload);
       return createSignatureED(privateKey, payloadBytes);
     }
     default:
@@ -241,9 +247,23 @@ export async function createSignatureRSA(privateKey: string, payload: string) {
 }
 
 export async function createSignatureECK1(privateKey, payload) {
-  const sha = sha256(payload);
-  const sign = await secp.signAsync(sha, privateKey, {lowS: false});
-  return base64url(Buffer.from(sign.toCompactRawBytes()));
+  let payloadBytes;
+  if (typeof payload === 'string') {
+    payloadBytes = new TextEncoder().encode(payload);
+  } else if (payload instanceof Uint8Array) {
+    payloadBytes = payload;
+  } else {
+    throw new Error('Unsupported payload type');
+  }
+
+  const msgHash = sha256(payloadBytes);
+  const privKeyBytes = Buffer.from(privateKey, 'base64');
+
+  const signatureBytes = await secp.signAsync(msgHash, privKeyBytes, {
+    lowS: false,
+    extraEntropy: true,
+  });
+  return base64url(Buffer.from(signatureBytes.toCompactRawBytes()));
 }
 
 export async function createSignatureED(privateKey, payloadBytes) {
@@ -252,15 +272,20 @@ export async function createSignatureED(privateKey, payloadBytes) {
   return replaceCharactersInB64(Buffer.from(sign).toString('base64'));
 }
 
-export async function createSignatureECR1(privateKey, payload) {
+/**
+ * ES256 over raw bytes. On Android the key is in the hardware keystore and signBytes signs the
+ * bytes as given (sign() would sign the UTF-8 bytes of a string, corrupting binary payloads such
+ * as OpenID4VP 1.0 VP hashes and mdoc DeviceAuthentication). On iOS the key is read and used in JS.
+ */
+export async function createSignatureECR1(privateKey, payload: Uint8Array) {
   if (!isHardwareKeystoreExists) {
     throw Error;
   } else {
     if (isAndroid()) {
-      let signature64 = await RNSecureKeystoreModule.sign(
+      let signature64 = await RNSecureKeystoreModule.signBytes(
         KeyTypes.ES256,
         KeyTypes.ES256,
-        payload,
+        Buffer.from(payload).toString('base64'),
       );
       const base64DeodedSignature = base64.decode(
         signature64.replace(/\n/g, ''),

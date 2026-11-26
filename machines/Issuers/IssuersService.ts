@@ -489,11 +489,17 @@ async function sendTokenRequest(
   if (tokenRequestObject.codeVerifier) {
     formBody.append('code_verifier', tokenRequestObject.codeVerifier);
   }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+  // The VCI client sets dpopProof when the authorization server advertises
+  // dpop_signing_alg_values_supported (RFC 9449); it then sends the credential request with DPoP.
+  if (tokenRequestObject.dpopProof) {
+    headers.DPoP = tokenRequestObject.dpopProof;
+  }
   const response = await fetch(tokenRequestObject.tokenEndpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    headers,
     body: formBody.toString(),
   });
 
@@ -504,7 +510,20 @@ async function sendTokenRequest(
       response.status,
       errorText,
     );
-    throw new Error(`Token request failed: ${response.status} ${errorText}`);
+    // The issuer's OAuth error ({error, error_description}) decides the error screen; a body
+    // that isn't one becomes a server error (upstream Inji Wallet 1.0.0-alpha.1).
+    let issuerError: {error?: string; error_description?: string} = {};
+    try {
+      issuerError = JSON.parse(errorText);
+    } catch {
+      // Not JSON.
+    }
+    const tokenError: any = new Error(
+      `Token request failed: ${response.status} ${errorText}`,
+    );
+    tokenError.issuerErrorCode = issuerError?.error ?? 'server_error';
+    tokenError.issuerErrorMessage = issuerError?.error_description;
+    throw tokenError;
   }
   const tokenResponse = await response.json();
   return tokenResponse;

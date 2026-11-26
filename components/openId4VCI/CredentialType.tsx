@@ -7,12 +7,15 @@ import {displayType} from '../../machines/Issuers/IssuersMachine';
 import {SvgImage} from '../ui/svg';
 import {getDisplayObjectForCurrentLanguage} from '../../shared/openId4VCI/Utils';
 import {CredentialTypes} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
-import { getCredentialType } from '../VC/common/VCUtils';
+import {getCredentialType} from '../VC/common/VCUtils';
 
 export const CredentialType: React.FC<CredentialTypeProps> = props => {
-  const selectedIssuerDisplayObject = props.item.display?.length
-    ? getDisplayObjectForCurrentLanguage(props.item.display)
-    : {name:getCredentialType(props.item)};
+  // OpenID4VCI 1.0 issuers put the credential's display under credential_metadata.
+  const credentialDisplay =
+    (props.item as any).credential_metadata?.display ?? props.item.display;
+  const selectedIssuerDisplayObject = credentialDisplay?.length
+    ? getDisplayObjectForCurrentLanguage(credentialDisplay)
+    : {name: getCredentialType(props.item)};
 
   return (
     <Pressable

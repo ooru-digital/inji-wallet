@@ -10,6 +10,9 @@ import {
   getMatchingCredentialIssuerMetadata,
   selectCredentialRequestKey,
   updateCredentialInformation,
+  getVciErrorMessageType,
+  ErrorMessage,
+  VCIServerErrorCode,
 } from './Utils';
 import {VCFormat} from '../VCFormat';
 
@@ -402,6 +405,56 @@ describe('openId4VCI Utils', () => {
       expect(result.vcMetadata).toBeDefined();
       expect(result.vcMetadata.format).toBe(VCFormat.ldp_vc);
       expect(result.vcMetadata.id).toBe('metadata-id');
+    });
+  });
+
+  describe('getVciErrorMessageType', () => {
+    const map = (error: any) =>
+      getVciErrorMessageType(
+        error,
+        message => message.includes('Network request failed'),
+        'No internet connection',
+        'request timedout',
+      );
+
+    it('uses the issuer error code when it is a known one', () => {
+      expect(map({code: 'VCI-009', issuerErrorCode: 'invalid_grant'})).toBe(
+        VCIServerErrorCode.INVALID_GRANT,
+      );
+    });
+
+    it('treats an unknown issuer error code as a server error', () => {
+      expect(map({issuerErrorCode: 'something_else'})).toBe(
+        VCIServerErrorCode.SERVER_ERROR,
+      );
+    });
+
+    it('reports the holder connection before VCI client codes', () => {
+      expect(map({code: 'VCI-006', message: 'No internet connection'})).toBe(
+        ErrorMessage.NO_INTERNET,
+      );
+      expect(map(new Error('Network request failed'))).toBe(
+        ErrorMessage.NETWORK_REQUEST_FAILED,
+      );
+    });
+
+    it('maps the VCI client offer and timeout codes', () => {
+      expect(map({code: 'VCI-008', message: 'offer'})).toBe(
+        VCIServerErrorCode.INVALID_CREDENTIAL_OFFER,
+      );
+      expect(map({code: 'VCI-007', message: 'slow'})).toBe(
+        VCIServerErrorCode.TIMEOUT_ERROR,
+      );
+      expect(map({code: 'VCI-009', message: 'download failed'})).toBe(
+        VCIServerErrorCode.SERVER_ERROR,
+      );
+    });
+
+    it('falls back to the generic error', () => {
+      expect(map({code: 'UNKNOWN_ERROR', message: 'boom'})).toBe(
+        ErrorMessage.GENERIC,
+      );
+      expect(map(undefined)).toBe(ErrorMessage.GENERIC);
     });
   });
 });

@@ -12,7 +12,7 @@ RCT_EXTERN_METHOD(init:(NSString *)traceabilityId)
 // Requests a credential using a credential offer string and client metadata (both as JSON strings)
 RCT_EXTERN_METHOD(requestCredentialByOffer:(NSString *)credentialOffer
                   clientMetadata:(NSString *)clientMetadata
-                  signatureSuite:(NSString *)signatureSuite
+                  openId4VpWalletConfig:(id)openId4VpWalletConfig
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
@@ -20,7 +20,7 @@ RCT_EXTERN_METHOD(requestCredentialByOffer:(NSString *)credentialOffer
 RCT_EXTERN_METHOD(requestCredentialFromTrustedIssuer:(NSString *)credentialIssuer
                   credentialConfigurationId:(NSString *)credentialConfigurationId
                   clientMetadata:(NSString *)clientMetadata
-                  signatureSuite:(NSString *)signatureSuite
+                  openId4VpWalletConfig:(id)openId4VpWalletConfig
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
@@ -56,5 +56,10 @@ RCT_EXTERN_METHOD(sendIssuerTrustResponseFromJS:(BOOL)isTrusted)
 
 // Sends token response JSON back to native side (in response to onRequestTokenResponse)
 RCT_EXTERN_METHOD(sendTokenResponseFromJS:(NSString *)tokenResponseJson)
+
+RCT_EXTERN_METHOD(sendJsonLdCanonicalizeResultFromJS:(NSString *)result)
+RCT_EXTERN_METHOD(notifyCanonicalizationFailureFromJS:(NSString *)code
+                  message:(NSString *)message
+                  )
 
 @end

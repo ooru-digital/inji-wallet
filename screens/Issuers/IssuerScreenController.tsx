@@ -121,7 +121,12 @@ export function useIssuerScreenController({route, navigation}) {
       selectSelectedDuplicateVcKeys,
     ),
 
-    CANCEL: () => service.send(IssuerScreenTabEvents.CANCEL()),
+    // An issuer error (from the authorization redirect) shows the error screen; without one the
+    // holder simply backed out.
+    CANCEL: (issuerError?: {
+      issuerErrorCode?: string;
+      issuerErrorMessage?: string;
+    }) => service.send(IssuerScreenTabEvents.CANCEL(issuerError)),
     SELECTED_ISSUER: id =>
       service.send(IssuerScreenTabEvents.SELECTED_ISSUER(id)),
     FETCH_ISSUERS: () => service.send(IssuerScreenTabEvents.FETCH_ISSUERS()),

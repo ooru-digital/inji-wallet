@@ -1,5 +1,5 @@
 {
-  "originHash" : "7744c3ad67c6d7ee86ea158886a34385e095876aa28a88dfa40b4b6889d1b4d3",
+  "originHash" : "2a31d418588c0ddc6e8b51251269beaad617b95fd6967a32947e36f706d74962",
   "pins" : [
     {
       "identity" : "aexml",
@@ -74,12 +74,21 @@
       }
     },
     {
+      "identity" : "inji-openid4vp-ios-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/inji/inji-openid4vp-ios-swift",
+      "state" : {
+        "revision" : "d8c19266288044ef2583a02552ecea10b14e9711",
+        "version" : "1.0.0-rc.1"
+      }
+    },
+    {
       "identity" : "inji-vc-renderer-ios-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mosip/inji-vc-renderer-ios-swift.git",
       "state" : {
-        "revision" : "68b6c14aaf1e572f84307e0f932d93a66134055d",
-        "version" : "0.1.0"
+        "revision" : "335f132abfe78630a6c827adc443d3d8b6982431",
+        "version" : "1.0.0-alpha.1"
       }
     },
     {
@@ -87,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/inji/inji-vci-client-ios-swift",
       "state" : {
-        "revision" : "948d51127b8421f39863af2fa1c0335a97e1d750",
-        "version" : "0.7.0"
+        "revision" : "2fe9e509edcda581f7ae9535fb3fabceda47050a",
+        "version" : "1.0.0-rc.1"
       }
     },
     {
@@ -101,12 +110,21 @@
       }
     },
     {
+      "identity" : "multiformatskit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ATProtoKit/MultiformatsKit.git",
+      "state" : {
+        "revision" : "cfb8003e2d6bd8c3520a1b38cdbef8e757876e6d",
+        "version" : "0.3.1"
+      }
+    },
+    {
       "identity" : "pixelpass-ios-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mosip/pixelpass-ios-swift/",
       "state" : {
-        "revision" : "15b41b878cc3507c167748f92fa6abe9a49cd3c0",
-        "version" : "0.7.0"
+        "revision" : "0f6223ef65012260d93ec4a2273ca9f14be2a2a5",
+        "version" : "1.0.0-alpha.1"
       }
     },
     {
@@ -123,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mosip/secure-keystore-ios-swift",
       "state" : {
-        "revision" : "1ea5182ca985302d11010b7a16ea496167969ab3",
-        "version" : "0.3.0"
+        "revision" : "19defe6f77dcc1ed5daa65ddf38be8370027f8d5",
+        "version" : "1.0.0-alpha.1"
       }
     },
     {
@@ -134,6 +152,24 @@
       "state" : {
         "revision" : "e325083424688055363bbfcb7f1a440d7d7a1bae",
         "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "917b472dbe53ba699cbb0495f9a95a084bc6364d",
+        "version" : "1.7.4"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     },
     {
@@ -150,8 +186,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mosip/tuvali-ios-swift/",
       "state" : {
-        "revision" : "2d49e123f70dfc2179983a753d370cc2212385db",
-        "version" : "0.5.0"
+        "revision" : "6d9d9e8b74086f03bbec76671c684c2830cbb0e3",
+        "version" : "1.0.0-alpha.1"
       }
     },
     {

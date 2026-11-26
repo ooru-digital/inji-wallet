@@ -187,10 +187,17 @@ export const IssuersMachine = model.createMachine(
             actions: ['setIssuerDisplayDetails', 'setSelectedCredentialIssuer'],
             target: '.checkingIssuerTrust',
           },
-          CANCEL: {
-            actions: ['resetLoadingReason'],
-            target: '#issuersMachine.selectingIssuer',
-          },
+          CANCEL: [
+            {
+              cond: 'isCancelledWithIssuerError',
+              actions: ['resetLoadingReason', 'setError'],
+              target: '#issuersMachine.error',
+            },
+            {
+              actions: ['resetLoadingReason'],
+              target: '#issuersMachine.selectingIssuer',
+            },
+          ],
         },
         states: {
           idle: {},
@@ -680,10 +687,21 @@ export const IssuersMachine = model.createMachine(
             actions: ['setCNonce', 'setWellknwonKeyTypes'],
             target: '.keyManagement',
           },
-          CANCEL: {
-            target: 'selectingIssuer',
-            actions: ['resetSelectedCredentialType', 'resetLoadingReason'],
-          },
+          CANCEL: [
+            {
+              cond: 'isCancelledWithIssuerError',
+              actions: [
+                'resetSelectedCredentialType',
+                'resetLoadingReason',
+                'setError',
+              ],
+              target: 'error',
+            },
+            {
+              target: 'selectingIssuer',
+              actions: ['resetSelectedCredentialType', 'resetLoadingReason'],
+            },
+          ],
         },
         initial: 'idle',
         states: {

@@ -40,6 +40,7 @@ import {
   selectIsVerifierRegistered,
   selectshowTrustConsentModal,
   selectVCsMatchingAuthRequest,
+  selectDcqlMatchingResult,
   selectVerifiableCredentialsData,
   selectVerifierLogoInTrustModal,
   selectVerifierNameInTrustModal,
@@ -61,6 +62,13 @@ import {VPShareActivityLog} from '../../components/VPShareActivityLogEvent';
 import {isIOS} from '../../shared/constants';
 import {getFaceAttribute} from '../../components/VC/common/VCUtils';
 import {getRequestedCredentialGroups} from '../../shared/openID4VP/requestedCredentialGroups';
+import {
+  dcqlDisclosuresByVc,
+  initialDcqlSelection,
+  isDcqlSelectionComplete,
+  orderDcqlSections,
+  toggleDcqlCard,
+} from '../../components/openid4vp/dcql/dcqlSelection';
 
 type MyVcsTabNavigation = NavigationProp<RootRouteProps>;
 
@@ -79,11 +87,11 @@ export function useSendVPScreen(props) {
     props?.route?.name === 'IssuersScreen'
       ? props.route.params.ovpService
       : scanService.getSnapshot().context.OpenId4VPRef;
-  // input descriptor id to VCs mapping
+  // Request item (input descriptor, or DCQL credential query) id → selected card keys.
   const [
     inputDescriptorIdToSelectedVcKeys,
     setInputDescriptorIdToSelectedVcKeys,
-  ] = useState<Record<string, [string]>>({});
+  ] = useState<Record<string, string[]>>({});
 
   const hasLoggedErrorRef = useRef(false);
 
@@ -114,8 +122,29 @@ export function useSendVPScreen(props) {
     [presentationDefinition],
   );
 
+  // DCQL requests: the cards are chosen per credential set (dcqlSelection.ts).
+  const dcqlMatchingResult = useSelector(
+    openID4VPService,
+    selectDcqlMatchingResult,
+  );
+  const isDcqlRequest = dcqlMatchingResult != null;
+  const dcqlSections = useMemo(
+    () => orderDcqlSections(dcqlMatchingResult),
+    [dcqlMatchingResult],
+  );
+  useEffect(() => {
+    if (dcqlMatchingResult) {
+      setInputDescriptorIdToSelectedVcKeys(
+        initialDcqlSelection(dcqlMatchingResult, dcqlSections),
+      );
+    }
+  }, [dcqlMatchingResult, dcqlSections]);
+
   // A request item that only one card can satisfy starts with that card picked.
   useEffect(() => {
+    if (isDcqlRequest) {
+      return;
+    }
     setInputDescriptorIdToSelectedVcKeys(previous => {
       let next = previous;
       Object.entries(vcsMatchingAuthRequest ?? {}).forEach(
@@ -136,17 +165,29 @@ export function useSendVPScreen(props) {
       );
       return next;
     });
-  }, [vcsMatchingAuthRequest]);
+  }, [vcsMatchingAuthRequest, isDcqlRequest]);
 
-  // Every request item the wallet has a card for needs one picked before sharing.
-  const isSelectionComplete =
-    Object.keys(vcsMatchingAuthRequest ?? {}).length > 0 &&
-    Object.entries(vcsMatchingAuthRequest).every(
-      ([inputDescriptorId, vcs]) =>
-        !Array.isArray(vcs) ||
-        vcs.length === 0 ||
-        inputDescriptorIdToSelectedVcKeys[inputDescriptorId]?.length > 0,
-    );
+  // Presentation definition: every request item the wallet has a card for needs one picked.
+  // DCQL: every required credential set needs one of its options met.
+  const isSelectionComplete = isDcqlRequest
+    ? isDcqlSelectionComplete(dcqlSections, inputDescriptorIdToSelectedVcKeys)
+    : Object.keys(vcsMatchingAuthRequest ?? {}).length > 0 &&
+      Object.entries(vcsMatchingAuthRequest).every(
+        ([inputDescriptorId, vcs]) =>
+          !Array.isArray(vcs) ||
+          vcs.length === 0 ||
+          inputDescriptorIdToSelectedVcKeys[inputDescriptorId]?.length > 0,
+      );
+
+  // DCQL cards disclose exactly the claims the verifier asked for; presentation definition
+  // SD-JWT cards disclose what the holder picked.
+  const disclosuresToShare = (userSelectedDisclosuresByVc: any) =>
+    isDcqlRequest
+      ? dcqlDisclosuresByVc(
+          dcqlMatchingResult,
+          inputDescriptorIdToSelectedVcKeys,
+        )
+      : userSelectedDisclosuresByVc;
 
   const checkIfAnyVCHasImage = vcs => {
     return Object.values(vcs)
@@ -203,12 +244,16 @@ export function useSendVPScreen(props) {
     openID4VPService,
     selectOpenID4VPRetryCount,
   );
+  // DCQL: the library decides — a request whose required credential sets can't all be met is
+  // unmatched even when some of its queries found cards.
   const noCredentialsMatchingVPRequest =
     isSelectingVCs &&
-    (Object.keys(vcsMatchingAuthRequest).length === 0 ||
-      Object.values(vcsMatchingAuthRequest).every(
-        value => Array.isArray(value) && value.length === 0,
-      ));
+    (isDcqlRequest
+      ? !dcqlMatchingResult?.success
+      : Object.keys(vcsMatchingAuthRequest).length === 0 ||
+        Object.values(vcsMatchingAuthRequest).every(
+          value => Array.isArray(value) && value.length === 0,
+        ));
 
   const isOVPViaDeepLink = useSelector(
     openID4VPService,
@@ -333,6 +378,9 @@ export function useSendVPScreen(props) {
     inputDescriptorIdToSelectedVcKeys,
     requestedCredentialGroups,
     isSelectionComplete,
+    isDcqlRequest,
+    dcqlMatchingResult,
+    dcqlSections,
     isVerifyingIdentity: useSelector(
       openID4VPService,
       selectIsVerifyingIdentity,
@@ -385,11 +433,29 @@ export function useSendVPScreen(props) {
       });
     },
 
+    // DCQL: selects or deselects a card for a credential query within a credential set.
+    SELECT_DCQL_CARD: (
+      queryId: string,
+      vcKey: string,
+      sectionIndex: number,
+    ) => {
+      setInputDescriptorIdToSelectedVcKeys(previous =>
+        toggleDcqlCard(
+          dcqlMatchingResult,
+          dcqlSections,
+          previous,
+          queryId,
+          vcKey,
+          sectionIndex,
+        ),
+      );
+    },
+
     ACCEPT_REQUEST: selectedDisclosuresByVc => {
       openID4VPService.send(
         OpenID4VPEvents.ACCEPT_REQUEST(
           getSelectedVCs(),
-          selectedDisclosuresByVc,
+          disclosuresToShare(selectedDisclosuresByVc),
         ),
       );
     },
@@ -402,7 +468,7 @@ export function useSendVPScreen(props) {
       openID4VPService.send(
         OpenID4VPEvents.VERIFY_AND_ACCEPT_REQUEST(
           getSelectedVCs(),
-          selectedDisclosuresByVc,
+          disclosuresToShare(selectedDisclosuresByVc),
         ),
       );
     },

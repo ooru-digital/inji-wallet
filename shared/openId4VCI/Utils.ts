@@ -298,6 +298,149 @@ export enum ErrorMessage {
   NETWORK_REQUEST_FAILED = 'networkRequestFailed',
 }
 
+/**
+ * Credential download errors, from upstream Inji Wallet 1.0.0-alpha.1: the issuer's OAuth /
+ * OpenID4VCI error codes, plus the wallet's own. Each has `IssuersScreen.errors.<code>.title` and
+ * `.message` translations.
+ */
+export enum VCIServerErrorCode {
+  INVALID_REQUEST = 'invalid_request',
+  UNAUTHORIZED_CLIENT = 'unauthorized_client',
+  ACCESS_DENIED = 'access_denied',
+  UNSUPPORTED_RESPONSE_TYPE = 'unsupported_response_type',
+  INVALID_SCOPE = 'invalid_scope',
+  SERVER_ERROR = 'server_error',
+  TEMPORARILY_UNAVAILABLE = 'temporarily_unavailable',
+  INVALID_CLIENT = 'invalid_client',
+  INVALID_GRANT = 'invalid_grant',
+  UNSUPPORTED_GRANT_TYPE = 'unsupported_grant_type',
+  AUTHORIZATION_PENDING = 'authorization_pending',
+  SLOW_DOWN = 'slow_down',
+  INVALID_CREDENTIAL_REQUEST = 'invalid_credential_request',
+  UNSUPPORTED_CREDENTIAL_TYPE = 'unsupported_credential_type',
+  UNSUPPORTED_CREDENTIAL_FORMAT = 'unsupported_credential_format',
+  INVALID_PROOF = 'invalid_proof',
+  INVALID_ENCRYPTION_PARAMETERS = 'invalid_encryption_parameters',
+  INVALID_TOKEN = 'invalid_token',
+  INSUFFICIENT_SCOPE = 'insufficient_scope',
+  INVALID_CREDENTIAL_OFFER = 'invalid_credential_offer',
+  CREDENTIAL_OFFER_FETCH_FAILED = 'credential_offer_fetch_failed',
+  UNSUPPORTED_GRANT = 'unsupported_grant',
+  USER_CANCELLED = 'user_cancelled',
+  NETWORK_ERROR = 'network_error',
+  TIMEOUT_ERROR = 'timeout_error',
+  PARSING_ERROR = 'parsing_error',
+  VERIFICATION_FAILED = 'verification_failed',
+  STORAGE_ERROR = 'storage_error',
+  UNKNOWN_ERROR = 'unknown_error',
+}
+
+/** Errors the holder can retry; the error screen offers "Try again". */
+export const retryableErrors = new Set<string>([
+  VCIServerErrorCode.SERVER_ERROR,
+  VCIServerErrorCode.INVALID_GRANT,
+  VCIServerErrorCode.SLOW_DOWN,
+  VCIServerErrorCode.INVALID_PROOF,
+  VCIServerErrorCode.INVALID_ENCRYPTION_PARAMETERS,
+  VCIServerErrorCode.CREDENTIAL_OFFER_FETCH_FAILED,
+  VCIServerErrorCode.NETWORK_ERROR,
+  VCIServerErrorCode.TIMEOUT_ERROR,
+  VCIServerErrorCode.PARSING_ERROR,
+  VCIServerErrorCode.STORAGE_ERROR,
+  VCIServerErrorCode.UNKNOWN_ERROR,
+  VCIServerErrorCode.ACCESS_DENIED,
+  VCIServerErrorCode.UNSUPPORTED_GRANT_TYPE,
+  VCIServerErrorCode.INVALID_CREDENTIAL_OFFER,
+  ErrorMessage.NO_INTERNET,
+]);
+
+/** Errors a retry can't fix: the holder goes back (to choose another issuer or card). */
+export const goBackErrors = new Set<string>([
+  VCIServerErrorCode.UNAUTHORIZED_CLIENT,
+  VCIServerErrorCode.UNSUPPORTED_RESPONSE_TYPE,
+  VCIServerErrorCode.INVALID_SCOPE,
+  VCIServerErrorCode.UNSUPPORTED_CREDENTIAL_TYPE,
+  VCIServerErrorCode.UNSUPPORTED_CREDENTIAL_FORMAT,
+  VCIServerErrorCode.INSUFFICIENT_SCOPE,
+  VCIServerErrorCode.UNSUPPORTED_GRANT,
+  ErrorMessage.TECHNICAL_DIFFICULTIES,
+  ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED,
+]);
+
+/** Errors that end the request: the holder goes back to the wallet. */
+export const goHomeErrors = new Set<string>([
+  VCIServerErrorCode.INVALID_REQUEST,
+  VCIServerErrorCode.INVALID_CLIENT,
+  VCIServerErrorCode.TEMPORARILY_UNAVAILABLE,
+  VCIServerErrorCode.INVALID_CREDENTIAL_REQUEST,
+]);
+
+/** Errors about the holder's connection rather than the issuer. */
+export const connectionErrors = new Set<string>([
+  ErrorMessage.NO_INTERNET,
+  ErrorMessage.NETWORK_REQUEST_FAILED,
+  VCIServerErrorCode.NETWORK_ERROR,
+  VCIServerErrorCode.TIMEOUT_ERROR,
+  VCIServerErrorCode.CREDENTIAL_OFFER_FETCH_FAILED,
+]);
+
+/** A VCI client failure as VciClient rethrows it (native code plus the issuer's own error). */
+export type VciClientError = {
+  code?: string;
+  message?: string;
+  issuerErrorCode?: string;
+  issuerErrorMessage?: string;
+};
+
+/**
+ * The error screen to show for a failed download: the issuer's error code when it sent one
+ * (unknown codes become server_error), then the holder's connection, then the VCI client's own
+ * code (VCI-008 a bad credential offer, VCI-007 a timeout, any other one server_error), then the
+ * older message-based cases, else generic.
+ */
+export function getVciErrorMessageType(
+  error: any,
+  isNetworkFailure: (message: string) => boolean,
+  noInternetText: string,
+  requestTimeoutText: string,
+): string {
+  const vciError: VciClientError = error ?? {};
+  const message = vciError.message ?? String(error ?? '');
+  if (vciError.issuerErrorCode) {
+    return (Object.values(VCIServerErrorCode) as string[]).includes(
+      vciError.issuerErrorCode,
+    )
+      ? vciError.issuerErrorCode
+      : VCIServerErrorCode.SERVER_ERROR;
+  }
+  if (message.includes(noInternetText)) {
+    return ErrorMessage.NO_INTERNET;
+  }
+  if (isNetworkFailure(message)) {
+    return ErrorMessage.NETWORK_REQUEST_FAILED;
+  }
+  if (message.includes(requestTimeoutText)) {
+    return ErrorMessage.REQUEST_TIMEDOUT;
+  }
+  if (
+    message.includes(
+      OIDCErrors.AUTHORIZATION_ENDPOINT_DISCOVERY.GRANT_TYPE_NOT_SUPPORTED,
+    )
+  ) {
+    return ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED;
+  }
+  if (vciError.code === 'VCI-008') {
+    return VCIServerErrorCode.INVALID_CREDENTIAL_OFFER;
+  }
+  if (vciError.code === 'VCI-007') {
+    return VCIServerErrorCode.TIMEOUT_ERROR;
+  }
+  if (vciError.code && /^VCI-\d+$/.test(vciError.code)) {
+    return VCIServerErrorCode.SERVER_ERROR;
+  }
+  return ErrorMessage.GENERIC;
+}
+
 export async function constructProofJWT(
   publicKey: any,
   privateKey: any,

@@ -15,6 +15,8 @@ import VCIClient
  * mandatory and React Native calls `addListener`/`removeListeners` *on this module*; a plain
  * RCTBridgeModule has neither, so the listeners silently never attach, the hooks are never
  * answered, and every download hangs forever. RCTEventEmitter supplies both methods.
+ *
+ * Otherwise this is upstream Inji Wallet 1.0.0-alpha.1's module (VCI client 1.0.0-alpha.1).
  */
 @objc(InjiVciClient)
 class RNVCIClientModule: RCTEventEmitter {
@@ -28,6 +30,7 @@ class RNVCIClientModule: RCTEventEmitter {
   private var pendingIssuerTrustDecision: ((Bool) -> Void)?
   private var pendingSelectedCredentialsContinuation: CheckedContinuation<AnyObject, Error>?
   private var pendingSignVPContinuation: CheckedContinuation<NSArray, Error>?
+  private var pendingJsonLdCanonicalizeContinuation: CheckedContinuation<String, Error>?
 
   override static func moduleName() -> String {
     return "InjiVciClient"
@@ -44,6 +47,7 @@ class RNVCIClientModule: RCTEventEmitter {
       "onCheckIssuerTrust",
       "onPresentationRequest",
       "onRequestSignedVPToken",
+      "onJsonLdCanonicalize",
     ]
   }
 
@@ -54,22 +58,29 @@ class RNVCIClientModule: RCTEventEmitter {
 
   // MARK: - Public API
 
-  fileprivate func getSupportedAuthorizationMethods(signatureSuite: String?) -> [AuthorizationMethod] {
+  fileprivate func getSupportedAuthorizationMethods(openId4VpWalletConfig: AnyObject) throws
+    -> [AuthorizationMethod]
+  {
+    let parsedOpenId4VpWalletConfig = try OpenId4VPUtils.parseWalletConfig(openId4VpWalletConfig)
+    
     return [
       .redirectToWeb(openWebPage: { authUrl in
-        let result: [String: String] =  try await self.getAuthCodeContinuationHook(authUrl: authUrl)
+        let result: [String: String] = try await self.getAuthCodeContinuationHook(authUrl: authUrl)
 
         return result
       }),
       .presentationDuringIssuance(
+        jsonLdCanonicalizer: { data in
+          try await self.invokeJsonLdCanonicalize(data)
+        },
+        openid4vpWalletConfig: parsedOpenId4VpWalletConfig,
         selectCredentialsForPresentation: { vpRequest in
           try await self.getSelectedCredentialsContinuationHook(vpRequest: vpRequest)
         },
         signVerifiablePresentation: { unsignedVPTokens in
           try await self.getSignVerifiablePresentationContinuationHook(
             unsignedVPTokens: unsignedVPTokens)
-        },
-        ldpVpSignatureSuite: signatureSuite
+        }
       ),
     ]
   }
@@ -78,7 +89,7 @@ class RNVCIClientModule: RCTEventEmitter {
   func requestCredentialByOffer(
     _ credentialOffer: String,
     clientMetadata: String,
-    signatureSuite: String,
+    openId4VpWalletConfig: AnyObject,
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
@@ -91,7 +102,7 @@ class RNVCIClientModule: RCTEventEmitter {
 
         let clientMeta = try parseClientMetadata(from: clientMetadata)
 
-        let response = try await vciClient.fetchCredentialUsingCredentialOffer(
+        let response = try await vciClient.fetchCredentialsUsingCredentialOffer(
           credentialOffer: credentialOffer,
           clientMetadata: clientMeta,
           getTxCode: { inputMode, description, length in
@@ -101,16 +112,12 @@ class RNVCIClientModule: RCTEventEmitter {
               length: length
             )
           },
-          authorizationMethods: getSupportedAuthorizationMethods(signatureSuite: signatureSuite),
+          authorizationMethods: try getSupportedAuthorizationMethods(openId4VpWalletConfig: openId4VpWalletConfig),
           getTokenResponse: { tokenRequest in
             try await self.getTokenResponseHook(tokenRequest: tokenRequest)
           },
-          getProofJwt: { credentialIssuer, cNonce, algos in
-            try await self.getProofContinuationHook(
-              credentialIssuer: credentialIssuer,
-              cNonce: cNonce,
-              proofSigningAlgorithmsSupported: algos
-            )
+          getProofs: { metadata in
+            try await self.getProofsContinuationHook(metadata: metadata)
           },
           onCheckIssuerTrust: { credentialIssuer, issuerDisplay in
             try await self.getIssuerTrustDecisionHook(
@@ -120,9 +127,9 @@ class RNVCIClientModule: RCTEventEmitter {
           }
         )
 
-        resolve(try response?.toJsonString())
+        resolve(try self.toSingleCredentialResponseJson(response))
       } catch {
-        reject(nil, error.localizedDescription, nil)
+        rejectVCIError(error, reject: reject)
       }
     }
   }
@@ -132,7 +139,7 @@ class RNVCIClientModule: RCTEventEmitter {
     _ credentialIssuer: String,
     credentialConfigurationId: String,
     clientMetadata: String,
-    signatureSuite: String,
+    openId4VpWalletConfig: AnyObject,
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
@@ -145,26 +152,22 @@ class RNVCIClientModule: RCTEventEmitter {
 
         let clientMeta = try parseClientMetadata(from: clientMetadata)
 
-        let response = try await vciClient.fetchCredentialFromTrustedIssuer(
+        let response = try await vciClient.fetchCredentialsFromTrustedIssuer(
           credentialIssuer: credentialIssuer,
           credentialConfigurationId: credentialConfigurationId,
           clientMetadata: clientMeta,
           getTokenResponse: { tokenRequest in
             try await self.getTokenResponseHook(tokenRequest: tokenRequest)
           },
-          authorizationMethods: getSupportedAuthorizationMethods(signatureSuite: signatureSuite),
-          getProofJwt: { credentialIssuer, cNonce, algos in
-            try await self.getProofContinuationHook(
-              credentialIssuer: credentialIssuer,
-              cNonce: cNonce,
-              proofSigningAlgorithmsSupported: algos
-            )
+          authorizationMethods: try getSupportedAuthorizationMethods(openId4VpWalletConfig: openId4VpWalletConfig),
+          getProofs: { metadata in
+            try await self.getProofsContinuationHook(metadata: metadata)
           },
           downloadTimeoutInMillis: 200000)
 
-        resolve(try response?.toJsonString())
+        resolve(try self.toSingleCredentialResponseJson(response))
       } catch {
-        reject(nil, error.localizedDescription, nil)
+        rejectVCIError(error, reject: reject)
       }
     }
   }
@@ -191,8 +194,43 @@ class RNVCIClientModule: RCTEventEmitter {
 
         resolve(jsonString)
       } catch {
-        reject(nil, error.localizedDescription, nil)
+        rejectVCIError(error, reject: reject)
       }
+    }
+  }
+
+  private func rejectVCIError(
+    _ error: Error,
+    reject: RCTPromiseRejectBlock
+  ) {
+    if let vciError = error as? VCIClientException {
+
+      var userInfo: [String: Any] = [
+        "code": vciError.code
+      ]
+
+      if let issuerErrorCode = vciError.issuerErrorCode {
+        userInfo["issuerErrorCode"] = issuerErrorCode
+      }
+
+      if let issuerErrorDescription = vciError.issuerErrorDescription {
+        userInfo["issuerErrorDescription"] = issuerErrorDescription
+      }
+
+      let nsError = NSError(
+        domain: "InjiVciClient",
+        code: 0,
+        userInfo: userInfo
+      )
+
+      reject(vciError.code, vciError.message, nsError)
+
+    } else {
+      reject(
+        "UNKNOWN_ERROR",
+        (error as NSError).localizedDescription,
+        error
+      )
     }
   }
 
@@ -228,6 +266,20 @@ class RNVCIClientModule: RCTEventEmitter {
     }
   }
 
+  // metadata.nonce is the one the library fetched from the issuer's nonce_endpoint (OpenID4VCI
+  // 1.0), or nil when the issuer advertises none.
+  private func getProofsContinuationHook(
+    metadata: CredentialRequestProofMetadata
+  ) async throws -> CredentialRequestProofs {
+    let proof = try await getProofContinuationHook(
+      credentialIssuer: metadata.credentialIssuer,
+      cNonce: metadata.nonce,
+      proofSigningAlgorithmsSupported: metadata.proofSigningAlgorithmsSupported
+    )
+
+    return CredentialRequestProofs(proofs: [proof])
+  }
+
   private func getProofContinuationHook(
     credentialIssuer: String,
     cNonce: String?,
@@ -251,7 +303,7 @@ class RNVCIClientModule: RCTEventEmitter {
   }
 
   private func getSelectedCredentialsContinuationHook(vpRequest: AuthorizationRequest) async throws
-    -> [String: [FormatType: [OpenID4VPAnyCodable]]]
+    -> [String: [Credential]]
   {
     let vpRequestJson = try OpenId4VPUtils.toJsonString(jsonObject: vpRequest)
     sendEvent(
@@ -266,17 +318,17 @@ class RNVCIClientModule: RCTEventEmitter {
       self.pendingSelectedCredentialsContinuation = continuation
     }
 
-    guard let credentialsMap = selectedCredentials as? [String: [String: [Any]]] else {
+    guard let credentialsMap = selectedCredentials as? [String: [Any]] else {
       print("Invalid credentials map format")
       return [:]
     }
 
-    return OpenId4VPUtils.parseSelectedVCs(credentialsMap)
+    return try OpenId4VPUtils.parseSelectedVCs(credentialsMap)
   }
 
   private func getSignVerifiablePresentationContinuationHook(
-    unsignedVPTokens: [UnsignedVPTokenV2]
-  ) async throws -> [VPTokenSigningResultV2] {
+    unsignedVPTokens: [UnsignedVPToken]
+  ) async throws -> [VPTokenSigningResult] {
     let unsignedVPTokensJson = try OpenId4VPUtils.toJson(unsignedVPTokens)
     sendEvent(
       withName: "onRequestSignedVPToken",
@@ -296,7 +348,7 @@ class RNVCIClientModule: RCTEventEmitter {
       )
     }
 
-    return try OpenId4VPUtils.parseVPTokenSigningResultV2(signedVPTokens)
+    return try OpenId4VPUtils.parseVPTokenSigningResult(signedVPTokens)
   }
 
   private func getTokenResponseHook(tokenRequest: TokenRequest) async throws -> TokenResponse {
@@ -309,6 +361,9 @@ class RNVCIClientModule: RCTEventEmitter {
       "clientId": tokenRequest.clientId ?? NSNull(),
       "redirectUri": tokenRequest.redirectUri ?? NSNull(),
       "codeVerifier": tokenRequest.codeVerifier ?? NSNull(),
+      // Set only when the authorization server advertises dpop_signing_alg_values_supported;
+      // sent as the DPoP header.
+      "dpopProof": tokenRequest.dpopProof ?? NSNull(),
     ]
 
     sendEvent(
@@ -345,6 +400,30 @@ class RNVCIClientModule: RCTEventEmitter {
     return try await withCheckedThrowingContinuation { continuation in
       self.pendingIssuerTrustDecision = { decision in continuation.resume(returning: decision) }
     }
+  }
+
+  private func toSingleCredentialResponseJson(
+    _ response: CredentialResponse
+  ) throws -> String {
+    guard let firstItem = response.credentials?.first else {
+      throw VCIClientException(code: "DOWNLOAD_FAILED", message: "No credential returned from issuer", issuerErrorCode: nil, issuerErrorDescription: nil)
+    }
+
+    var dict: [String: Any] = [
+      "credential": firstItem.credential?.value
+    ]
+    if let issuer = response.credentialIssuer {
+      dict["credentialIssuer"] = issuer
+    }
+    if let configId = response.credentialConfigurationId {
+      dict["credentialConfigurationId"] = configId
+    }
+
+    let data = try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
+    guard let jsonString = String(data: data, encoding: .utf8) else {
+      throw VCIClientException(code: "DOWNLOAD_FAILED", message: "Failed to serialize credential response")
+    }
+    return jsonString
   }
 
   // MARK: - Receivers from JS
@@ -390,6 +469,40 @@ class RNVCIClientModule: RCTEventEmitter {
     pendingIssuerTrustDecision?(trusted)
     pendingIssuerTrustDecision = nil
   }
+  
+  @objc(abortPresentationFlowFromJS:message:)
+  func abortPresentationFlowFromJS(_ code: String, message: String) {
+    let error = OpenId4VPUtils.convertToOpenID4VPException(
+      errorCode: code, error: message, moduleName: Self.moduleName())
+
+    pendingSelectedCredentialsContinuation?.resume(throwing: error)
+    pendingSignVPContinuation?.resume(throwing: error)
+
+    pendingSelectedCredentialsContinuation = nil
+    pendingSignVPContinuation = nil
+
+    pendingProofContinuation = nil
+    pendingAuthCodeContinuation = nil
+    pendingTxCodeContinuation = nil
+    pendingTokenResponseContinuation = nil
+    pendingIssuerTrustDecision = nil
+  }
+  
+  @objc(sendJsonLdCanonicalizeResultFromJS:)
+  func sendJsonLdCanonicalizeResultFromJS(_ result: String) {
+    pendingJsonLdCanonicalizeContinuation?.resume(returning: result)
+    pendingJsonLdCanonicalizeContinuation = nil
+  }
+  
+  @objc
+  func notifyCanonicalizationFailureFromJS(_ code: String, message: String) {
+    let error = OpenId4VPUtils.convertToOpenID4VPException(
+      errorCode: code, error: message, moduleName: Self.moduleName()
+    )
+
+    pendingJsonLdCanonicalizeContinuation?.resume(throwing: error)
+    pendingJsonLdCanonicalizeContinuation = nil
+  }
 
   // MARK: - JSON Parsing
 
@@ -403,21 +516,17 @@ class RNVCIClientModule: RCTEventEmitter {
   override static func requiresMainQueueSetup() -> Bool {
     return true
   }
-
-  @objc(abortPresentationFlowFromJS:message:)
-  func abortPresentationFlowFromJS(_ code: String, message: String) {
-    let error = OpenId4VPUtils.convertToOpenID4VPException(errorCode: code, error: message, moduleName: Self.moduleName())
-
-    pendingSelectedCredentialsContinuation?.resume(throwing: error)
-    pendingSignVPContinuation?.resume(throwing: error)
-
-    pendingSelectedCredentialsContinuation = nil
-    pendingSignVPContinuation = nil
-
-    pendingProofContinuation = nil
-    pendingAuthCodeContinuation = nil
-    pendingTxCodeContinuation = nil
-    pendingTokenResponseContinuation = nil
-    pendingIssuerTrustDecision = nil
+  
+  private func invokeJsonLdCanonicalize(_ data: String) async throws -> String {
+    sendEvent(
+      withName: "onJsonLdCanonicalize",
+      body: [
+        "data": data,
+      ]
+    )
+    
+    return try await withCheckedThrowingContinuation { (continuation : CheckedContinuation<String, Error>) in
+      self.pendingJsonLdCanonicalizeContinuation = continuation
+    }
   }
 }

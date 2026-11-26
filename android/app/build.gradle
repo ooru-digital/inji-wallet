@@ -21,7 +21,13 @@ configurations.all {
     exclude group: 'org.jetbrains.dokka'
     exclude group: 'org.freemarker'
     resolutionStrategy {
-        force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0', 'com.fasterxml.jackson.core:jackson-core:2.14.0'
+        force 'androidx.activity:activity-ktx:1.7.1', 'androidx.activity:activity:1.7.0'
+        // Jackson 2.15.2, as upstream Inji 1.0.0-alpha.1 pins it. The 1.0 Inji libraries call APIs
+        // added after 2.14 (e.g. BufferRecycler.releaseToPool), and core, databind and the Kotlin
+        // module must stay on one version.
+        force 'com.fasterxml.jackson.core:jackson-core:2.15.2'
+        force 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+        force 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2'
         // The BioChq face SDK needs CameraX 1.4.1; expo-camera pins 1.4.0-beta02 and 1.3.x
         // causes NoSuchFieldError: ProcessCameraProvider$Companion at runtime. Only these six
         // artifacts are forced — camera-mlkit-vision (expo-camera) has no 1.4.1 release.
@@ -59,6 +65,9 @@ configurations.all {
             }
         }
     }
+    // As upstream Inji 1.0.0-alpha.1: the Inji libraries bring their own Bouncy Castle.
+    all*.exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15to18'
+    all*.exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
     all*.exclude module: 'bcprov-jdk15to18'
     all*.exclude module: 'bcutil-jdk18on'
     all*.exclude module: 'bcprov-jdk15on'
@@ -344,33 +353,37 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("io.mosip:injivcrenderer-aar:0.1.0")
-    implementation("com.apicatalog:titanium-json-ld-jre8:1.3.1")
-    // No `changing = true`: 0.7.0 is a fixed version, and that flag told Gradle to treat it as
-    // mutable — re-fetching its metadata on every build and letting a re-published 0.7.0 silently
-    // change the app.
-    implementation("io.inji:inji-openid4vp-aar:0.7.0"){
+    // Inji libraries: the 1.0.0-alpha.1 set (they moved from the io.mosip to the io.inji group),
+    // except OpenID4VP and the VCI client below. No `changing = true` on any of them: fixed versions
+    // are never re-published, and that flag makes Gradle re-fetch their metadata on every build.
+    implementation("io.inji:injivcrenderer-aar:1.0.0-alpha.1")
+    // 1.7.0: the 1.0 Inji libraries call ToRdfApi.provide(RdfQuadConsumer), added in titanium 1.5.
+    implementation("com.apicatalog:titanium-json-ld-jre8:1.7.0")
+    // OpenID4VP and the VCI client are the stock 1.0.0-rc.1 releases (OpenID4VP 1.0 / OpenID4VCI
+    // 1.0), unpatched; iOS pins the same tags. alpha.1 OpenID4VP always builds a VC Data Model v1 VP,
+    // which verifiers reject around a v2 card; rc.1 builds a v2 VP for v2 cards.
+    implementation("io.inji:inji-openid4vp-aar:1.0.0-rc.1"){
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
-        exclude group: 'io.mosip', module: 'vcverifier-jar'
+        exclude group: 'io.inji', module: 'vcverifier-jar'
         exclude group: 'com.google.crypto.tink', module: 'tink'
         exclude group: 'com.augustcellars.cose', module:'cose-java'
     }
     implementation("com.facebook.react:react-android")
     implementation 'com.facebook.soloader:soloader:0.10.1+'
-    implementation("io.mosip:pixelpass-aar:0.7.0")
-    implementation("io.mosip:secure-keystore:0.3.0")
-    implementation("io.mosip:tuvali:0.5.2")
-    implementation("io.inji:inji-vci-client-aar:0.7.0"){
+    implementation("io.inji:pixelpass-aar:1.0.0-alpha.1")
+    implementation("io.inji:secure-keystore:1.0.0-alpha.1")
+    implementation("io.inji:tuvali:1.0.0-alpha.1")
+    implementation("io.inji:inji-vci-client-aar:1.0.0-rc.1"){
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk18on'
-        exclude group: 'io.mosip', module: 'vcverifier-jar'
+        exclude group: 'io.inji', module: 'vcverifier-jar'
         exclude group: 'com.google.crypto.tink', module: 'tink'
         exclude group: 'com.augustcellars.cose', module:'cose-java'
         exclude group: 'io.inji', module: 'inji-openid4vp-aar'
     }
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation("io.mosip:vcverifier-aar:1.6.0") {
+    implementation("io.inji:vcverifier-aar:1.8.1") {
         exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
     }
 
@@ -441,7 +454,7 @@ dependencies {
 
 task CaptureLibraryVersion {
     def libDef = project.configurations.getByName('implementation').allDependencies.matching {
-        it.group.equals("io.mosip") && it.name.equals("tuvali")
+        it.group.equals("io.inji") && it.name.equals("tuvali")
     }
     if (libDef.size() > 0) {
         android.buildTypes.each {

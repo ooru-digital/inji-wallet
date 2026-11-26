@@ -47,6 +47,7 @@ export const openID4VPActions = (model: any) => {
         return result.matchingVCs;
       },
       requestedClaims: () => result.requestedClaims,
+      dcqlMatchingResult: () => null,
 
       purpose: context => {
         const response = context.authenticationResponse;
@@ -63,6 +64,22 @@ export const openID4VPActions = (model: any) => {
           )
         );
       },
+    }),
+
+    /**
+     * DCQL requests: the result of the getDcqlMatchingVCs service. vcsMatchingAuthRequest gets the
+     * same credential-query → VC[] shape as presentation definition matching, so the selection
+     * and mini-view logic work for both; the DCQL UI reads dcqlMatchingResult.
+     */
+    setDcqlMatchingResult: model.assign({
+      dcqlMatchingResult: (_: any, event: any) => event.data.dcqlResult,
+      vcsMatchingAuthRequest: (_: any, event: any) => event.data.matchingVCs,
+      requestedClaims: (_: any, event: any) =>
+        Array.from(event.data.dcqlResult.requestedClaims as Set<string>).join(
+          ',',
+        ),
+      purpose: () => '',
+      hasNoMatchingVCs: (_: any, event: any) => !event.data.dcqlResult.success,
     }),
 
     setAuthenticationResponseForPresentationAuthFlow: model.assign({

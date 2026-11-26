@@ -142,6 +142,30 @@ function stripProtectedFlags(node: any): any {
   return node;
 }
 
+/** The xhr document loader, with `@protected` stripped from every fetched context. */
+function createDocumentLoader() {
+  const loadRemoteContext = jsonld.documentLoaders.xhr();
+  return async (url: string, options?: any) => {
+    const remoteDocument = await loadRemoteContext(url, options);
+    // The xhr loader hands back `document` as raw JSON text, not a parsed object — passing
+    // that straight to stripProtectedFlags made it a silent no-op, since the function returns
+    // anything non-object untouched. jsonld accepts an already-parsed object here just fine.
+    const parsed =
+      typeof remoteDocument.document === 'string'
+        ? JSON.parse(remoteDocument.document)
+        : remoteDocument.document;
+    return {...remoteDocument, document: stripProtectedFlags(parsed)};
+  };
+}
+
+/**
+ * JSON-LD expansion for the iOS OpenID4VP library, which matches DCQL type_values against a
+ * credential's expanded types (Android's library expands natively).
+ */
+export async function jsonLdExpand(data: any) {
+  return await jsonld.expand(data, {documentLoader: createDocumentLoader()});
+}
+
 export async function canonicalize(unsignedVp: any) {
   try {
     const jsonldProof = {...unsignedVp['proof']};
@@ -150,18 +174,7 @@ export async function canonicalize(unsignedVp: any) {
     if ('proof' in jsonldObjectClone) {
       delete jsonldObjectClone.proof;
     }
-    const loadRemoteContext = jsonld.documentLoaders.xhr();
-    const documentLoader = async (url: string, options?: any) => {
-      const remoteDocument = await loadRemoteContext(url, options);
-      // The xhr loader hands back `document` as raw JSON text, not a parsed object — passing
-      // that straight to stripProtectedFlags made it a silent no-op, since the function returns
-      // anything non-object untouched. jsonld accepts an already-parsed object here just fine.
-      const parsed =
-        typeof remoteDocument.document === 'string'
-          ? JSON.parse(remoteDocument.document)
-          : remoteDocument.document;
-      return {...remoteDocument, document: stripProtectedFlags(parsed)};
-    };
+    const documentLoader = createDocumentLoader();
     const expandedJsonldObject = await jsonld.expand(jsonldObjectClone, {
       documentLoader,
     });

@@ -1,8 +1,9 @@
 import {
+  connectionErrors,
   ErrorMessage,
   getDisplayObjectForCurrentLanguage,
+  getVciErrorMessageType,
   Issuers_Key_Ref,
-  OIDCErrors,
   selectCredentialRequestKey,
 } from '../../shared/openId4VCI/Utils';
 import {
@@ -116,29 +117,27 @@ export const IssuersActions = (model: any) => {
 
     setError: model.assign({
       errorMessage: (_: any, event: any) => {
-        const error: string = event.data?.message ?? String(event.data ?? '');
-        console.error(`Error occurred while ${event.type} -> `, error);
-        if (error.includes(NO_INTERNET)) {
-          return ErrorMessage.NO_INTERNET;
-        }
-        if (isNetworkError(error)) {
-          return ErrorMessage.NETWORK_REQUEST_FAILED;
-        }
-        if (error.includes(REQUEST_TIMEOUT)) {
-          return ErrorMessage.REQUEST_TIMEDOUT;
-        }
+        // A CANCEL from the authorization web view carries the issuer's error on the event itself.
+        const error = event.data ?? event;
+        console.error(
+          `Error occurred while ${event.type} -> `,
+          error?.message ?? error?.issuerErrorCode ?? String(error ?? ''),
+        );
+        const errorType = getVciErrorMessageType(
+          error,
+          isNetworkError,
+          NO_INTERNET,
+          REQUEST_TIMEOUT,
+        );
         // Every credential download failure lands here. The user's own connection problems
-        // (above) aren't reported; the rest go to Crashlytics as non-fatal, with the failed step.
-        reportError(event.data, `Credential download failed: ${event.type}`);
-        if (
-          error.includes(
-            OIDCErrors.AUTHORIZATION_ENDPOINT_DISCOVERY
-              .GRANT_TYPE_NOT_SUPPORTED,
-          )
-        ) {
-          return ErrorMessage.AUTHORIZATION_GRANT_TYPE_NOT_SUPPORTED;
+        // aren't reported; the rest go to Crashlytics as non-fatal, with the failed step.
+        if (!connectionErrors.has(errorType)) {
+          reportError(
+            event.data ?? error,
+            `Credential download failed: ${event.type}`,
+          );
         }
-        return ErrorMessage.GENERIC;
+        return errorType;
       },
     }),
     resetError: model.assign({

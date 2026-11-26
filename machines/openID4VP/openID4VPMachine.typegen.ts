@@ -11,6 +11,7 @@
 "done.invoke.OpenID4VP.checkVerifierTrust:invocation[0]": { type: "done.invoke.OpenID4VP.checkVerifierTrust:invocation[0]"; data: unknown; __tip: "See the XState TS docs to learn how to strongly type this." };
 "done.invoke.OpenID4VP.getKeyPairFromKeystore:invocation[0]": { type: "done.invoke.OpenID4VP.getKeyPairFromKeystore:invocation[0]"; data: unknown; __tip: "See the XState TS docs to learn how to strongly type this." };
 "done.invoke.OpenID4VP.getTrustedVerifiersList:invocation[0]": { type: "done.invoke.OpenID4VP.getTrustedVerifiersList:invocation[0]"; data: unknown; __tip: "See the XState TS docs to learn how to strongly type this." };
+"done.invoke.OpenID4VP.matchingDcqlVCs:invocation[0]": { type: "done.invoke.OpenID4VP.matchingDcqlVCs:invocation[0]"; data: unknown; __tip: "See the XState TS docs to learn how to strongly type this." };
 "done.invoke.OpenID4VP.sendingVP.sendVP:invocation[0]": { type: "done.invoke.OpenID4VP.sendingVP.sendVP:invocation[0]"; data: unknown; __tip: "See the XState TS docs to learn how to strongly type this." };
 "done.invoke.OpenID4VP.storeTrustedVerifier:invocation[0]": { type: "done.invoke.OpenID4VP.storeTrustedVerifier:invocation[0]"; data: unknown; __tip: "See the XState TS docs to learn how to strongly type this." };
 "error.platform.OpenID4VP.authenticateVerifier:invocation[0]": { type: "error.platform.OpenID4VP.authenticateVerifier:invocation[0]"; data: unknown };
@@ -18,6 +19,7 @@
 "error.platform.OpenID4VP.checkVerifierTrust:invocation[0]": { type: "error.platform.OpenID4VP.checkVerifierTrust:invocation[0]"; data: unknown };
 "error.platform.OpenID4VP.getKeyPairFromKeystore:invocation[0]": { type: "error.platform.OpenID4VP.getKeyPairFromKeystore:invocation[0]"; data: unknown };
 "error.platform.OpenID4VP.getTrustedVerifiersList:invocation[0]": { type: "error.platform.OpenID4VP.getTrustedVerifiersList:invocation[0]"; data: unknown };
+"error.platform.OpenID4VP.matchingDcqlVCs:invocation[0]": { type: "error.platform.OpenID4VP.matchingDcqlVCs:invocation[0]"; data: unknown };
 "error.platform.OpenID4VP.sendingVP.constructVP.constructing:invocation[0]": { type: "error.platform.OpenID4VP.sendingVP.constructVP.constructing:invocation[0]"; data: unknown };
 "error.platform.OpenID4VP.sendingVP.sendVP:invocation[0]": { type: "error.platform.OpenID4VP.sendingVP.sendVP:invocation[0]"; data: unknown };
 "error.platform.OpenID4VP.storeTrustedVerifier:invocation[0]": { type: "error.platform.OpenID4VP.storeTrustedVerifier:invocation[0]"; data: unknown };
@@ -29,6 +31,7 @@
         invokeSrcNameMap: {
           "fetchTrustedVerifiers": "done.invoke.OpenID4VP.getTrustedVerifiersList:invocation[0]";
 "getAuthenticationResponse": "done.invoke.OpenID4VP.authenticateVerifier:invocation[0]";
+"getDcqlMatchingVCs": "done.invoke.OpenID4VP.matchingDcqlVCs:invocation[0]";
 "getKeyPair": "done.invoke.OpenID4VP.getKeyPairFromKeystore:invocation[0]";
 "getSelectedKey": "done.invoke.OpenID4VP.checkKeyPair:invocation[0]";
 "isVerifierTrusted": "done.invoke.OpenID4VP.checkVerifierTrust:invocation[0]";
@@ -40,10 +43,10 @@
 "storeTrustedVerifier": "done.invoke.OpenID4VP.storeTrustedVerifier:invocation[0]";
         };
         missingImplementations: {
-          actions: "compareAndStoreSelectedVC" | "dismissTrustModal" | "forwardToParent" | "getFaceAuthConsent" | "getVcsMatchingAuthRequest" | "incrementOpenID4VPRetryCount" | "loadKeyPair" | "logActivity" | "resetError" | "resetFaceCaptureBannerStatus" | "resetIsFaceVerificationRetryAttempt" | "resetIsShareWithSelfie" | "resetIsShowLoadingScreen" | "resetOpenID4VPRetryCount" | "setAuthenticationError" | "setAuthenticationResponse" | "setAuthenticationResponseForPresentationAuthFlow" | "setConstructVPError" | "setError" | "setFlowType" | "setIsFaceVerificationRetryAttempt" | "setIsOVPViaDeepLink" | "setIsShareWithSelfie" | "setIsShowLoadingScreen" | "setMiniViewShareSelectedVC" | "setPresentationRequest" | "setSelectedVCs" | "setSendVPShareError" | "setShareLogTypeUnverified" | "setShowFaceAuthConsent" | "setSignVPError" | "setTrustedVerifiers" | "setTrustedVerifiersApiCallError" | "setUnsignedVPToken" | "setUrlEncodedAuthorizationRequest" | "showTrustConsentModal" | "storeShowFaceAuthConsent" | "updateFaceCaptureBannerStatus" | "updateShowFaceAuthConsent";
+          actions: "compareAndStoreSelectedVC" | "dismissTrustModal" | "forwardToParent" | "getFaceAuthConsent" | "getVcsMatchingAuthRequest" | "incrementOpenID4VPRetryCount" | "loadKeyPair" | "logActivity" | "resetError" | "resetFaceCaptureBannerStatus" | "resetIsFaceVerificationRetryAttempt" | "resetIsShareWithSelfie" | "resetIsShowLoadingScreen" | "resetOpenID4VPRetryCount" | "setAuthenticationError" | "setAuthenticationResponse" | "setAuthenticationResponseForPresentationAuthFlow" | "setConstructVPError" | "setDcqlMatchingResult" | "setError" | "setFlowType" | "setIsFaceVerificationRetryAttempt" | "setIsOVPViaDeepLink" | "setIsShareWithSelfie" | "setIsShowLoadingScreen" | "setMiniViewShareSelectedVC" | "setPresentationRequest" | "setSelectedVCs" | "setSendVPShareError" | "setShareLogTypeUnverified" | "setShowFaceAuthConsent" | "setSignVPError" | "setTrustedVerifiers" | "setTrustedVerifiersApiCallError" | "setUnsignedVPToken" | "setUrlEncodedAuthorizationRequest" | "showTrustConsentModal" | "storeShowFaceAuthConsent" | "updateFaceCaptureBannerStatus" | "updateShowFaceAuthConsent";
           delays: never;
-          guards: "hasKeyPair" | "hasNoMatchingVCsAndIsAuthorizationFlow" | "isAnyVCHasImage" | "isAuthorizationFlow" | "isClientValidationRequred" | "isFaceVerificationRetryAttempt" | "isNotAuthorizationFlow" | "isSelectedVCMatchingRequest" | "isShareWithSelfie" | "isSimpleOpenID4VPShare" | "showFaceAuthConsentScreen";
-          services: "fetchTrustedVerifiers" | "getAuthenticationResponse" | "getKeyPair" | "getSelectedKey" | "isVerifierTrusted" | "sendSelectedCredentialsForVP" | "sendVP" | "shareDeclineStatus" | "shouldValidateClient" | "signVP" | "storeTrustedVerifier";
+          guards: "hasKeyPair" | "hasNoMatchingVCsAndIsAuthorizationFlow" | "isAnyVCHasImage" | "isAuthorizationFlow" | "isClientValidationRequred" | "isDcqlRequest" | "isFaceVerificationRetryAttempt" | "isNotAuthorizationFlow" | "isSelectedVCMatchingRequest" | "isShareWithSelfie" | "isSimpleOpenID4VPShare" | "showFaceAuthConsentScreen";
+          services: "fetchTrustedVerifiers" | "getAuthenticationResponse" | "getDcqlMatchingVCs" | "getKeyPair" | "getSelectedKey" | "isVerifierTrusted" | "sendSelectedCredentialsForVP" | "sendVP" | "shareDeclineStatus" | "shouldValidateClient" | "signVP" | "storeTrustedVerifier";
         };
         eventsCausingActions: {
           "compareAndStoreSelectedVC": "SET_SELECTED_VC";
@@ -60,10 +63,11 @@
 "resetIsShareWithSelfie": "CANCEL" | "DISMISS_POPUP";
 "resetIsShowLoadingScreen": "AUTHENTICATE_VIA_PRESENTATION" | "DISMISS_POPUP" | "done.invoke.OpenID4VP.authenticateVerifier:invocation[0]" | "done.invoke.OpenID4VP.checkKeyPair:invocation[0]" | "error.platform.OpenID4VP.authenticateVerifier:invocation[0]" | "error.platform.OpenID4VP.getTrustedVerifiersList:invocation[0]" | "xstate.stop";
 "resetOpenID4VPRetryCount": "RESET_RETRY_COUNT";
-"setAuthenticationError": "error.platform.OpenID4VP.authenticateVerifier:invocation[0]";
+"setAuthenticationError": "error.platform.OpenID4VP.authenticateVerifier:invocation[0]" | "error.platform.OpenID4VP.matchingDcqlVCs:invocation[0]";
 "setAuthenticationResponse": "done.invoke.OpenID4VP.authenticateVerifier:invocation[0]";
 "setAuthenticationResponseForPresentationAuthFlow": "done.invoke.OpenID4VP.checkKeyPair:invocation[0]";
 "setConstructVPError": "error.platform.OpenID4VP.sendingVP.constructVP.constructing:invocation[0]";
+"setDcqlMatchingResult": "done.invoke.OpenID4VP.matchingDcqlVCs:invocation[0]";
 "setError": "error.platform.OpenID4VP.checkKeyPair:invocation[0]" | "error.platform.OpenID4VP.getKeyPairFromKeystore:invocation[0]";
 "setFlowType": "AUTHENTICATE" | "AUTHENTICATE_VIA_PRESENTATION";
 "setIsFaceVerificationRetryAttempt": "FACE_INVALID";
@@ -95,6 +99,7 @@
 "isAnyVCHasImage": "CHECK_FOR_IMAGE";
 "isAuthorizationFlow": "" | "CANCEL" | "CHECK_FOR_CONSENT" | "CHECK_FOR_IMAGE" | "CHECK_SELECTED_VC" | "DISMISS" | "done.invoke.OpenID4VP.checkKeyPair:invocation[0]" | "error.platform.OpenID4VP.authenticateVerifier:invocation[0]" | "error.platform.OpenID4VP.sendingVP.constructVP.constructing:invocation[0]" | "error.platform.OpenID4VP.sendingVP.sendVP:invocation[0]" | "error.platform.OpenID4VP.storeTrustedVerifier:invocation[0]" | "error.platform.signVP:invocation[0]" | "xstate.after(200)#OpenID4VP.consentRejected";
 "isClientValidationRequred": "done.invoke.OpenID4VP.checkIfClientValidationIsRequired:invocation[0]";
+"isDcqlRequest": "DOWNLOADED_VCS";
 "isFaceVerificationRetryAttempt": "FACE_INVALID";
 "isNotAuthorizationFlow": "LOG_ACTIVITY";
 "isSelectedVCMatchingRequest": "CHECK_SELECTED_VC";
@@ -105,6 +110,7 @@
         eventsCausingServices: {
           "fetchTrustedVerifiers": "done.invoke.OpenID4VP.checkIfClientValidationIsRequired:invocation[0]";
 "getAuthenticationResponse": "done.invoke.OpenID4VP.checkKeyPair:invocation[0]";
+"getDcqlMatchingVCs": "DOWNLOADED_VCS";
 "getKeyPair": "done.invoke.OpenID4VP.checkIfClientValidationIsRequired:invocation[0]" | "done.invoke.OpenID4VP.getTrustedVerifiersList:invocation[0]";
 "getSelectedKey": "FACE_VALID" | "done.invoke.OpenID4VP.getKeyPairFromKeystore:invocation[0]";
 "isVerifierTrusted": "done.invoke.OpenID4VP.authenticateVerifier:invocation[0]" | "done.invoke.OpenID4VP.checkKeyPair:invocation[0]";
@@ -115,7 +121,7 @@
 "signVP": "SIGN_VP";
 "storeTrustedVerifier": "VERIFIER_TRUST_CONSENT_GIVEN";
         };
-        matchesStates: "authFlowFailed" | "authenticateVerifier" | "checkFaceAuthConsent" | "checkIfAnyMatchingVCs" | "checkIfAnySelectedVCHasImage" | "checkIfClientValidationIsRequired" | "checkIfMatchingVCsHasSelectedVC" | "checkKeyPair" | "checkVerifierTrust" | "consentRejected" | "faceVerificationConsent" | "getConsentForVPSharing" | "getKeyPairFromKeystore" | "getTrustedVerifiersList" | "getVCsSatisfyingAuthRequest" | "invalidIdentity" | "noMatchingVCs" | "requestVerifierConsent" | "selectingVCs" | "sendRejectionToParent" | "sendingVP" | "sendingVP.constructVP" | "sendingVP.constructVP.constructing" | "sendingVP.constructVP.signVP" | "sendingVP.prepare" | "sendingVP.sendVP" | "setSelectedVC" | "shareVPDeclineStatusToVerifier" | "showConfirmationPopup" | "showError" | "storeTrustedVerifier" | "success" | "verifyingIdentity" | "waitingForData" | { "sendingVP"?: "constructVP" | "prepare" | "sendVP" | { "constructVP"?: "constructing" | "signVP"; }; };
+        matchesStates: "authFlowFailed" | "authenticateVerifier" | "checkFaceAuthConsent" | "checkIfAnyMatchingVCs" | "checkIfAnySelectedVCHasImage" | "checkIfClientValidationIsRequired" | "checkIfMatchingVCsHasSelectedVC" | "checkKeyPair" | "checkVerifierTrust" | "consentRejected" | "faceVerificationConsent" | "getConsentForVPSharing" | "getKeyPairFromKeystore" | "getTrustedVerifiersList" | "getVCsSatisfyingAuthRequest" | "invalidIdentity" | "matchingDcqlVCs" | "noMatchingVCs" | "requestVerifierConsent" | "selectingVCs" | "sendRejectionToParent" | "sendingVP" | "sendingVP.constructVP" | "sendingVP.constructVP.constructing" | "sendingVP.constructVP.signVP" | "sendingVP.prepare" | "sendingVP.sendVP" | "setSelectedVC" | "shareVPDeclineStatusToVerifier" | "showConfirmationPopup" | "showError" | "storeTrustedVerifier" | "success" | "verifyingIdentity" | "waitingForData" | { "sendingVP"?: "constructVP" | "prepare" | "sendVP" | { "constructVP"?: "constructing" | "signVP"; }; };
         tags: never;
       }
   

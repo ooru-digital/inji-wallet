@@ -72,11 +72,15 @@ export function getValueForCurrentLanguage(
   localizedData: LocalizedField[] | Object,
   defaultLanguage = '@none',
 ) {
-  const currentLanguage = i18next.language;
-  const currentLanguageCode = languageCodeMap[currentLanguage];
+  // Issuers label fields with 3-letter (eng) or 2-letter (en) codes; accept either.
+  const currentTwoLetterLanguageCode = i18next.language;
+  const currentThreeLetterLanguageCode =
+    languageCodeMap[currentTwoLetterLanguageCode];
   if (Array.isArray(localizedData)) {
     const valueForCurrentLanguage = localizedData.filter(
-      obj => obj.language === currentLanguageCode,
+      obj =>
+        obj.language === currentThreeLetterLanguageCode ||
+        obj.language === currentTwoLetterLanguageCode,
     );
 
     return valueForCurrentLanguage[0]?.value
@@ -91,12 +95,17 @@ export function getClientNameForCurrentLanguage(
   localizedData: Object,
   defaultLanguage = '@none',
 ) {
-  const currentLanguage = i18next.language;
-  const currentLanguageCode = languageCodeMap[currentLanguage];
+  const currentTwoLetterLanguageCode = i18next.language;
+  const currentThreeLetterLanguageCode =
+    languageCodeMap[currentTwoLetterLanguageCode];
   const localizedDataObject = localizedData as {[key: string]: string};
-  return localizedDataObject.hasOwnProperty(currentLanguageCode)
-    ? localizedDataObject[currentLanguageCode]
-    : localizedDataObject[defaultLanguage];
+  if (localizedDataObject.hasOwnProperty(currentThreeLetterLanguageCode)) {
+    return localizedDataObject[currentThreeLetterLanguageCode];
+  }
+  if (localizedDataObject.hasOwnProperty(currentTwoLetterLanguageCode)) {
+    return localizedDataObject[currentTwoLetterLanguageCode];
+  }
+  return localizedDataObject[defaultLanguage];
 }
 
 // The server sends ISO 639-3 (three-letter) language codes; the app's languages use ISO 639-1

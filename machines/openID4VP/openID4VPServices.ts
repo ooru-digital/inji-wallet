@@ -1,20 +1,16 @@
 import {CACHED_API} from '../../shared/api';
 import {fetchKeyPair} from '../../shared/cryptoutil/cryptoUtil';
-import {getJWK, hasKeyPair} from '../../shared/openId4VCI/Utils';
-import base64url from 'base64url';
-import OpenID4VP from '../../shared/openID4VP/OpenID4VP';
+import {hasKeyPair} from '../../shared/openId4VCI/Utils';
+import OpenID4VP, {credentialIdOf} from '../../shared/openID4VP/OpenID4VP';
 import {OVP_ERROR_CODE, OVP_ERROR_MESSAGES} from '../../shared/constants';
 import {getVerifierKey, VCShareFlowType} from '../../shared/Utils';
 import {
   isClientValidationRequired,
   signDataForVpPreparation,
-  signDataForVpPreparationV2,
 } from '../../shared/openID4VP/OpenID4VPHelper';
 import {NativeModules} from 'react-native';
 import VciClient from '../../shared/vciClient/VciClient';
-import {SelectedCredentialsForVPSharing} from '../VerifiableCredential/VCMetaMachine/vc';
-
-export const signatureSuite = 'JsonWebSignature2020';
+import {VC} from '../VerifiableCredential/VCMetaMachine/vc';
 
 export const openID4VPServices = () => {
   return {
@@ -26,30 +22,41 @@ export const openID4VPServices = () => {
       return await isClientValidationRequired();
     },
 
+    // Trusted verifiers and client validation reach the library through the wallet config
+    // (OpenID4VPHelper.getWalletConfig), as in upstream Inji Wallet 1.0.0-alpha.1.
     getAuthenticationResponse: (context: any) => async () => {
-      // DIAGNOSTIC (dev only) — remove once the authenticateVerifier failure is understood.
-      // The xstate machine log truncates this string, and the native side currently reports the
-      // failure only as a bare "ERR_UNKNOWN" with an undefined userInfo, so neither end shows
-      // what the SDK was actually handed. This is the exact post-normalizeAuthorizationRequest
-      // input — worth checking specifically whether client_id_scheme=pre-registered was appended
-      // (needsPreRegisteredScheme should add it for this verifier's bare http client_id) and
-      // whether client_metadata came through with vp_formats.
-      if (__DEV__) {
-        console.log(
-          '[OpenID4VP] authenticateVerifier request:',
-          context.urlEncodedAuthorizationRequest,
-        );
-        console.log(
-          '[OpenID4VP] trustedVerifiers count:',
-          Array.isArray(context.trustedVerifiers)
-            ? context.trustedVerifiers.length
-            : typeof context.trustedVerifiers,
-        );
-      }
       return await OpenID4VP.authenticateVerifier(
         context.urlEncodedAuthorizationRequest,
-        context.trustedVerifiers,
       );
+    },
+
+    // DCQL requests: the library matches the credentials. Returns the full result for the DCQL
+    // UI plus a credential-query → VC[] map, the shape presentation definition matching produces.
+    getDcqlMatchingVCs: (context: any, event: any) => async () => {
+      const vcs: VC[] = event.vcs ?? [];
+      const dcqlResult = await OpenID4VP.getDcqlMatchingVCs(
+        context.authenticationResponse,
+        vcs,
+      );
+      const vcByKey: Record<string, VC> = {};
+      vcs.forEach(vc => (vcByKey[credentialIdOf(vc)] = vc));
+      const matchingVCs: Record<string, VC[]> = {};
+      Object.entries(dcqlResult.matchingVCs).forEach(([queryId, match]) => {
+        const matched = (match.matchingVcs ?? [])
+          .map(m => vcByKey[m.matchingVcInfo.vcKey])
+          .filter(Boolean);
+        if (matched.length > 0) {
+          matchingVCs[queryId] = matched;
+        }
+      });
+      if (!dcqlResult.success) {
+        // As for presentation definitions: tell the verifier only when the request can't be met.
+        void OpenID4VP.sendErrorToVerifier(
+          OVP_ERROR_MESSAGES.NO_MATCHING_VCS,
+          OVP_ERROR_CODE.NO_MATCHING_VCS,
+        );
+      }
+      return {dcqlResult, matchingVCs};
     },
 
     isVerifierTrusted: (context: any) => async () => {
@@ -107,8 +114,9 @@ export const openID4VPServices = () => {
     },
 
     sendSelectedCredentialsForVP: (context: any) => async () => {
-      const selectedCredentials: SelectedCredentialsForVPSharing =
+      const selectedCredentials =
         await OpenID4VP.prepareCredentialsForVPSharing(
+          context.authenticationResponse,
           context.selectedVCs,
           context.selectedDisclosuresByVc,
         );
@@ -117,26 +125,22 @@ export const openID4VPServices = () => {
       );
     },
 
+    // Presentation during issuance: the VCI client hands over OpenID4VP 1.0 unsigned tokens.
     signVP: (context: any) => async () => {
-      return await signDataForVpPreparationV2(context.unsignedVPToken, context);
+      return await signDataForVpPreparation(context.unsignedVPToken);
     },
 
     sendVP: (context: any) => async () => {
-      const jwk = await getJWK(context.publicKey, context.keyType);
-      const holderId = 'did:jwk:' + base64url(JSON.stringify(jwk)) + '#0';
-
       const unSignedVpTokens = await OpenID4VP.constructUnsignedVPToken(
+        context.authenticationResponse,
         context.selectedVCs,
         context.selectedDisclosuresByVc,
-        holderId,
-        signatureSuite,
       );
-      const vpTokenSigningResultMap = await signDataForVpPreparation(
+      const vpTokenSigningResults = await signDataForVpPreparation(
         unSignedVpTokens,
-        context,
       );
       const verifierResponse = await OpenID4VP.shareVerifiablePresentation(
-        vpTokenSigningResultMap,
+        vpTokenSigningResults,
       );
       if (verifierResponse['status_code'] !== 200) {
         console.error(

@@ -1,11 +1,11 @@
 import {isLocationEnabled} from 'react-native-device-info';
-import  { isMinimumStorageLimitReached } from '../../../shared/storage';
+import {isMinimumStorageLimitReached} from '../../../shared/storage';
 import BluetoothStateManager from 'react-native-bluetooth-state-manager';
 import {
-  check,
   checkMultiple,
   PERMISSIONS,
   PermissionStatus,
+  request,
   requestMultiple,
   RESULTS,
 } from 'react-native-permissions';
@@ -29,7 +29,9 @@ export const ScanServices = (model: any) => {
         let response: PermissionStatus = RESULTS.GRANTED;
 
         if (isIOS()) {
-          response = await check(PERMISSIONS.IOS.BLUETOOTH_PERIPHERAL);
+          // request, not check: check never shows the prompt, so a first-time user was
+          // reported as denied (upstream Inji Wallet #2455).
+          response = await request(PERMISSIONS.IOS.BLUETOOTH_PERIPHERAL);
         }
 
         if (response === RESULTS.GRANTED) {
@@ -94,8 +96,8 @@ export const ScanServices = (model: any) => {
       ])
         .then(response => {
           if (
-            response[PERMISSIONS.ANDROID.BLUETOOTH_ADVERTISE] ===
-              RESULTS.GRANTED &&
+            // The wallet scans for the verifier; it never advertises.
+            response[PERMISSIONS.ANDROID.BLUETOOTH_SCAN] === RESULTS.GRANTED &&
             response[PERMISSIONS.ANDROID.BLUETOOTH_CONNECT] === RESULTS.GRANTED
           ) {
             callback(model.events.NEARBY_ENABLED());
@@ -169,7 +171,7 @@ export const ScanServices = (model: any) => {
           });
         }
       };
-      const { processedCredential, ...rest } = context.selectedVc;
+      const {processedCredential, ...rest} = context.selectedVc;
       // The saved CredIssuer QR image and credential ID are the holder's wallet-side data kept
       // next to the credential, not part of it, so neither is shared. The ID is what looks up
       // the holder's QR, and the image as a base64 PNG would add tens of KB to a slow BLE transfer.
@@ -179,9 +181,7 @@ export const ScanServices = (model: any) => {
         rest.verifiableCredential = verifiableCredential;
       }
       const payload = JSON.stringify(rest);
-      wallet.sendData(
-        payload
-      );
+      wallet.sendData(payload);
       const subscription = subscribe(statusCallback);
       return () => subscription?.remove();
     },
@@ -196,7 +196,9 @@ export const ScanServices = (model: any) => {
     },
 
     checkStorageAvailability: () => async () => {
-      return Promise.resolve(isMinimumStorageLimitReached('minStorageRequiredForAuditEntry'));
+      return Promise.resolve(
+        isMinimumStorageLimitReached('minStorageRequiredForAuditEntry'),
+      );
     },
   };
 };

@@ -47,6 +47,7 @@ import {APP_EVENTS} from '../../machines/app';
 import {useScanScreen} from './ScanScreenController';
 import {useOvpErrorModal} from '../../shared/hooks/useOvpErrorModal';
 import {TrustModalVerifier} from '../../components/TrustModalVerifier';
+import {DcqlCredentialSets} from '../../components/openid4vp/dcql/DcqlCredentialSets';
 
 const COLORS = Theme.Colors.Design;
 // Protocol names are not translated.
@@ -303,6 +304,12 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
     return VCMetadata.fromVcMetadataString(vcData.vcMetadata).getVcKey();
   };
 
+  // Every matching card by key, for the DCQL view, which identifies cards by key.
+  const matchingVcsByKey: Record<string, any> = {};
+  Object.values(vcsMatchingAuthRequest ?? {})
+    .flat()
+    .forEach((vcData: any) => (matchingVcsByKey[getVcKey(vcData)] = vcData));
+
   const selectedVCs = controller.getSelectedVCs();
   const selectedCount = Object.values(selectedVCs).flat().length;
   const selectedHasImage = controller.checkIfAnyVCHasImage(selectedVCs);
@@ -371,212 +378,261 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
           onCancel={controller.CANCEL}
         />
       }
-      {Object.keys(vcsMatchingAuthRequest).length > 0 && (
-        <>
-          <View style={styles.screen}>
-            <ScrollView contentContainerStyle={styles.content}>
-              <View style={styles.verifierCard}>
-                <VerifierAvatar
-                  logo={controller.verifierLogoInTrustModal}
-                  size={64}
-                />
-                <View style={styles.verifierInfo}>
-                  <RNText
-                    style={styles.verifierName}
-                    numberOfLines={2}
-                    testID="shareRequestVerifierName">
-                    {verifierName}
-                  </RNText>
-                  {!controller.isAuthorizationFlow &&
-                    controller.isVerifierRegistered && (
-                      <View style={styles.trustedRow}>
-                        <Icon
-                          name="shield-check-outline"
-                          type="material-community"
-                          size={16}
-                          color={COLORS.teal}
-                        />
-                        <RNText style={styles.trustedText}>
-                          {t('trustedVerifier')}
-                        </RNText>
-                      </View>
-                    )}
-                  {!!purpose && (
-                    <RNText style={styles.purpose} testID="shareRequestPurpose">
-                      {controller.isAuthorizationFlow
-                        ? purpose
-                        : t('purposeLabel', {purpose})}
+      {Object.keys(vcsMatchingAuthRequest).length > 0 &&
+        !(
+          controller.isDcqlRequest && controller.noCredentialsMatchingVPRequest
+        ) && (
+          <>
+            <View style={styles.screen}>
+              <ScrollView contentContainerStyle={styles.content}>
+                <View style={styles.verifierCard}>
+                  <VerifierAvatar
+                    logo={controller.verifierLogoInTrustModal}
+                    size={64}
+                  />
+                  <View style={styles.verifierInfo}>
+                    <RNText
+                      style={styles.verifierName}
+                      numberOfLines={2}
+                      testID="shareRequestVerifierName">
+                      {verifierName}
                     </RNText>
-                  )}
-                </View>
-              </View>
-
-              {Object.entries(vcsMatchingAuthRequest).map(
-                ([inputDescriptorId, vcs]) => {
-                  const group =
-                    controller.requestedCredentialGroups[inputDescriptorId];
-                  const hasChoice = vcs.length > 1;
-                  const description =
-                    group?.purpose || (hasChoice ? t('pickOneHint') : '');
-                  return (
-                    <View key={inputDescriptorId} style={styles.group}>
-                      <View style={styles.groupHeader}>
-                        <RNText style={styles.groupTitle}>
-                          {group?.name || t('requestedCard')}
-                        </RNText>
-                        <View style={styles.requiredBadge}>
-                          <RNText style={styles.requiredBadgeText}>
-                            {hasChoice ? t('requiredPickOne') : t('required')}
+                    {!controller.isAuthorizationFlow &&
+                      controller.isVerifierRegistered && (
+                        <View style={styles.trustedRow}>
+                          <Icon
+                            name="shield-check-outline"
+                            type="material-community"
+                            size={16}
+                            color={COLORS.teal}
+                          />
+                          <RNText style={styles.trustedText}>
+                            {t('trustedVerifier')}
                           </RNText>
                         </View>
-                      </View>
-                      {!!description && (
-                        <RNText style={styles.groupDescription}>
-                          {description}
-                        </RNText>
                       )}
-                      <View style={styles.groupCards}>
-                        {vcs.map(vcData => {
-                          const vcKey = getVcKey(vcData);
-                          return (
-                            <VPShareCredentialCard
-                              key={`${vcKey}-${inputDescriptorId}`}
-                              testID={`shareRequestCard-${vcKey}`}
-                              vcMetadata={vcData.vcMetadata}
-                              selected={
-                                !!controller.inputDescriptorIdToSelectedVcKeys[
-                                  inputDescriptorId
-                                ]?.includes(vcKey)
-                              }
-                              onPress={() =>
-                                controller.SELECT_VC_ITEM(
-                                  vcKey,
-                                  inputDescriptorId,
-                                )
-                              }
-                              selectedDisclosures={
-                                selectedDisclosuresByVc[vcKey]
-                              }
-                              onDisclosuresChange={disclosures =>
-                                handleDisclosureChange(vcKey, disclosures)
-                              }
-                              onCredentialTypeLoaded={credentialType =>
-                                handleCredentialTypeLoaded(
-                                  vcKey,
-                                  credentialType,
-                                )
-                              }
-                            />
-                          );
-                        })}
-                      </View>
-                    </View>
-                  );
-                },
-              )}
-
-              {selectedHasImage && (
-                <View style={styles.selfieNote}>
-                  <Icon
-                    name="camera-outline"
-                    type="material-community"
-                    size={20}
-                    color={COLORS.link}
-                  />
-                  <RNText style={styles.selfieNoteText}>
-                    {t('selfieNote')}
-                  </RNText>
+                    {!!purpose && (
+                      <RNText
+                        style={styles.purpose}
+                        testID="shareRequestPurpose">
+                        {controller.isAuthorizationFlow
+                          ? purpose
+                          : t('purposeLabel', {purpose})}
+                      </RNText>
+                    )}
+                  </View>
                 </View>
-              )}
-            </ScrollView>
 
-            <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
-              {selectedCount > 0 && (
-                <RNText style={styles.summary} testID="shareRequestSummary">
-                  {selectionSummary}
-                </RNText>
-              )}
-              <Pressable
-                testID={
-                  controller.isAuthorizationFlow
-                    ? 'consent-share-button'
-                    : selectedHasImage
-                    ? 'accept-request-and-verify-button'
-                    : 'accept-request-button'
-                }
-                accessibilityRole="button"
-                accessibilityState={{disabled: !controller.isSelectionComplete}}
-                disabled={!controller.isSelectionComplete}
-                onPress={onShare}
-                style={({pressed}) => [
-                  styles.shareButton,
-                  !controller.isSelectionComplete && styles.shareButtonDisabled,
-                  pressed && styles.pressed,
-                ]}>
-                {selectedHasImage && (
-                  <Icon
-                    name="face-recognition"
-                    type="material-community"
-                    size={22}
-                    color={COLORS.surface}
+                {controller.isDcqlRequest && controller.dcqlMatchingResult && (
+                  <DcqlCredentialSets
+                    result={controller.dcqlMatchingResult}
+                    sections={controller.dcqlSections}
+                    selection={controller.inputDescriptorIdToSelectedVcKeys}
+                    renderCard={(queryId, vcKey, sectionIndex) => {
+                      const vcData = matchingVcsByKey[vcKey];
+                      if (!vcData) {
+                        return null;
+                      }
+                      return (
+                        <VPShareCredentialCard
+                          testID={`shareRequestCard-${vcKey}`}
+                          vcMetadata={vcData.vcMetadata}
+                          selected={
+                            !!controller.inputDescriptorIdToSelectedVcKeys[
+                              queryId
+                            ]?.includes(vcKey)
+                          }
+                          onPress={() =>
+                            controller.SELECT_DCQL_CARD(
+                              queryId,
+                              vcKey,
+                              sectionIndex,
+                            )
+                          }
+                          onCredentialTypeLoaded={credentialType =>
+                            handleCredentialTypeLoaded(vcKey, credentialType)
+                          }
+                        />
+                      );
+                    }}
                   />
                 )}
-                <RNText style={styles.shareButtonText}>{shareTitle}</RNText>
-              </Pressable>
+
+                {!controller.isDcqlRequest &&
+                  Object.entries(vcsMatchingAuthRequest).map(
+                    ([inputDescriptorId, vcs]) => {
+                      const group =
+                        controller.requestedCredentialGroups[inputDescriptorId];
+                      const hasChoice = vcs.length > 1;
+                      const description =
+                        group?.purpose || (hasChoice ? t('pickOneHint') : '');
+                      return (
+                        <View key={inputDescriptorId} style={styles.group}>
+                          <View style={styles.groupHeader}>
+                            <RNText style={styles.groupTitle}>
+                              {group?.name || t('requestedCard')}
+                            </RNText>
+                            <View style={styles.requiredBadge}>
+                              <RNText style={styles.requiredBadgeText}>
+                                {hasChoice
+                                  ? t('requiredPickOne')
+                                  : t('required')}
+                              </RNText>
+                            </View>
+                          </View>
+                          {!!description && (
+                            <RNText style={styles.groupDescription}>
+                              {description}
+                            </RNText>
+                          )}
+                          <View style={styles.groupCards}>
+                            {vcs.map(vcData => {
+                              const vcKey = getVcKey(vcData);
+                              return (
+                                <VPShareCredentialCard
+                                  key={`${vcKey}-${inputDescriptorId}`}
+                                  testID={`shareRequestCard-${vcKey}`}
+                                  vcMetadata={vcData.vcMetadata}
+                                  selected={
+                                    !!controller.inputDescriptorIdToSelectedVcKeys[
+                                      inputDescriptorId
+                                    ]?.includes(vcKey)
+                                  }
+                                  onPress={() =>
+                                    controller.SELECT_VC_ITEM(
+                                      vcKey,
+                                      inputDescriptorId,
+                                    )
+                                  }
+                                  selectedDisclosures={
+                                    selectedDisclosuresByVc[vcKey]
+                                  }
+                                  onDisclosuresChange={disclosures =>
+                                    handleDisclosureChange(vcKey, disclosures)
+                                  }
+                                  onCredentialTypeLoaded={credentialType =>
+                                    handleCredentialTypeLoaded(
+                                      vcKey,
+                                      credentialType,
+                                    )
+                                  }
+                                />
+                              );
+                            })}
+                          </View>
+                        </View>
+                      );
+                    },
+                  )}
+
+                {selectedHasImage && (
+                  <View style={styles.selfieNote}>
+                    <Icon
+                      name="camera-outline"
+                      type="material-community"
+                      size={20}
+                      color={COLORS.link}
+                    />
+                    <RNText style={styles.selfieNoteText}>
+                      {t('selfieNote')}
+                    </RNText>
+                  </View>
+                )}
+              </ScrollView>
+
+              <View
+                style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
+                {selectedCount > 0 && (
+                  <RNText style={styles.summary} testID="shareRequestSummary">
+                    {selectionSummary}
+                  </RNText>
+                )}
+                <Pressable
+                  testID={
+                    controller.isAuthorizationFlow
+                      ? 'consent-share-button'
+                      : selectedHasImage
+                      ? 'accept-request-and-verify-button'
+                      : 'accept-request-button'
+                  }
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    disabled: !controller.isSelectionComplete,
+                  }}
+                  disabled={!controller.isSelectionComplete}
+                  onPress={onShare}
+                  style={({pressed}) => [
+                    styles.shareButton,
+                    !controller.isSelectionComplete &&
+                      styles.shareButtonDisabled,
+                    pressed && styles.pressed,
+                  ]}>
+                  {selectedHasImage && (
+                    <Icon
+                      name="face-recognition"
+                      type="material-community"
+                      size={22}
+                      color={COLORS.surface}
+                    />
+                  )}
+                  <RNText style={styles.shareButtonText}>{shareTitle}</RNText>
+                </Pressable>
+              </View>
             </View>
-          </View>
-          <VerifyIdentityOverlay
-            credential={controller.credentials}
-            verifiableCredentialData={controller.verifiableCredentialsData}
-            isVerifyingIdentity={controller.isVerifyingIdentity}
-            onCancel={controller.CANCEL}
-            onFaceValid={controller.FACE_VALID}
-            onFaceInvalid={controller.FACE_INVALID}
-            isInvalidIdentity={controller.isInvalidIdentity}
-            onNavigateHome={controller.GO_TO_HOME}
-            onRetryVerification={controller.RETRY_VERIFICATION}
-          />
-
-          {controller.overlayDetails !== null && !isSelfieShareConsent && (
-            <VPShareOverlay
-              isVisible={controller.overlayDetails !== null}
-              title={controller.overlayDetails.title}
-              titleTestID={controller.overlayDetails.titleTestID}
-              message={controller.overlayDetails.message}
-              messageTestID={controller.overlayDetails.messageTestID}
-              primaryButtonTestID={
-                controller.overlayDetails.primaryButtonTestID
-              }
-              primaryButtonText={controller.overlayDetails.primaryButtonText}
-              primaryButtonEvent={getPrimaryButtonEvent()}
-              secondaryButtonTestID={
-                controller.overlayDetails.secondaryButtonTestID
-              }
-              secondaryButtonText={
-                controller.overlayDetails.secondaryButtonText
-              }
-              secondaryButtonEvent={
-                controller.overlayDetails.secondaryButtonEvent
-              }
-              onCancel={controller.overlayDetails.onCancel}
+            <VerifyIdentityOverlay
+              credential={controller.credentials}
+              verifiableCredentialData={controller.verifiableCredentialsData}
+              isVerifyingIdentity={controller.isVerifyingIdentity}
+              onCancel={controller.CANCEL}
+              onFaceValid={controller.FACE_VALID}
+              onFaceInvalid={controller.FACE_INVALID}
+              isInvalidIdentity={controller.isInvalidIdentity}
+              onNavigateHome={controller.GO_TO_HOME}
+              onRetryVerification={controller.RETRY_VERIFICATION}
             />
-          )}
 
-          <FaceVerificationConsentSheet
-            isVisible={isSelfieConsentVisible}
-            face={photoCard?.face}
-            photoCardName={photoCard && credentialTypesByVcKey[photoCard.vcKey]}
-            cardNames={selectedCardNames}
-            verifierName={verifierName}
-            onConfirm={
-              controller.isVPSharingConsent
-                ? controller.CONFIRM
-                : () => controller.FACE_VERIFICATION_CONSENT(false)
-            }
-            onCancel={controller.DISMISS_POPUP}
-          />
-        </>
-      )}
+            {controller.overlayDetails !== null && !isSelfieShareConsent && (
+              <VPShareOverlay
+                isVisible={controller.overlayDetails !== null}
+                title={controller.overlayDetails.title}
+                titleTestID={controller.overlayDetails.titleTestID}
+                message={controller.overlayDetails.message}
+                messageTestID={controller.overlayDetails.messageTestID}
+                primaryButtonTestID={
+                  controller.overlayDetails.primaryButtonTestID
+                }
+                primaryButtonText={controller.overlayDetails.primaryButtonText}
+                primaryButtonEvent={getPrimaryButtonEvent()}
+                secondaryButtonTestID={
+                  controller.overlayDetails.secondaryButtonTestID
+                }
+                secondaryButtonText={
+                  controller.overlayDetails.secondaryButtonText
+                }
+                secondaryButtonEvent={
+                  controller.overlayDetails.secondaryButtonEvent
+                }
+                onCancel={controller.overlayDetails.onCancel}
+              />
+            )}
+
+            <FaceVerificationConsentSheet
+              isVisible={isSelfieConsentVisible}
+              face={photoCard?.face}
+              photoCardName={
+                photoCard && credentialTypesByVcKey[photoCard.vcKey]
+              }
+              cardNames={selectedCardNames}
+              verifierName={verifierName}
+              onConfirm={
+                controller.isVPSharingConsent
+                  ? controller.CONFIRM
+                  : () => controller.FACE_VERIFICATION_CONSENT(false)
+              }
+              onCancel={controller.DISMISS_POPUP}
+            />
+          </>
+        )}
       {errorModal.show && !controller.isAuthorizationFlow && (
         <ErrorView
           isModal

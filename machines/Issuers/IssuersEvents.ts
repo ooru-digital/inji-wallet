@@ -11,7 +11,14 @@ export const IssuersEvents = {
   RESET_ERROR: () => ({}),
   SHOW_ERROR: (error: any) => ({error}),
   CHECK_KEY_PAIR: () => ({}),
-  CANCEL: () => ({}),
+  // The authorization web view cancels with the issuer's error when the redirect carries one.
+  CANCEL: ({
+    issuerErrorCode,
+    issuerErrorMessage,
+  }: {issuerErrorCode?: string; issuerErrorMessage?: string} = {}) => ({
+    issuerErrorCode,
+    issuerErrorMessage,
+  }),
   STORE_RESPONSE: (response?: unknown) => ({response}),
   STORE_ERROR: (error: Error, requester?: string) => ({error, requester}),
   RESET_VERIFY_ERROR: () => ({}),

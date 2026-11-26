@@ -21,6 +21,11 @@ export function selectVCsMatchingAuthRequest(state: State) {
   return state.context.vcsMatchingAuthRequest;
 }
 
+/** DCQL requests only: the library's matching result, credential sets included. */
+export function selectDcqlMatchingResult(state: State) {
+  return state.context.dcqlMatchingResult;
+}
+
 export function selectSelectedVCs(state: State) {
   return state.context.selectedVCs;
 }

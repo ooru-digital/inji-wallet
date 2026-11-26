@@ -19,6 +19,7 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.Arguments;
 import java.util.ArrayList;
 import java.util.List;
+import io.mosip.residentapp.mdoc.BinarySigner;
 
 public class RNSecureKeystoreModule extends ReactContextBaseJavaModule {
   private final KeyGeneratorImpl keyGenerator = new KeyGeneratorImpl();
@@ -179,6 +180,50 @@ public class RNSecureKeystoreModule extends ReactContextBaseJavaModule {
         successLambda,
         failureLambda,
         getCurrentActivity());
+  }
+
+  /**
+   * Signs raw bytes (base64Data) with a hardware key, as upstream Inji Wallet 1.0.0-alpha.1 does
+   * for OpenID4VP 1.0 VP tokens. sign() above signs the UTF-8 bytes of a String, which corrupts
+   * binary payloads. Resolves the raw signature as standard base64 (DER for ES256).
+   */
+  @ReactMethod
+  public void signBytes(String signAlgorithm, String alias, String base64Data, Promise promise) {
+    String algorithm;
+    if ("RS256".equals(signAlgorithm)) {
+      algorithm = "SHA256withRSA";
+    } else if ("ES256".equals(signAlgorithm)) {
+      algorithm = "SHA256withECDSA";
+    } else {
+      promise.reject("", "Unsupported algorithm for signing");
+      return;
+    }
+
+    Function1<String, Unit> successLambda = signature -> {
+      promise.resolve(signature);
+      return Unit.INSTANCE;
+    };
+
+    Function2<Integer, String, Unit> failureLambda = (code, message) -> {
+      promise.reject(code.toString(), message);
+      return Unit.INSTANCE;
+    };
+
+    Activity activity = getCurrentActivity();
+    if (activity == null) {
+      promise.reject("", "No current activity for the biometric prompt");
+      return;
+    }
+    BinarySigner.INSTANCE.signBase64(
+        keystore,
+        cipherBox,
+        biometrics,
+        algorithm,
+        alias,
+        base64Data,
+        successLambda,
+        failureLambda,
+        activity);
   }
 
   @ReactMethod(isBlockingSynchronousMethod = true)

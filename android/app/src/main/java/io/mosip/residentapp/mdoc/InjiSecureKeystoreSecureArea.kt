@@ -214,3 +214,47 @@ class InjiSecureKeystoreSecureArea(
         }
     }
 }
+
+/**
+ * Signs raw bytes (passed base64) with a keystore key, for RNSecureKeystoreModule.signBytes.
+ * Upstream Inji Wallet 1.0.0-alpha.1's BinarySigner, kept here next to the other raw-byte signer.
+ *
+ * OpenID4VP 1.0 hands the wallet binary data to sign (canonicalized VP hashes, mdoc
+ * DeviceAuthentication). SecureKeystoreImpl.sign takes a String and signs its UTF-8 bytes, which
+ * corrupts any byte >= 0x80 (see InjiSecureKeystoreSecureArea above), so it cannot be used for that.
+ *
+ * The result is the raw signature as standard base64 (NO_WRAP): DER for ECDSA, which JS converts to
+ * r||s. URL_SAFE here mangled DER bytes containing '+' or '/' (upstream #2496 / #2487).
+ */
+object BinarySigner {
+    fun signBase64(
+        keystore: SecureKeystoreImpl,
+        cipherBox: CipherBoxImpl,
+        biometrics: Biometrics,
+        signAlgorithm: String,
+        alias: String,
+        base64Data: String,
+        onSuccess: (String) -> Unit,
+        onFailure: (Int, String) -> Unit,
+        context: android.content.Context,
+    ) {
+        try {
+            val key = keystore.getKeyOrThrow(alias) as PrivateKey
+            val payload = Base64.decode(base64Data, Base64.NO_WRAP)
+
+            kotlinx.coroutines.runBlocking {
+                val createCryptoObject = {
+                    BiometricPrompt.CryptoObject(cipherBox.createSignature(key, signAlgorithm))
+                }
+                val action: (BiometricPrompt.CryptoObject) -> Unit = { cryptoObject ->
+                    val signature = cryptoObject.signature!!
+                    signature.update(payload)
+                    onSuccess(Base64.encodeToString(signature.sign(), Base64.NO_WRAP))
+                }
+                biometrics.authenticateAndPerform(createCryptoObject, action, onFailure, context)
+            }
+        } catch (e: Exception) {
+            onFailure(e.hashCode(), e.message ?: e.toString())
+        }
+    }
+}

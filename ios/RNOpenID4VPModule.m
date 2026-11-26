@@ -1,26 +1,28 @@
 #import <Foundation/Foundation.h>
 #import "React/RCTBridgeModule.h"
+#import <React/RCTEventEmitter.h>
 
-@interface RCT_EXTERN_MODULE(InjiOpenID4VP, NSObject)
+// RCTEventEmitter, not NSObject: it supplies the addListener/removeListeners pair that
+// NativeEventEmitter requires on iOS. See the comment in RNOpenID4VPModule.swift.
+@interface RCT_EXTERN_MODULE(InjiOpenID4VP, RCTEventEmitter)
 
 RCT_EXTERN_METHOD(initSdk:(NSString *)appId
-                  walletMetadata:(id)walletMetadata
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+                  walletConfig:(id)walletConfig)
 
 RCT_EXTERN_METHOD(authenticateVerifier:(NSString *)urlEncodedAuthorizationRequest
-                  trustedVerifierJSON:(id)trustedVerifierJSON
-                  shouldValidateClient:(BOOL)shouldValidateClient
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(constructUnsignedVPToken:(id)credentialsMap
-                  holderId:(NSString *)holderId
-                  signatureSuite:(NSString *)signatureSuite
+RCT_EXTERN_METHOD(getMatchingCredentials:(id)vpRequest
+                  availableWalletCredentials:(id)availableWalletCredentials
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(shareVerifiablePresentation:(id)vpResponseMetadata
+RCT_EXTERN_METHOD(constructUnsignedVPToken:(id)selectedVCs
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(shareVerifiablePresentation:(NSArray *)vpTokenSigningResults
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
@@ -29,6 +31,12 @@ RCT_EXTERN_METHOD(sendErrorToVerifier:(NSString *)error
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
-RCT_EXTERN_METHOD(requiresMainQueueSetup:(BOOL))
+// JSON-LD results from JS, in response to onJsonLdCanonicalize / onJsonLdExpand
+RCT_EXTERN_METHOD(sendJsonLdCanonicalizeResultFromJS:(NSString *)result)
+RCT_EXTERN_METHOD(notifyCanonicalizationFailureFromJS:(NSString *)code
+                  message:(NSString *)message)
+RCT_EXTERN_METHOD(sendJsonLdExpandResultFromJS:(id)result)
+RCT_EXTERN_METHOD(notifyJsonLdExpansionFailureFromJS:(NSString *)code
+                  message:(NSString *)message)
 
 @end

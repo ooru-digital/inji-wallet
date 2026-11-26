@@ -17,6 +17,9 @@ export interface Typegen0 {
     'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection': {
       type: 'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection';
     };
+    'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnectionBeforeBleConnect': {
+      type: 'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnectionBeforeBleConnect';
+    };
     'xstate.init': {type: 'xstate.init'};
     'xstate.stop': {type: 'xstate.stop'};
   };
@@ -31,6 +34,7 @@ export interface Typegen0 {
     checkStorageAvailability: 'done.invoke.scan.checkStorage:invocation[0]';
     disconnect:
       | 'done.invoke.scan.clearingConnection:invocation[0]'
+      | 'done.invoke.scan.clearingConnectionBeforeBleConnect:invocation[0]'
       | 'done.invoke.scan.disconnectDevice:invocation[0]'
       | 'done.invoke.scan.reviewing.disconnect:invocation[0]';
     monitorConnection: 'done.invoke.scan:invocation[0]';
@@ -57,6 +61,7 @@ export interface Typegen0 {
       | 'resetAuthorizationRequest'
       | 'resetBleError'
       | 'resetFaceCaptureBannerStatus'
+      | 'resetReadyForBluetoothStateCheck'
       | 'resetFlowType'
       | 'resetIsOVPViaDeepLink'
       | 'resetIsQrLoginViaDeepLink'
@@ -157,6 +162,7 @@ export interface Typegen0 {
     resetAuthorizationRequest: 'RESET';
     resetBleError: 'DISMISS';
     resetFaceCaptureBannerStatus: '' | 'ACCEPT_REQUEST' | 'CLOSE_BANNER';
+    resetReadyForBluetoothStateCheck: '';
     resetFlowType:
       | 'DISCONNECT'
       | 'DISMISS'
@@ -323,6 +329,7 @@ export interface Typegen0 {
     | 'checkingLocationState.disabled'
     | 'checkingLocationState.requestToEnableLocation'
     | 'clearingConnection'
+    | 'clearingConnectionBeforeBleConnect'
     | 'connecting'
     | 'connecting.inProgress'
     | 'connecting.timeout'
