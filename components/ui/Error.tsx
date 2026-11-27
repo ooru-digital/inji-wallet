@@ -144,8 +144,13 @@ export const ErrorView: React.FC<ErrorProps> = props => {
     );
   };
 
+  // Screens keep this mounted while hidden, so back is only taken while the error is showing;
+  // otherwise it swallowed back on the whole screen (the scanner couldn't be left with back).
   useFocusEffect(
     React.useCallback(() => {
+      if (!isVisible) {
+        return;
+      }
       const onBackPress = () => {
         onDismiss && onDismiss();
         return true;
@@ -157,7 +162,7 @@ export const ErrorView: React.FC<ErrorProps> = props => {
       );
 
       return () => disableBackHandler.remove();
-    }, []),
+    }, [isVisible, onDismiss]),
   );
 
   return isModal ? (
