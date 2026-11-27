@@ -52,7 +52,9 @@ export const AppLock: React.FC<{isAuthorized: boolean}> = ({isAuthorized}) => {
   return <LockScreen onUnlock={unlock} />;
 };
 
-const StorageLockScreen: React.FC<{onRetry: () => void}> = ({onRetry}) => {
+export const StorageLockScreen: React.FC<{onRetry: () => void}> = ({
+  onRetry,
+}) => {
   const biometricT = useTranslation('BiometricScreen').t;
   const {t} = useTranslation('SettingScreen');
   const {c} = useRevampTheme();
