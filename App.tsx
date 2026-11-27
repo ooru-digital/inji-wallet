@@ -1,6 +1,7 @@
 import 'react-native-get-random-values';
 import React, {useContext, useEffect, useState} from 'react';
 import {AppLayout} from './screens/AppLayout';
+import {StorageLockScreen} from './screens/AppLock';
 import {useFont} from './shared/hooks/useFont';
 import {GlobalContextProvider} from './components/GlobalContextProvider';
 import {GlobalContext} from './shared/GlobalContext';
@@ -8,6 +9,7 @@ import {useSelector} from '@xstate/react';
 import {useTranslation} from 'react-i18next';
 import {
   APP_EVENTS,
+  selectIsBiometricCancelled,
   selectIsDecryptError,
   selectIsKeyInvalidateError,
   selectIsDeepLinkDetected,
@@ -108,6 +110,9 @@ const AppLoadingWrapper: React.FC = () => {
     appService,
     selectIsKeyInvalidateError,
   );
+  // The storage asks for the fingerprint while the app is still starting, before AppLock is on
+  // screen, so a cancelled prompt left nothing but a blank page.
+  const storageLocked = useSelector(appService, selectIsBiometricCancelled);
   const controller = useApp();
   const {t} = useTranslation('WelcomeScreen');
   useEffect(() => {
@@ -124,6 +129,11 @@ const AppLoadingWrapper: React.FC = () => {
   }, [isKeyInvalidateError]);
   return (
     <>
+      {storageLocked && (
+        <StorageLockScreen
+          onRetry={() => appService.send(APP_EVENTS.RETRY_BIOMETRIC())}
+        />
+      )}
       <MessageOverlay
         isVisible={isKeyInvalidateError}
         title={t('errors.invalidateKeyError.title')}
