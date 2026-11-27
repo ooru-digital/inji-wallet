@@ -73,6 +73,9 @@ export const MainLayout: React.FC = () => {
       animated>
       <Navigator
         initialRouteName={mainRoutes[0].name}
+        // Back returns to the tab the holder came from (Sharing history goes back to Settings),
+        // and from there to Home.
+        backBehavior="history"
         tabBar={props => <RevampTabBar {...props} />}
         screenOptions={({route}) => ({
           tabBarAccessibilityLabel: route.name,
