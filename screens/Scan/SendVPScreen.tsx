@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from 'react';
 import {useTranslation} from 'react-i18next';
@@ -142,13 +143,16 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
     );
   }, []);
 
+  // Back closes the request like the close button; while it's sending, it waits for the share.
+  const onBackPress = useRef<() => void>(() => undefined);
   useFocusEffect(
     React.useCallback(() => {
-      const onBackPress = () => true;
-
       const disableBackHandler = BackHandler.addEventListener(
         'hardwareBackPress',
-        onBackPress,
+        () => {
+          onBackPress.current();
+          return true;
+        },
       );
 
       return () => disableBackHandler.remove();
@@ -187,6 +191,12 @@ export const SendVPScreen: React.FC<ScanLayoutProps> = props => {
       BackHandler.exitApp();
     } else {
       controller.DISMISS();
+    }
+  };
+
+  onBackPress.current = () => {
+    if (!controller.showLoadingScreen) {
+      handleDismiss();
     }
   };
 
