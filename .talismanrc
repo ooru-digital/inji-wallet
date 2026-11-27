@@ -1,4 +1,8 @@
 fileignoreconfig:
+  - filename: scripts/build-android.sh
+    checksum: 64dfc20dddde3b57cd34a1b30bc738afd9f1b2ca0404b284d9409d3d5870f0ea
+  - filename: .github/workflows/credissuer-build.yml
+    checksum: a6793e433492d2b90568017d36faed151ce68ffab4edad8b61471d7255e424fe
   - filename: components/revamp/walletText.ts
     checksum: fcf693a3501a4965cd08d8fb1914013d8c8ddc8c3ea16ad1bdd7600d7fa0ceba
   - filename: shared/displayLanguage.ts
