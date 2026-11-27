@@ -34,9 +34,23 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
   });
   const ALERT_MESSAGE = t('message');
 
+  const webViewCanGoBack = useRef(false);
+
+  const cancelSignIn = useCallback(() => {
+    controller.CANCEL();
+    navigation.goBack();
+  }, [controller, navigation]);
+
+  // Back steps back inside the issuer's sign-in pages, and otherwise leaves sign-in like the
+  // header's back arrow. It used to be swallowed, so back did nothing here.
   const handleBackPress = useCallback(() => {
+    if (webViewCanGoBack.current) {
+      webViewRef.current?.goBack();
+    } else {
+      cancelSignIn();
+    }
     return true;
-  }, []);
+  }, [cancelSignIn]);
 
   // Previously startAuthSessionOnIOS only ever ran from the Alert's "Continue" tap, so it could
   // only ever fire once no matter how many times this effect itself re-ran. Now that it runs
@@ -82,21 +96,23 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
         startAuthSessionOnIOS();
       }
     } else {
-      Alert.alert(ALERT_TITLE, ALERT_MESSAGE, [
-        {
-          text: t('cancel'),
-          style: 'cancel',
-          onPress: () => {
-            controller.CANCEL();
-            navigation.goBack();
+      Alert.alert(
+        ALERT_TITLE,
+        ALERT_MESSAGE,
+        [
+          {
+            text: t('cancel'),
+            style: 'cancel',
+            onPress: cancelSignIn,
           },
-        },
-        {
-          text: t('continue'),
-          style: 'default',
-          onPress: () => setShowWebView(true),
-        },
-      ]);
+          {
+            text: t('continue'),
+            style: 'default',
+            onPress: () => setShowWebView(true),
+          },
+        ],
+        {cancelable: true, onDismiss: cancelSignIn},
+      );
     }
 
     return () => backHandler.remove();
@@ -107,6 +123,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
     navigation,
     controller,
     handleBackPress,
+    cancelSignIn,
   ]);
 
   useEffect(() => {
@@ -192,11 +209,7 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
 
   const renderHeader = () => (
     <View style={Theme.AuthWebViewScreenStyle.header}>
-      <TouchableOpacity
-        onPress={() => {
-          controller.CANCEL();
-          navigation.goBack();
-        }}>
+      <TouchableOpacity onPress={cancelSignIn}>
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
       <Text style={Theme.AuthWebViewScreenStyle.headerText}>Authenticate</Text>
@@ -216,6 +229,9 @@ const AuthWebViewScreen: React.FC<any> = ({route, navigation}) => {
           originWhitelist={['*']}
           source={{uri: authorizationURL}}
           onShouldStartLoadWithRequest={handleNavigationRequest}
+          onNavigationStateChange={state => {
+            webViewCanGoBack.current = state.canGoBack;
+          }}
           startInLoadingState
           renderLoading={() => (
             <View style={Theme.AuthWebViewScreenStyle.loader}>

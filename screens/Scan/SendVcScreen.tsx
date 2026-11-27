@@ -55,9 +55,13 @@ export const SendVcScreen: React.FC = () => {
     );
   }, []);
 
+  // Back cancels the share, like the Cancel button. It used to do nothing.
   useFocusEffect(
     React.useCallback(() => {
-      const onBackPress = () => true;
+      const onBackPress = () => {
+        controller.CANCEL();
+        return true;
+      };
 
       const disableBackHandler = BackHandler.addEventListener(
         'hardwareBackPress',
@@ -65,7 +69,7 @@ export const SendVcScreen: React.FC = () => {
       );
 
       return () => disableBackHandler.remove();
-    }, []),
+    }, [controller]),
   );
 
   return (
